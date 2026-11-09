@@ -22,6 +22,14 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
+    App\Extraction\Ocr\TesseractOcr:
+        arguments:
+            $binary: '%env(TESSERACT_BINARY)%'
+
+    App\Extraction\Ocr\ScannedPdfOcrExtractor:
+        arguments:
+            $pdftoppmBinary: '%env(PDFTOPPM_BINARY)%'
+
     # pii-shield: the app depends only on the interface. Switching to the real
     # shield (task A) is a one-line change of this alias, no code change.
     Briefklar\PiiShield\NullPiiShield: ~

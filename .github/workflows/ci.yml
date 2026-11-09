@@ -38,7 +38,7 @@ jobs:
         with:
           php-version: '8.4'
       - if: steps.detect.outputs.present == 'true'
-        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-deu
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-deu poppler-utils
       - if: steps.detect.outputs.present == 'true'
         working-directory: app
         run: composer install --no-interaction --prefer-dist

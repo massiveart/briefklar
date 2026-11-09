@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{# Intermediate page until the explanation agent is wired (deliverable 3). #}
+{% block title %}{{ 'letter.extracted.title'|trans }}{% endblock %}
+
+{% block body %}
+    <h1>{{ 'letter.extracted.title'|trans }}</h1>
+    <p>{{ ('letter.extracted.method.' ~ extracted.method.value)|trans }}</p>
+    <pre class="extracted-text">{{ extracted.text }}</pre>
+    <p><a href="{{ path('letter_upload') }}">{{ 'letter.extracted.again'|trans }}</a></p>
+{% endblock %}

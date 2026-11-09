@@ -1,0 +1,16 @@
+app:
+    name: briefklar
+letter:
+    privacy: Dein Brief wird nur für diese Anfrage verarbeitet und nicht gespeichert. Texterkennung läuft lokal auf diesem Server.
+    upload:
+        title: Brief verstehen
+        intro: Lade einen Brief von einer Behörde hoch. Wir erklären dir in einfachen Worten, worum es geht und was du tun musst.
+        label: Brief (PDF oder Foto)
+        help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
+        submit: Brief erklären
+    extracted:
+        title: Erkannter Text
+        again: Anderen Brief hochladen
+        method:
+            pdf_text_layer: Der Text wurde direkt aus dem PDF gelesen.
+            ocr: Der Text wurde per Texterkennung (OCR) gelesen. Bitte mit dem Original vergleichen.

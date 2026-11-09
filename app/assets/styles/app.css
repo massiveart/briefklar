@@ -1,3 +1,47 @@
+/* Minimal base styles; the real UI comes with deliverable 4. */
+:root {
+    --text: #1d1d1f;
+    --muted: #5f6368;
+    --bg: #fafaf7;
+    --accent: #1a5fb4;
+    --error: #b3261e;
+}
+
 body {
-    background-color: skyblue;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 1.0625rem/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.lead, .privacy, .help-text { color: var(--muted); }
+.privacy { font-size: .9rem; }
+form ul { color: var(--error); padding-left: 1.2rem; }
+label { display: block; font-weight: 600; margin-bottom: .25rem; }
+input[type=file] { margin: .25rem 0; }
+
+button {
+    margin-top: 1rem;
+    padding: .6rem 1.2rem;
+    border: 0;
+    border-radius: .4rem;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.extracted-text {
+    white-space: pre-wrap;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: .4rem;
+    padding: 1rem;
+    font-size: .9rem;
 }

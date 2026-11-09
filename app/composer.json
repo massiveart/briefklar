@@ -8,6 +8,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "briefklar/pii-shield": "@dev",
+        "smalot/pdfparser": "^2.13",
         "symfony/ai-agent": "1.0.0-BETA1",
         "symfony/ai-anthropic-platform": "1.0.0-BETA1",
         "symfony/ai-bundle": "1.0.0-BETA1",

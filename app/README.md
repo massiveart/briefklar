@@ -24,6 +24,22 @@ Briefklar\PiiShield\PiiShieldInterface: '@Briefklar\PiiShield\NullPiiShield'
 
 Until task A ships, this is `NullPiiShield` (pass-through). Switching to the real shield is a config change only.
 
+## Text extraction (`src/Extraction/`)
+
+Everything runs locally, nothing is sent anywhere and nothing is stored (see `../docs/adr/0002-local-ocr-before-redaction.md`).
+
+`ExtractionChain` tries all `TextExtractorInterface` services (tag `app.text_extractor`) by priority; the first usable text wins:
+
+| Priority | Extractor | Input | How |
+|---|---|---|---|
+| 30 | `Pdf\PdfTextLayerExtractor` | PDF | `smalot/pdfparser`; skipped if the text layer has fewer than 50 letters (scans) |
+| 20 | `Ocr\ScannedPdfOcrExtractor` | PDF | `pdftoppm` (300 dpi, max. 10 pages) into a private temp dir, Tesseract per page, temp dir removed in `finally` |
+| 10 | `Ocr\ImageOcrExtractor` | PNG, JPEG, TIFF | Tesseract (`deu`) |
+
+The MIME type is detected from the file content, not taken from the client. `OcrTextCorrector` fixes known Tesseract misreads that matter downstream (`$ 49 VStG` -> `§ 49 VStG`). Binaries are configurable via `TESSERACT_BINARY` and `PDFTOPPM_BINARY`.
+
+Tests build PDFs and images from `../fixtures/letters/*.txt` at runtime (`tests/Support/PdfFixtureFactory.php`), so no binary fixtures are committed. OCR tests need `tesseract` and `pdftoppm` and are skipped without them (both are in the container and in CI).
+
 ## Development
 
 No PHP on the host required. PHP 8.4, Composer and Tesseract run in the app container; the Makefile in the repository root wraps everything:
