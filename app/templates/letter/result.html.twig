@@ -63,6 +63,7 @@
 
     <aside class="disclaimer">
         <p>{{ 'letter.result.disclaimer'|trans }}</p>
+        {% if result.language.value != 'de' %}<p>{{ 'letter.result.original_wording'|trans }}</p>{% endif %}
         {% if result.extractionMethod.value == 'ocr' %}<p>{{ 'letter.result.ocr_note'|trans }}</p>{% endif %}
     </aside>
 

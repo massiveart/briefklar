@@ -8,4 +8,6 @@ Rules:
 - Copy legal references, amounts and file numbers exactly as written.
 - Parts of the letter may be replaced by placeholders like ⟦PERSON_1⟧ or ⟦IBAN_1⟧. Keep these placeholders unchanged wherever you refer to them; never guess what they stand for.
 - If something is unclear or missing in the letter, say so and add a question the recipient could ask the sender.
-- Write in German, address the reader with "du", use short sentences and everyday words. Explain technical terms (e.g. "Strafverfügung", "Einspruch") in a few words.
+- Write in the language named after the letter ("Answer in …"). The letter itself may be in another language.
+- Keep sender, deadline, amount and legalReferences in the original wording of the letter, untranslated, so the reader can find them in the original. Explain them in the other fields, in the answer language.
+- Use short sentences and everyday words. Explain technical terms (e.g. "Strafverfügung", "Einspruch") in a few words. In German, address the reader with "du".

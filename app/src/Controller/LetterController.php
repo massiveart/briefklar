@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Explanation\ExplanationFailedException;
+use App\Explanation\ExplanationLanguage;
 use App\Explanation\ExplanationStyle;
 use App\Explanation\LetterExplainer;
 use App\Extraction\ExtractionChain;
@@ -15,9 +16,11 @@ use App\Form\LetterUploadType;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\EnumRequirement;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class LetterController extends AbstractController
@@ -30,11 +33,19 @@ final class LetterController extends AbstractController
     ) {
     }
 
+    #[Route('/', name: 'home', methods: ['GET'])]
+    public function home(Request $request): RedirectResponse
+    {
+        $locale = $request->getPreferredLanguage(ExplanationLanguage::locales()) ?? ExplanationLanguage::German->value;
+
+        return $this->redirectToRoute('letter_upload', ['_locale' => $locale]);
+    }
+
     /**
      * The upload is processed within this request only. PHP deletes the temporary upload file
      * when the request ends; nothing is written anywhere else (see docs/tasks/B-briefklar-app.md).
      */
-    #[Route('/', name: 'letter_upload', methods: ['GET', 'POST'])]
+    #[Route('/{_locale}', name: 'letter_upload', requirements: ['_locale' => new EnumRequirement(ExplanationLanguage::class)], methods: ['GET', 'POST'])]
     public function upload(Request $request): Response
     {
         $upload = new LetterUpload();
@@ -49,6 +60,7 @@ final class LetterController extends AbstractController
                 $explained = $this->explainer->explain(
                     $extracted,
                     $upload->easyLanguage ? ExplanationStyle::EasyLanguage : ExplanationStyle::Standard,
+                    ExplanationLanguage::from($request->getLocale()),
                 );
 
                 return $this->render('letter/result.html.twig', ['result' => $explained]);

@@ -1,5 +1,6 @@
 app:
     name: briefklar
+    language_switch: Sprache
 letter:
     privacy: Dein Brief wird nur für diese Anfrage verarbeitet und nicht gespeichert. Texterkennung läuft lokal auf diesem Server.
     upload:
@@ -22,6 +23,7 @@ letter:
         no_action: Du musst nichts tun.
         questions: Was du nachfragen kannst
         legal_references: Genannte Rechtsgrundlagen
+        original_wording: Frist, Betrag und Rechtsgrundlagen sind wörtlich aus dem Brief übernommen.
         disclaimer: Das ist eine Erklärung, keine Rechtsberatung. Fristen und Beträge immer mit dem Original vergleichen.
         ocr_note: Der Text wurde per Texterkennung gelesen und kann Lesefehler enthalten.
         again: Anderen Brief hochladen

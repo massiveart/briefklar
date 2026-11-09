@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Explanation;
 
+use App\Explanation\ExplanationLanguage;
 use App\Explanation\ExplanationStyle;
 use App\Explanation\LetterExplainer;
 use App\Extraction\ExtractedText;
 use App\Extraction\ExtractionMethod;
 use App\Tests\Support\PdfFixtureFactory;
 use App\Tests\Support\ScriptedPlatform;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class LetterExplainerTest extends KernelTestCase
@@ -71,5 +73,32 @@ final class LetterExplainerTest extends KernelTestCase
         self::getContainer()->get(LetterExplainer::class)->explain($letter);
 
         self::assertStringNotContainsString('Leichte Sprache', self::getContainer()->get(ScriptedPlatform::class)->requests()[0]);
+    }
+
+    /**
+     * @return iterable<string, array{ExplanationLanguage, ExplanationStyle, string}>
+     */
+    public static function languages(): iterable
+    {
+        yield 'german' => [ExplanationLanguage::German, ExplanationStyle::Standard, 'Answer in German.'];
+        yield 'english' => [ExplanationLanguage::English, ExplanationStyle::Standard, 'Answer in English.'];
+        yield 'english easy read' => [ExplanationLanguage::English, ExplanationStyle::EasyLanguage, 'Answer in English.'];
+    }
+
+    #[DataProvider('languages')]
+    public function testAnswerLanguageIsSentOutsideTheLetter(ExplanationLanguage $language, ExplanationStyle $style, string $instruction): void
+    {
+        self::bootKernel();
+        $letter = new ExtractedText(PdfFixtureFactory::letter('01-strafverfuegung'), ExtractionMethod::PdfTextLayer);
+
+        $result = self::getContainer()->get(LetterExplainer::class)->explain($letter, $style, $language);
+
+        self::assertSame($language, $result->language);
+        $request = self::getContainer()->get(ScriptedPlatform::class)->requests()[0];
+        self::assertStringContainsString($instruction, $request);
+        // the instruction must not be inside the letter, where the prompt tells the model to ignore instructions
+        $closing = mb_strrpos($request, '</letter>');
+        self::assertNotFalse($closing);
+        self::assertGreaterThan($closing, mb_strpos($request, $instruction));
     }
 }

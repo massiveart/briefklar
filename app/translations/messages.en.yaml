@@ -1,0 +1,29 @@
+app:
+    name: briefklar
+    language_switch: Language
+letter:
+    privacy: Your letter is processed for this request only and is not stored. Text recognition runs locally on this server.
+    upload:
+        title: Understand a letter
+        intro: Upload a letter from an authority. We explain in plain words what it is about and what you have to do, even if the letter is in German.
+        label: Letter (PDF or photo)
+        help: PDF, PNG, JPEG or TIFF, up to 10 MB.
+        submit: Explain letter
+        easy_language: Explanation in Easy Read
+        easy_language_help: Very short sentences, simple words, difficult words are explained.
+    result:
+        title: Explanation of your letter
+        easy_language: In Easy Read
+        deadline: Deadline
+        no_deadline: The letter does not state a deadline.
+        deadline_unverified: We could not find this deadline in the letter. Please check it in the original.
+        amount: Amount
+        summary: What is it about?
+        actions: What do you have to do?
+        no_action: You do not have to do anything.
+        questions: What you can ask
+        legal_references: Legal provisions cited
+        original_wording: Deadline, amount and legal provisions are quoted as written in the letter.
+        disclaimer: This is an explanation, not legal advice. Always compare deadlines and amounts with the original.
+        ocr_note: The text was read by text recognition and may contain reading errors.
+        again: Upload another letter

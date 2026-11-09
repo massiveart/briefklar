@@ -22,6 +22,15 @@
     <body>
         <header class="nav">
             <a class="nav-brand" href="{{ path('letter_upload') }}"><img src="{{ asset('images/logo.svg') }}" alt="{{ 'app.name'|trans }}" width="164" height="34"></a>
+            <nav class="lang-switch" aria-label="{{ 'app.language_switch'|trans }}">
+                {% for language in enum('App\\Explanation\\ExplanationLanguage').cases() %}
+                    {% if language.value == app.request.locale %}
+                        <span class="lang-switch__current" aria-current="true" lang="{{ language.value }}">{{ language.nativeName }}</span>
+                    {% else %}
+                        <a href="{{ path('letter_upload', {_locale: language.value}) }}" hreflang="{{ language.value }}" lang="{{ language.value }}">{{ language.nativeName }}</a>
+                    {% endif %}
+                {% endfor %}
+            </nav>
         </header>
         <main>
             {% block body %}{% endblock %}

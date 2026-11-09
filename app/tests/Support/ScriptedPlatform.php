@@ -52,7 +52,7 @@ final class ScriptedPlatform
      */
     private function answer(array|string|object $payload): string
     {
-        $request = json_encode($payload, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
+        $request = json_encode($payload, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
         $this->requests[] = $request;
 
         foreach ($this->answers as $marker => $fixture) {

@@ -62,6 +62,12 @@ Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in 
 
 The pages follow the "Classical" design system (Claude Design): its tokens (`--color-*`, `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`) and component classes (`.nav`, `.btn`, `.field`/`.input`, `.card`, `.tag`) are copied into `app.css`. The system defines one light theme. Cormorant Garamond and Lora are self-hosted from `assets/fonts/` (SIL OFL 1.1, licences next to the files), so no visitor request goes to Google Fonts. The logo (`assets/images/logo.svg`, favicon `logo-mark.svg`) is an envelope whose flap turns into a check mark, stroked in the accent, next to the wordmark "brief*klar*" in Cormorant Garamond with the text outlined as paths. The system has no error colour, so warnings and form errors use the deep accent ramp plus an icon and text. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
 
+## Languages
+
+The app is available in German (`/de`) and English (`/en`); `/` redirects by `Accept-Language` (fallback German). The UI language is also the language of the explanation: the English page explains a German letter in English ("Easy Read" instead of "Leichte Sprache"). Sender, deadline, amount and legal references stay in the letter's original wording, so they can be found in the original and `DeadlineCheck` keeps working. The answer language is sent after `</letter>`, outside the part the model treats as data.
+
+`ExplanationLanguage` is the single list of languages (route requirement, switcher, model instruction). Adding one: a case there, `translations/messages.<locale>.yaml` and `validators.<locale>.yaml`, and the locale in `enabled_locales` (`config/packages/translation.yaml`).
+
 ## Development
 
 Secrets never go into git. Create your local `app/.env.local` once (ignored; `compose.yaml` loads it into the container):

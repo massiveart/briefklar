@@ -15,7 +15,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpException;
 
 /**
  * Asks the explanation agent (config/packages/ai.yaml) for a structured explanation,
- * in standard German or in Leichte Sprache.
+ * in the user's language, in standard or easy-to-read wording.
  *
  * Redaction is not done here: pii-shield hooks into the agent as input/output processor,
  * so this class only ever sees the original text and the restored answer.
@@ -34,9 +34,17 @@ final readonly class LetterExplainer
     /**
      * @throws ExplanationFailedException if the provider fails or returns no valid explanation
      */
-    public function explain(ExtractedText $letter, ExplanationStyle $style = ExplanationStyle::Standard): ExplainedLetter
-    {
-        $messages = new MessageBag(Message::ofUser("<letter>\n".$letter->text."\n</letter>"));
+    public function explain(
+        ExtractedText $letter,
+        ExplanationStyle $style = ExplanationStyle::Standard,
+        ExplanationLanguage $language = ExplanationLanguage::German,
+    ): ExplainedLetter {
+        // The answer language goes after the letter, outside the part the model must treat as data.
+        $messages = new MessageBag(Message::ofUser(\sprintf(
+            "<letter>\n%s\n</letter>\n\nAnswer in %s.",
+            $letter->text,
+            $language->englishName(),
+        )));
 
         $agent = match ($style) {
             ExplanationStyle::Standard => $this->standardAgent,
@@ -55,6 +63,6 @@ final readonly class LetterExplainer
         $deadlineStated = null === $explanation->deadline
             || $this->deadlineCheck->isStatedInLetter($explanation->deadline, $letter->text);
 
-        return new ExplainedLetter($explanation, $deadlineStated, $letter->method, $style);
+        return new ExplainedLetter($explanation, $deadlineStated, $letter->method, $style, $language);
     }
 }

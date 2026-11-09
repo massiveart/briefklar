@@ -1,0 +1,8 @@
+letter:
+    upload:
+        missing: Please choose a file.
+        too_large: The file is too large (at most {{ limit }} {{ suffix }}).
+        unsupported_type: This file type is not supported. Please upload a PDF or a photo (PNG, JPEG, TIFF).
+        unreadable: We could not recognise any text in this file. Is the photo sharp and well lit?
+    explanation:
+        failed: The explanation did not work just now. Please try again in a minute.
