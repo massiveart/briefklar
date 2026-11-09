@@ -19,8 +19,11 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+      - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/phpunit
+      - run: vendor/bin/php-cs-fixer check --diff
+      - run: vendor/bin/phpstan analyse --no-progress
 
   app:
     runs-on: ubuntu-latest
