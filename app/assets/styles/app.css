@@ -167,6 +167,7 @@ a:hover { color: var(--color-accent-800); }
     text-decoration: none;
 }
 .nav-brand:hover { color: var(--color-accent-700); }
+.nav-brand img { display: block; height: 34px; width: auto; }
 
 .btn {
     display: inline-flex;

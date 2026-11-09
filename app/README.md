@@ -58,7 +58,7 @@ Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in 
 
 ## UI (`assets/styles/app.css`, `templates/`)
 
-The pages follow the "Classical" design system (Claude Design): its tokens (`--color-*`, `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`) and component classes (`.nav`, `.btn`, `.field`/`.input`, `.card`, `.tag`) are copied into `app.css`. The system defines one light theme. Cormorant Garamond and Lora are self-hosted from `assets/fonts/` (SIL OFL 1.1, licences next to the files), so no visitor request goes to Google Fonts. The system has no error colour, so warnings and form errors use the deep accent ramp plus an icon and text. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
+The pages follow the "Classical" design system (Claude Design): its tokens (`--color-*`, `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`) and component classes (`.nav`, `.btn`, `.field`/`.input`, `.card`, `.tag`) are copied into `app.css`. The system defines one light theme. Cormorant Garamond and Lora are self-hosted from `assets/fonts/` (SIL OFL 1.1, licences next to the files), so no visitor request goes to Google Fonts. The logo (`assets/images/logo.svg`, favicon `logo-mark.svg`) is an envelope whose flap turns into a check mark, stroked in the accent, next to the wordmark "brief*klar*" in Cormorant Garamond with the text outlined as paths. The system has no error colour, so warnings and form errors use the deep accent ramp plus an icon and text. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
 
 ## Development
 
