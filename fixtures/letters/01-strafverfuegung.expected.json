@@ -1,0 +1,23 @@
+{
+  "pii": [
+    { "type": "PERSON", "value": "Maria Musterfrau" },
+    { "type": "ADDRESS", "value": "Lindenweg 12\n6900 Bregenz" },
+    { "type": "FILE_NUMBER", "value": "BHMS-VK-2026/48213" },
+    { "type": "LICENSE_PLATE", "value": "B-123AB" },
+    { "type": "IBAN", "value": "AT61 1904 3002 3457 3201" }
+  ],
+  "must_survive": [
+    "Bezirkshauptmannschaft Musterstadt",
+    "28.10.2026",
+    "14.10.2026",
+    "§ 20 Abs. 2 StVO",
+    "§ 99 Abs. 3 lit. a StVO",
+    "§ 49 VStG",
+    "110,00 Euro",
+    "binnen zwei Wochen",
+    "50 km/h",
+    "23 km/h"
+  ],
+  "negative": [],
+  "notes": "Official's name and authority e-mail are not the recipient's PII. Decide in task A whether to redact them (default: keep authority contact data, it is needed for the action steps)."
+}

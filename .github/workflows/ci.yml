@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [pii-shield]   # add ris-client once it has a composer.json
+    defaults:
+      run:
+        working-directory: packages/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/phpunit
+
+  app:
+    runs-on: ubuntu-latest
+    if: hashFiles('app/composer.json') != ''
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-deu
+      - run: composer install --no-interaction --prefer-dist
+      - run: bin/phpunit

@@ -1,0 +1,25 @@
+{
+  "name": "briefklar/pii-shield",
+  "description": "Reversible PII redaction for Symfony AI with DACH recognizers (AT SVNR, IBAN, tax numbers) and checksum validation.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": ["symfony-ai", "pii", "gdpr", "dsgvo", "redaction", "anonymization", "llm"],
+  "require": {
+    "php": ">=8.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^12.0"
+  },
+  "suggest": {
+    "symfony/ai-agent": "To use the input/output processors in Symfony AI agents",
+    "symfony/ai-platform": "To use the NER detector via Hugging Face"
+  },
+  "autoload": {
+    "psr-4": { "Briefklar\\PiiShield\\": "src/" }
+  },
+  "autoload-dev": {
+    "psr-4": { "Briefklar\\PiiShield\\Tests\\": "tests/" }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

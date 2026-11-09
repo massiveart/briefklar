@@ -1,0 +1,24 @@
+{
+  "pii": [
+    { "type": "PERSON", "value": "Johann Beispielmann" },
+    { "type": "PERSON", "value": "Beispielmann" },
+    { "type": "ADDRESS", "value": "Bahnhofstraße 7/3\n4020 Linz" },
+    { "type": "TAX_NUMBER", "value": "46 123/4567" },
+    { "type": "SVNR", "value": "4568 150392" },
+    { "type": "BIRTH_DATE", "value": "15.03.1992" }
+  ],
+  "must_survive": [
+    "Finanzamt Österreich",
+    "02.11.2026",
+    "15.11.2026",
+    "1.245,00 Euro",
+    "4. Quartal 2026",
+    "§ 217 BAO",
+    "2 %",
+    "+43 50 233 233"
+  ],
+  "negative": [
+    { "value": "1234 010180", "reason": "SVNR with wrong check digit (correct would be 1237 010180), validator must reject" }
+  ],
+  "notes": "'Beispielmann' alone must map to the same placeholder as 'Johann Beispielmann' (same person). The authority hotline is public and must survive."
+}

@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: app/.env.local
+        required: false
+    volumes:
+      - ./:/srv
+    tmpfs:
+      - /tmp   # uploads live in memory only
+
+  ollama:
+    image: ollama/ollama
+    profiles: ["local"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  ollama:
