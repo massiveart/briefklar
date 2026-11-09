@@ -32,7 +32,11 @@ interface PiiShieldInterface
 }
 ```
 
-`RedactionResult` carries the redacted text and the mapping placeholder -> original. It never leaves the PHP process (not logged, not persisted, not sent to MCP clients unless they called `redact_text` themselves).
+`RedactionResult` carries the redacted text and the mapping placeholder -> original. It is never logged and never sent to a model provider.
+
+Optional, for unmasking across requests (e.g. MCP `redact_text` followed by a later restore): `PiiShield` can store the mapping in a vault and set `RedactionResult::$vaultId`. `VaultAwarePiiShieldInterface` adds `restoreFromVault(text, vaultId)` and `forget(vaultId)`. Persistent storage is only possible through `EncryptedVault` (libsodium, mandatory TTL); any PSR-6 cache works as backend. See ADR 0005.
+
+Irreversible masking for logs and previews (`AT61 **** **** **** 3201`, `[PERSON]`): `PiiMaskerInterface::mask(text)`, same detectors, no vault.
 
 Placeholder format: `⟦PERSON_1⟧`, `⟦SVNR_1⟧`, `⟦IBAN_1⟧`. Rationale: unusual brackets survive markdown and are rarely "corrected" by models; same entity value always maps to the same placeholder within one document, so the model can reason about "the same person".
 
