@@ -45,3 +45,12 @@ jobs:
       - if: steps.detect.outputs.present == 'true'
         working-directory: app
         run: bin/phpunit
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: app
+        run: vendor/bin/php-cs-fixer check --diff
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: app
+        run: bin/console cache:warmup --env=test && vendor/bin/phpstan analyse --no-progress
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: app
+        run: bin/console lint:container

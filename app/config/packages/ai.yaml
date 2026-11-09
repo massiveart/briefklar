@@ -1,0 +1,14 @@
+ai:
+    # see https://symfony.com/doc/current/ai/components/platform.html
+    platform:
+        ollama: null
+        huggingface:
+            api_key: '%env(HUGGINGFACE_API_KEY)%'
+        anthropic:
+            api_key: '%env(ANTHROPIC_API_KEY)%'
+
+    # see https://symfony.com/doc/current/ai/bundles/ai-bundle.html
+    agent:
+
+    # see https://symfony.com/doc/current/ai/components/store.html
+    store:
