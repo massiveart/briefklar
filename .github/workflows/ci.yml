@@ -19,20 +19,29 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+      - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/phpunit
+      - run: vendor/bin/php-cs-fixer check --diff
+      - run: vendor/bin/phpstan analyse --no-progress
 
   app:
     runs-on: ubuntu-latest
-    if: hashFiles('app/composer.json') != ''
-    defaults:
-      run:
-        working-directory: app
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      # hashFiles() is not available in job-level `if`, so the app check runs as a step.
+      - id: detect
+        run: |
+          if [ -f app/composer.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.detect.outputs.present == 'true'
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-deu
-      - run: composer install --no-interaction --prefer-dist
-      - run: bin/phpunit
+      - if: steps.detect.outputs.present == 'true'
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-deu
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: app
+        run: composer install --no-interaction --prefer-dist
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: app
+        run: bin/phpunit

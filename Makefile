@@ -1,17 +1,25 @@
 PACKAGES := packages/pii-shield packages/ris-client
 
-.PHONY: install test qa up down
+.PHONY: install test qa cs-check cs-fix phpstan up down
 
 install:
-	@for p in $(PACKAGES); do [ -f $$p/composer.json ] && (cd $$p && composer install) || true; done
-	@[ -f app/composer.json ] && (cd app && composer install) || true
+	@set -e; for p in $(PACKAGES); do if [ -f $$p/composer.json ]; then (cd $$p && composer install); fi; done
+	@set -e; if [ -f app/composer.json ]; then (cd app && composer install); fi
 
 test:
-	@for p in $(PACKAGES); do [ -f $$p/phpunit.xml.dist ] && (cd $$p && vendor/bin/phpunit) || true; done
-	@[ -f app/phpunit.xml.dist ] && (cd app && bin/phpunit) || true
+	@set -e; for p in $(PACKAGES); do if [ -f $$p/phpunit.xml.dist ]; then (cd $$p && vendor/bin/phpunit); fi; done
+	@set -e; if [ -f app/phpunit.xml.dist ]; then (cd app && bin/phpunit); fi
 
-qa:
-	@echo "TODO (day 0): wire php-cs-fixer @Symfony and phpstan level 8 per package"
+qa: cs-check phpstan
+
+cs-check:
+	@set -e; for p in $(PACKAGES); do if [ -f $$p/.php-cs-fixer.dist.php ]; then echo "== cs-check $$p"; (cd $$p && vendor/bin/php-cs-fixer check --diff); fi; done
+
+cs-fix:
+	@set -e; for p in $(PACKAGES); do if [ -f $$p/.php-cs-fixer.dist.php ]; then (cd $$p && vendor/bin/php-cs-fixer fix); fi; done
+
+phpstan:
+	@set -e; for p in $(PACKAGES); do if [ -f $$p/phpstan.dist.neon ]; then echo "== phpstan $$p"; (cd $$p && vendor/bin/phpstan analyse --no-progress); fi; done
 
 up:
 	docker compose up -d --build
