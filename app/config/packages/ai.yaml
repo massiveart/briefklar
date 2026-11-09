@@ -16,6 +16,13 @@ ai:
             prompt:
                 file: '%kernel.project_dir%/config/prompts/explain_letter.md'
 
+        # Same task in "Leichte Sprache" (easy-to-read German), chosen by the user on the upload page.
+        letter_explainer_easy:
+            platform: app.ai.platform
+            model: '%env(AI_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/config/prompts/explain_letter_easy.md'
+
 services:
     # Resolves AI_PLATFORM at runtime, so switching providers needs no rebuild of the container.
     app.ai.platform:

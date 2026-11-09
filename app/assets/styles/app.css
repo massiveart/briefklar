@@ -424,3 +424,20 @@ form ul li::before {
 }
 
 .result-again { margin-top: var(--space-6); }
+
+/* ── Easy-language toggle ─────────────────────────────────────────────────── */
+.field--checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+.field--checkbox label { display: inline; font-size: 14px; color: var(--color-text); cursor: pointer; }
+.checkbox {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 3px 0 0;
+    accent-color: var(--color-accent-700);
+    cursor: pointer;
+}
+.style-note { margin: var(--space-1) 0 0; }

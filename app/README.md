@@ -44,6 +44,8 @@ Tests build PDFs and images from `../fixtures/letters/*.txt` at runtime (`tests/
 
 `LetterExplainer` sends the extracted text (wrapped in `<letter>…</letter>`) to the agent `letter_explainer` from `config/packages/ai.yaml` and asks for structured output into `LetterExplanation` (shared contract with task A, change only together). The system prompt lives in `config/prompts/explain_letter.md`: explain, no legal advice, never invent deadlines, keep pii-shield placeholders.
 
+A second agent, `letter_explainer_easy` (`config/prompts/explain_letter_easy.md`), writes the same structured answer in "Leichte Sprache" (very short sentences, explained terms, middle dots in compounds). Users opt in with a checkbox on the upload page; `ExplanationStyle` picks the agent. Both prompts carry the same safety rules, and sender, deadline, amount and legal references stay verbatim so `DeadlineCheck` still works.
+
 Provider and model come from env, no code change needed:
 
 | `AI_PLATFORM` | Key in `.env.local` | Example `AI_MODEL` |

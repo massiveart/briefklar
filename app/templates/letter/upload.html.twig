@@ -10,6 +10,13 @@
     {{ form_start(form, {attr: {'data-turbo': 'false', class: 'upload-form card elev-sm'}}) }}
         {{ form_errors(form) }}
         {{ form_row(form.letter, {row_attr: {class: 'field'}, attr: {class: 'input'}}) }}
+        <div class="field field--checkbox">
+            {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
+            <div>
+                {{ form_label(form.easyLanguage) }}
+                {{ form_help(form.easyLanguage) }}
+            </div>
+        </div>
         <div>
             <button type="submit" class="btn btn-primary">{{ 'letter.upload.submit'|trans }}</button>
         </div>

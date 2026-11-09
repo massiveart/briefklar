@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -20,6 +21,11 @@ final class LetterUploadType extends AbstractType
             'label' => 'letter.upload.label',
             'help' => 'letter.upload.help',
             'attr' => ['accept' => implode(',', LetterUpload::MIME_TYPES)],
+        ]);
+        $builder->add('easyLanguage', CheckboxType::class, [
+            'label' => 'letter.upload.easy_language',
+            'help' => 'letter.upload.easy_language_help',
+            'required' => false,
         ]);
     }
 

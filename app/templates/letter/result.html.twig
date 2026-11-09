@@ -6,6 +6,9 @@
 
 {% block body %}
     <p class="sender">{{ e.sender }}</p>
+    {% if result.style.value == 'easy_language' %}
+        <p class="style-note"><span class="tag tag-neutral">{{ 'letter.result.easy_language'|trans }}</span></p>
+    {% endif %}
     <h1>{{ e.subject }}</h1>
 
     <section class="deadline card {{ e.deadline is null ? 'deadline--none' : (result.deadlineStatedInLetter ? '' : 'deadline--unverified') }}" aria-labelledby="deadline-heading">

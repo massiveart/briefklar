@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Tests\Support\PdfFixtureFactory;
+use App\Tests\Support\ScriptedPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Field\ChoiceFormField;
 use Symfony\Component\DomCrawler\Field\FileFormField;
 use Symfony\Component\DomCrawler\Form;
 
@@ -39,6 +41,34 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('.amount', '110,00 Euro');
         self::assertSelectorTextContains('.references', '§ 49 VStG');
         self::assertSelectorTextContains('.disclaimer', 'keine Rechtsberatung');
+    }
+
+    public function testEasyLanguageToggleIsOffByDefault(): void
+    {
+        $client = self::createClient();
+        $this->uploadText($client, PdfFixtureFactory::letter('01-strafverfuegung'));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('.style-note');
+    }
+
+    public function testEasyLanguageToggleProducesEasyLanguageExplanation(): void
+    {
+        $client = self::createClient();
+        $crawler = $client->request('GET', '/');
+        $form = $crawler->selectButton('Brief erklären')->form();
+        self::attach($form, PdfFixtureFactory::toTempFile(PdfFixtureFactory::textPdf(PdfFixtureFactory::letter('01-strafverfuegung')), '.pdf'));
+        $field = $form['letter_upload[easyLanguage]'];
+        self::assertInstanceOf(ChoiceFormField::class, $field);
+        $field->tick();
+        $client->submit($form);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.style-note', 'In Leichter Sprache');
+        self::assertSelectorTextContains('.deadline__value', 'binnen zwei Wochen ab Zustellung');
+        $requests = self::getContainer()->get(ScriptedPlatform::class)->requests();
+        self::assertCount(1, $requests);
+        self::assertStringContainsString('Leichte Sprache', $requests[0]);
     }
 
     public function testFlagsDeadlineThatIsNotInTheLetter(): void
