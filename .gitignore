@@ -12,3 +12,6 @@
 CLAUDE.local.md
 .claude/settings.local.json
 /.private/
+
+# IDE settings
+/.idea/
