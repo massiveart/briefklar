@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield\Tests;
 
 use Briefklar\PiiShield\Entity;
+use Briefklar\PiiShield\PiiMasker;
 use Briefklar\PiiShield\PiiShield;
 use Briefklar\PiiShield\RedactionResult;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -105,6 +106,24 @@ final class FixtureLetterTest extends TestCase
         self::assertSame($this->withAliasesExpanded($text, $redaction), $restored->text);
         self::assertTrue($restored->isClean());
         self::assertSame([], $restored->unusedPlaceholders);
+    }
+
+    /**
+     * @param array{pii: list<array{type: string, value: string}>, must_survive: list<string>, negative: list<array{value: string, reason: string}>} $expected
+     */
+    #[DataProvider('letterProvider')]
+    public function testMaskingRemovesPiiAndKeepsMustSurvive(string $text, array $expected): void
+    {
+        $this->skipWithoutFixtures($text);
+
+        $masked = PiiMasker::withDefaultDetectors()->mask($text);
+
+        foreach ($expected['pii'] as $pii) {
+            self::assertStringNotContainsString($pii['value'], $masked, "{$pii['type']} leaked");
+        }
+        foreach ($expected['must_survive'] as $keep) {
+            self::assertStringContainsString($keep, $masked);
+        }
     }
 
     private function skipWithoutFixtures(string $text): void

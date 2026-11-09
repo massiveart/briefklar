@@ -25,6 +25,51 @@ $answer->unknownPlaceholders; // placeholders the model invented, e.g. ['⟦IBAN
 
 `RedactionResult` holds the original values in memory. Never log, persist or send it anywhere.
 
+### Unmasking in a later request (vaults)
+
+When masking and unmasking happen in different requests (e.g. an MCP client calls `redact_text` and restores the model's answer later), give `PiiShield` a vault. Persistent storage is only possible through `EncryptedVault` (XChaCha20-Poly1305 via libsodium); the storage backend only ever sees ciphertext. A TTL is mandatory (default 3600 s).
+
+```php
+use Briefklar\PiiShield\PiiShield;
+use Briefklar\PiiShield\Vault\EncryptedVault;
+use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+
+// Any PSR-6 pool works: Redis, filesystem, PDO, ...
+$vault = new EncryptedVault(
+    new Psr6CacheStorage(new RedisAdapter(RedisAdapter::createConnection('redis://localhost'))),
+    base64_decode($_ENV['PII_VAULT_KEY']), // 32 bytes, create with EncryptedVault::generateKey()
+);
+$shield = PiiShield::withDefaultDetectors($vault, vaultTtl: 900);
+
+// Request 1
+$redaction = $shield->redact($letter);
+$redaction->vaultId; // random 128-bit id, hand this to the client
+
+// Request 2
+$answer = $shield->restoreFromVault($modelOutput, $vaultId);
+$shield->forget($vaultId); // delete immediately when done
+```
+
+| Vault | Use |
+|---|---|
+| none (default) | mapping only in `RedactionResult`, one request |
+| `InMemoryVault` | one process / long-running worker, TTL-aware |
+| `EncryptedVault` + `VaultStorageInterface` | anything persistent; `Psr6CacheStorage` ships, implement the interface for other backends |
+
+`fetch` of a tampered entry, an entry encrypted with another key or an entry copied to another id throws `VaultException`.
+
+### Irreversible masking (logs, previews)
+
+```php
+use Briefklar\PiiShield\PiiMasker;
+
+PiiMasker::withDefaultDetectors()->mask('IBAN AT61 1904 3002 3457 3201, Frau Musterfrau');
+// "IBAN AT61 **** **** **** 3201, Frau [PERSON]"
+```
+
+Defaults: IBAN keeps first and last 4 characters, phone keeps the last 2, everything else becomes `[TYPE]`. Override per type: `new PiiMasker($detectors, [EntityType::Iban->value => new TypeLabelMask()])`. Partial masks leak length and some characters by design; never send masked text instead of redacted text to a model provider.
+
 ## Detectors
 
 | Entity | Detector | How |
