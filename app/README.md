@@ -42,6 +42,14 @@ Tests build PDFs and images from `../fixtures/letters/*.txt` at runtime (`tests/
 
 ## Development
 
+Secrets never go into git. Create your local `app/.env.local` once (ignored; `compose.yaml` loads it into the container):
+
+```bash
+echo "APP_SECRET=$(openssl rand -hex 16)" >> app/.env.local
+```
+
+Provider keys (e.g. `HUGGINGFACE_API_KEY`) go into the same file.
+
 No PHP on the host required. PHP 8.4, Composer and Tesseract run in the app container; the Makefile in the repository root wraps everything:
 
 ```bash
