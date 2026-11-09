@@ -20,6 +20,9 @@
         {% endif %}
     </head>
     <body>
+        <header class="nav">
+            <a class="nav-brand" href="{{ path('letter_upload') }}">{{ 'app.name'|trans }}</a>
+        </header>
         <main>
             {% block body %}{% endblock %}
         </main>

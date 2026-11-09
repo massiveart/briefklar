@@ -56,6 +56,10 @@ Provider and model come from env, no code change needed:
 
 Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in `config/services_test.yaml`) with canned answers from `tests/Fixtures/explanations/`. The agent pipeline (system prompt, processors, structured output) runs for real, and every provider request is recorded, so a test can check what would leave the server.
 
+## UI (`assets/styles/app.css`, `templates/`)
+
+The pages follow the "Classical" design system (Claude Design): its tokens (`--color-*`, `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`) and component classes (`.nav`, `.btn`, `.field`/`.input`, `.card`, `.tag`) are copied into `app.css`. The system defines one light theme. Cormorant Garamond and Lora are self-hosted from `assets/fonts/` (SIL OFL 1.1, licences next to the files), so no visitor request goes to Google Fonts. The system has no error colour, so warnings and form errors use the deep accent ramp plus an icon and text. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
+
 ## Development
 
 Secrets never go into git. Create your local `app/.env.local` once (ignored; `compose.yaml` loads it into the container):
