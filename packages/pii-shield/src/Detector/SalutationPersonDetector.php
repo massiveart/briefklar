@@ -31,10 +31,11 @@ final class SalutationPersonDetector implements DetectorInterface
         $block = "/^(?:Herrn?|Frau)[ \\t]*\\n{$titles}(?<name>{$word}(?:[ \\t]+{$word})+)[ \\t]*$/mu";
         $inline = "/\\b(?:Herrn?|Frau)[ \\t]+{$titles}(?<name>{$word}(?:[ \\t]+{$word})?)/mu";
 
+        // The address block is a strong signal; inline matches may include a following noun.
         $entities = [];
-        foreach ([$block, $inline] as $pattern) {
+        foreach ([[$block, 0.8, 'salutation_block'], [$inline, 0.6, 'salutation_inline']] as [$pattern, $confidence, $name]) {
             foreach (RegexMatcher::matchAll($pattern, $text, 'name') as $match) {
-                $entities[] = new Entity(EntityType::Person, $match['value'], $match['offset'], 0.7, 'salutation');
+                $entities[] = new Entity(EntityType::Person, $match['value'], $match['offset'], $confidence, $name);
             }
         }
 
