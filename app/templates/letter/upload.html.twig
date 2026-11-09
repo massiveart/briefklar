@@ -4,14 +4,27 @@
 
 {% block body %}
     <h1>{{ 'letter.upload.title'|trans }}</h1>
-    <p class="lead">{{ 'letter.upload.intro'|trans }}</p>
+    <p class="lead prose">{{ 'letter.upload.intro'|trans }}</p>
 
     {# Turbo Drive expects a redirect after POST; we do not store letters, so there is nothing to redirect to. #}
-    {{ form_start(form, {attr: {'data-turbo': 'false'}}) }}
+    {{ form_start(form, {attr: {'data-turbo': 'false', class: 'upload-form card elev-sm'}}) }}
         {{ form_errors(form) }}
-        {{ form_row(form.letter) }}
-        <button type="submit">{{ 'letter.upload.submit'|trans }}</button>
+        {{ form_row(form.letter, {row_attr: {class: 'field'}, attr: {class: 'input'}}) }}
+        <div class="field field--checkbox">
+            {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
+            <div>
+                {{ form_label(form.easyLanguage) }}
+                {{ form_help(form.easyLanguage) }}
+            </div>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">{{ 'letter.upload.submit'|trans }}</button>
+        </div>
     {{ form_end(form) }}
 
-    <p class="privacy">{{ 'letter.privacy'|trans }}</p>
+    <p class="privacy">
+        {# Lucide "lock" #}
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>{{ 'letter.privacy'|trans }}</span>
+    </p>
 {% endblock %}

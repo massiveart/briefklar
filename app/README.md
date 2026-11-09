@@ -44,6 +44,8 @@ Tests build PDFs and images from `../fixtures/letters/*.txt` at runtime (`tests/
 
 `LetterExplainer` sends the extracted text (wrapped in `<letter>…</letter>`) to the agent `letter_explainer` from `config/packages/ai.yaml` and asks for structured output into `LetterExplanation` (shared contract with task A, change only together). The system prompt lives in `config/prompts/explain_letter.md`: explain, no legal advice, never invent deadlines, keep pii-shield placeholders.
 
+A second agent, `letter_explainer_easy` (`config/prompts/explain_letter_easy.md`), writes the same structured answer in "Leichte Sprache" (very short sentences, explained terms, middle dots in compounds). Users opt in with a checkbox on the upload page; `ExplanationStyle` picks the agent. Both prompts carry the same safety rules, and sender, deadline, amount and legal references stay verbatim so `DeadlineCheck` still works.
+
 Provider and model come from env, no code change needed:
 
 | `AI_PLATFORM` | Key in `.env.local` | Example `AI_MODEL` |
@@ -55,6 +57,10 @@ Provider and model come from env, no code change needed:
 `DeadlineCheck` verifies that the reported deadline is written in the letter (verbatim period, or an ISO date that appears as `28.10.2026`, `5.1.2027` or `14. November 2026`). If not, the result page shows a warning instead of silently trusting the model.
 
 Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in `config/services_test.yaml`) with canned answers from `tests/Fixtures/explanations/`. The agent pipeline (system prompt, processors, structured output) runs for real, and every provider request is recorded, so a test can check what would leave the server.
+
+## UI (`assets/styles/app.css`, `templates/`)
+
+The pages follow the "Classical" design system (Claude Design): its tokens (`--color-*`, `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`) and component classes (`.nav`, `.btn`, `.field`/`.input`, `.card`, `.tag`) are copied into `app.css`. The system defines one light theme. Cormorant Garamond and Lora are self-hosted from `assets/fonts/` (SIL OFL 1.1, licences next to the files), so no visitor request goes to Google Fonts. The logo (`assets/images/logo.svg`, favicon `logo-mark.svg`) is an envelope whose flap turns into a check mark, stroked in the accent, next to the wordmark "brief*klar*" in Cormorant Garamond with the text outlined as paths. The system has no error colour, so warnings and form errors use the deep accent ramp plus an icon and text. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
 
 ## Development
 

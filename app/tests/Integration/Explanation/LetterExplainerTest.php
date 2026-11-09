@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Explanation;
 
+use App\Explanation\ExplanationStyle;
 use App\Explanation\LetterExplainer;
 use App\Extraction\ExtractedText;
 use App\Extraction\ExtractionMethod;
@@ -28,6 +29,7 @@ final class LetterExplainerTest extends KernelTestCase
         self::assertStringStartsWith('binnen zwei Wochen ab Zustellung', $result->explanation->deadline);
         self::assertTrue($result->deadlineStatedInLetter);
         self::assertSame(ExtractionMethod::PdfTextLayer, $result->extractionMethod);
+        self::assertSame(ExplanationStyle::Standard, $result->style);
     }
 
     public function testProviderRequestContainsSystemPromptSchemaAndDelimitedLetter(): void
@@ -43,5 +45,31 @@ final class LetterExplainerTest extends KernelTestCase
         self::assertStringContainsString('Never invent, compute or estimate deadlines', $requests[0]);
         self::assertStringContainsString('<letter>', $requests[0]);
         self::assertStringContainsString('STRAFVERFÜGUNG', $requests[0]);
+    }
+
+    public function testEasyLanguageUsesTheSecondPromptVariant(): void
+    {
+        self::bootKernel();
+        $letter = new ExtractedText(PdfFixtureFactory::letter('01-strafverfuegung'), ExtractionMethod::PdfTextLayer);
+
+        $result = self::getContainer()->get(LetterExplainer::class)->explain($letter, ExplanationStyle::EasyLanguage);
+
+        self::assertSame(ExplanationStyle::EasyLanguage, $result->style);
+        $requests = self::getContainer()->get(ScriptedPlatform::class)->requests();
+        self::assertCount(1, $requests);
+        self::assertStringContainsString('Leichte Sprache', $requests[0]);
+        // the safety rules must hold in both variants
+        self::assertStringContainsString('Do not give legal advice', $requests[0]);
+        self::assertStringContainsString('Never invent, compute or estimate deadlines', $requests[0]);
+    }
+
+    public function testStandardVariantDoesNotAskForEasyLanguage(): void
+    {
+        self::bootKernel();
+        $letter = new ExtractedText(PdfFixtureFactory::letter('01-strafverfuegung'), ExtractionMethod::PdfTextLayer);
+
+        self::getContainer()->get(LetterExplainer::class)->explain($letter);
+
+        self::assertStringNotContainsString('Leichte Sprache', self::getContainer()->get(ScriptedPlatform::class)->requests()[0]);
     }
 }

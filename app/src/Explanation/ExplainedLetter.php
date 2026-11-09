@@ -15,6 +15,7 @@ final readonly class ExplainedLetter
         public LetterExplanation $explanation,
         public bool $deadlineStatedInLetter,
         public ExtractionMethod $extractionMethod,
+        public ExplanationStyle $style,
     ) {
     }
 }

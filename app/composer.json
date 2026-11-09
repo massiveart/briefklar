@@ -16,6 +16,7 @@
         "symfony/ai-hugging-face-platform": "1.0.0-BETA1",
         "symfony/ai-ollama-platform": "1.0.0-BETA1",
         "symfony/ai-platform": "1.0.0-BETA1",
+        "symfony/asset": "8.1.*",
         "symfony/asset-mapper": "8.1.*",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",

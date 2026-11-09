@@ -8,8 +8,11 @@ letter:
         label: Brief (PDF oder Foto)
         help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
         submit: Brief erklären
+        easy_language: Erklärung in Leichter Sprache
+        easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
     result:
         title: Erklärung deines Briefs
+        easy_language: In Leichter Sprache
         deadline: Frist
         no_deadline: Im Brief steht keine Frist.
         deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.

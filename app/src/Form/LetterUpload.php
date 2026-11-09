@@ -19,4 +19,6 @@ final class LetterUpload
         mimeTypesMessage: 'letter.upload.unsupported_type',
     )]
     public ?UploadedFile $letter = null;
+
+    public bool $easyLanguage = false;
 }

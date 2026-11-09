@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Explanation\ExplanationFailedException;
+use App\Explanation\ExplanationStyle;
 use App\Explanation\LetterExplainer;
 use App\Extraction\ExtractionChain;
 use App\Extraction\ExtractionFailedException;
@@ -45,7 +46,10 @@ final class LetterController extends AbstractController
 
             try {
                 $extracted = $this->extraction->extract($file->getPathname(), (string) $file->getMimeType());
-                $explained = $this->explainer->explain($extracted);
+                $explained = $this->explainer->explain(
+                    $extracted,
+                    $upload->easyLanguage ? ExplanationStyle::EasyLanguage : ExplanationStyle::Standard,
+                );
 
                 return $this->render('letter/result.html.twig', ['result' => $explained]);
             } catch (UnsupportedDocumentException|ExtractionFailedException $e) {
