@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield;
 
 use Briefklar\PiiShield\Detector\DetectorInterface;
+use Briefklar\PiiShield\Vault\VaultException;
+use Briefklar\PiiShield\Vault\VaultInterface;
 
 /**
  * Replaces each detected entity with a consistent, typed placeholder (see EntityExtractor for detection rules).
@@ -13,50 +15,85 @@ use Briefklar\PiiShield\Detector\DetectorInterface;
  * - Person aliases: a surname that also occurs as last part of a full name maps to the
  *   full name's placeholder. Restore yields the full name (see README, "Restore").
  */
-final class PiiShield implements PiiShieldInterface
+final class PiiShield implements VaultAwarePiiShieldInterface
 {
+    public const int DEFAULT_VAULT_TTL = 3600;
+
     private readonly EntityExtractor $extractor;
 
     /**
      * @param iterable<DetectorInterface> $detectors
+     * @param VaultInterface|null         $vault     optional; enables restoreFromVault() across requests
+     * @param int                         $vaultTtl  seconds a stored mapping lives
      */
-    public function __construct(iterable $detectors)
-    {
+    public function __construct(
+        iterable $detectors,
+        private readonly ?VaultInterface $vault = null,
+        private readonly int $vaultTtl = self::DEFAULT_VAULT_TTL,
+    ) {
+        if ($vaultTtl <= 0) {
+            throw new \InvalidArgumentException('The vault TTL must be positive.');
+        }
         $this->extractor = new EntityExtractor($detectors);
     }
 
     /**
      * Offline, regex- and checksum-based detectors for all entity types.
      */
-    public static function withDefaultDetectors(): self
+    public static function withDefaultDetectors(?VaultInterface $vault = null, int $vaultTtl = self::DEFAULT_VAULT_TTL): self
     {
-        return new self(EntityExtractor::defaultDetectors());
+        return new self(EntityExtractor::defaultDetectors(), $vault, $vaultTtl);
     }
 
     public function redact(string $text): RedactionResult
     {
         $entities = $this->extractor->extract($text);
 
-        if ([] === $entities) {
-            return new RedactionResult($text, [], []);
+        $mapping = [];
+        $redacted = $text;
+        if ([] !== $entities) {
+            $placeholders = $this->assignPlaceholders($entities);
+            $mapping = $placeholders['vault'];
+
+            $redacted = '';
+            $cursor = 0;
+            foreach ($entities as $entity) {
+                $redacted .= mb_substr($text, $cursor, $entity->offset - $cursor).$placeholders['byValue'][$entity->type->value][$entity->value];
+                $cursor = $entity->offset + $entity->length();
+            }
+            $redacted .= mb_substr($text, $cursor);
         }
 
-        $placeholders = $this->assignPlaceholders($entities);
-
-        $redacted = '';
-        $cursor = 0;
-        foreach ($entities as $entity) {
-            $redacted .= mb_substr($text, $cursor, $entity->offset - $cursor).$placeholders['byValue'][$entity->type->value][$entity->value];
-            $cursor = $entity->offset + $entity->length();
+        $vaultId = null;
+        if (null !== $this->vault) {
+            $vaultId = bin2hex(random_bytes(16));
+            $this->vault->store($vaultId, $mapping, $this->vaultTtl);
         }
-        $redacted .= mb_substr($text, $cursor);
 
-        return new RedactionResult($redacted, $placeholders['vault'], $entities);
+        return new RedactionResult($redacted, $mapping, $entities, $vaultId);
     }
 
     public function restore(string $text, RedactionResult $redaction): RestoreResult
     {
         return self::restoreWith($text, $redaction->vault);
+    }
+
+    public function restoreFromVault(string $text, string $vaultId): RestoreResult
+    {
+        $mapping = $this->requireVault()->fetch($vaultId)
+            ?? throw new VaultException('Unknown or expired vault id.');
+
+        return self::restoreWith($text, $mapping);
+    }
+
+    public function forget(string $vaultId): void
+    {
+        $this->requireVault()->delete($vaultId);
+    }
+
+    private function requireVault(): VaultInterface
+    {
+        return $this->vault ?? throw new \LogicException('No vault configured. Pass a VaultInterface to PiiShield to restore across requests.');
     }
 
     /**

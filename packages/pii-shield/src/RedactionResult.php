@@ -13,11 +13,13 @@ final readonly class RedactionResult
     /**
      * @param array<string, string> $vault    placeholder => original value, e.g. ['⟦PERSON_1⟧' => 'Maria Muster']
      * @param list<Entity>          $entities all detected entities, for diagnostics and tests
+     * @param string|null           $vaultId  id of the stored mapping if a vault is configured (docs/adr/0005)
      */
     public function __construct(
         public string $redactedText,
         public array $vault,
         public array $entities,
+        public ?string $vaultId = null,
     ) {
     }
 
@@ -31,6 +33,6 @@ final readonly class RedactionResult
 
     public function __debugInfo(): array
     {
-        return ['redactedText' => $this->redactedText, 'vault' => '[hidden]', 'entityCount' => \count($this->entities)];
+        return ['redactedText' => $this->redactedText, 'vault' => '[hidden]', 'entityCount' => \count($this->entities), 'vaultId' => $this->vaultId];
     }
 }
