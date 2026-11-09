@@ -45,3 +45,13 @@ button {
     padding: 1rem;
     font-size: .9rem;
 }
+
+.sender { color: var(--muted); margin-bottom: 0; }
+.deadline { border-left: .35rem solid var(--accent); background: #fff; padding: .75rem 1rem; margin: 1.5rem 0; }
+.deadline h2 { margin: 0; font-size: 1rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.deadline__value { font-size: 1.35rem; font-weight: 700; margin: .25rem 0 0; }
+.deadline--unverified { border-color: var(--error); }
+.deadline--none { border-color: #ccc; }
+.warning { color: var(--error); font-weight: 600; }
+.amount { font-size: 1.15rem; }
+.disclaimer { color: var(--muted); font-size: .9rem; border-top: 1px solid #ddd; margin-top: 2rem; padding-top: 1rem; }

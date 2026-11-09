@@ -8,9 +8,17 @@ letter:
         label: Brief (PDF oder Foto)
         help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
         submit: Brief erklären
-    extracted:
-        title: Erkannter Text
+    result:
+        title: Erklärung deines Briefs
+        deadline: Frist
+        no_deadline: Im Brief steht keine Frist.
+        deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.
+        amount: Betrag
+        summary: Worum geht es?
+        actions: Was musst du tun?
+        no_action: Du musst nichts tun.
+        questions: Was du nachfragen kannst
+        legal_references: Genannte Rechtsgrundlagen
+        disclaimer: Das ist eine Erklärung, keine Rechtsberatung. Fristen und Beträge immer mit dem Original vergleichen.
+        ocr_note: Der Text wurde per Texterkennung gelesen und kann Lesefehler enthalten.
         again: Anderen Brief hochladen
-        method:
-            pdf_text_layer: Der Text wurde direkt aus dem PDF gelesen.
-            ocr: Der Text wurde per Texterkennung (OCR) gelesen. Bitte mit dem Original vergleichen.

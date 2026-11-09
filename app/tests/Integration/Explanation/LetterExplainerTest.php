@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Integration\Explanation;
+
+use App\Explanation\LetterExplainer;
+use App\Extraction\ExtractedText;
+use App\Extraction\ExtractionMethod;
+use App\Tests\Support\PdfFixtureFactory;
+use App\Tests\Support\ScriptedPlatform;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+
+final class LetterExplainerTest extends KernelTestCase
+{
+    public function testExplainsFixture01ThroughTheAgentPipeline(): void
+    {
+        self::bootKernel();
+        $letter = new ExtractedText(PdfFixtureFactory::letter('01-strafverfuegung'), ExtractionMethod::PdfTextLayer);
+
+        $result = self::getContainer()->get(LetterExplainer::class)->explain($letter);
+
+        self::assertSame('Bezirkshauptmannschaft Musterstadt', $result->explanation->sender);
+        self::assertTrue($result->explanation->actionRequired);
+        self::assertSame('110,00 Euro', $result->explanation->amount);
+        self::assertSame(['§ 20 Abs. 2 StVO', '§ 99 Abs. 3 lit. a StVO', '§ 49 VStG'], $result->explanation->legalReferences);
+        self::assertNotNull($result->explanation->deadline);
+        self::assertStringStartsWith('binnen zwei Wochen ab Zustellung', $result->explanation->deadline);
+        self::assertTrue($result->deadlineStatedInLetter);
+        self::assertSame(ExtractionMethod::PdfTextLayer, $result->extractionMethod);
+    }
+
+    public function testProviderRequestContainsSystemPromptSchemaAndDelimitedLetter(): void
+    {
+        self::bootKernel();
+        $letter = new ExtractedText(PdfFixtureFactory::letter('01-strafverfuegung'), ExtractionMethod::Ocr);
+
+        self::getContainer()->get(LetterExplainer::class)->explain($letter);
+
+        $requests = self::getContainer()->get(ScriptedPlatform::class)->requests();
+        self::assertCount(1, $requests);
+        self::assertStringContainsString('Do not give legal advice', $requests[0]);
+        self::assertStringContainsString('Never invent, compute or estimate deadlines', $requests[0]);
+        self::assertStringContainsString('<letter>', $requests[0]);
+        self::assertStringContainsString('STRAFVERFÜGUNG', $requests[0]);
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "sender": "Bezirkshauptmannschaft Musterstadt",
+    "subject": "Du sollst eine Geldstrafe zahlen, weil du im Ortsgebiet zu schnell gefahren bist.",
+    "summary": "Die Bezirkshauptmannschaft wirft dir vor, am 14.10.2026 in Musterstadt 23 km/h zu schnell gefahren zu sein. Dafür verhängt sie eine Geldstrafe von 110,00 Euro. Eine Strafverfügung ist eine Strafe ohne vorheriges Verfahren. Du kannst zahlen oder Einspruch erheben.",
+    "actionRequired": true,
+    "actions": [
+        "Zahle 110,00 Euro binnen zwei Wochen ab Zustellung auf das im Brief genannte Konto.",
+        "Gib als Verwendungszweck die Zahl BHMS-VK-2026/48213 an.",
+        "Wenn du mit der Strafe nicht einverstanden bist: Erhebe binnen zwei Wochen nach Zustellung schriftlich oder per E-Mail Einspruch."
+    ],
+    "deadline": "binnen zwei Wochen ab Zustellung – Bitte überweisen Sie den Betrag binnen zwei Wochen ab Zustellung auf das Konto.",
+    "amount": "110,00 Euro",
+    "legalReferences": ["§ 20 Abs. 2 StVO", "§ 99 Abs. 3 lit. a StVO", "§ 49 VStG"],
+    "questionsToAsk": ["Wann gilt der Brief als zugestellt?"]
+}

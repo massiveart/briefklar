@@ -40,6 +40,22 @@ The MIME type is detected from the file content, not taken from the client. `Ocr
 
 Tests build PDFs and images from `../fixtures/letters/*.txt` at runtime (`tests/Support/PdfFixtureFactory.php`), so no binary fixtures are committed. OCR tests need `tesseract` and `pdftoppm` and are skipped without them (both are in the container and in CI).
 
+## Explanation agent (`src/Explanation/`)
+
+`LetterExplainer` sends the extracted text (wrapped in `<letter>…</letter>`) to the agent `letter_explainer` from `config/packages/ai.yaml` and asks for structured output into `LetterExplanation` (shared contract with task A, change only together). The system prompt lives in `config/prompts/explain_letter.md`: explain, no legal advice, never invent deadlines, keep pii-shield placeholders.
+
+Provider and model come from env, no code change needed:
+
+| `AI_PLATFORM` | Key in `.env.local` | Example `AI_MODEL` |
+|---|---|---|
+| `huggingface` (default) | `HUGGINGFACE_API_KEY` | `Qwen/Qwen3-235B-A22B-Instruct-2507` |
+| `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-5-5` |
+| `ollama` | none (`docker compose --profile local up -d`) | `qwen3:8b` |
+
+`DeadlineCheck` verifies that the reported deadline is written in the letter (verbatim period, or an ISO date that appears as `28.10.2026`, `5.1.2027` or `14. November 2026`). If not, the result page shows a warning instead of silently trusting the model.
+
+Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in `config/services_test.yaml`) with canned answers from `tests/Fixtures/explanations/`. The agent pipeline (system prompt, processors, structured output) runs for real, and every provider request is recorded, so a test can check what would leave the server.
+
 ## Development
 
 Secrets never go into git. Create your local `app/.env.local` once (ignored; `compose.yaml` loads it into the container):

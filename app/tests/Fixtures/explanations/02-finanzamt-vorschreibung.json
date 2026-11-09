@@ -1,0 +1,11 @@
+{
+    "sender": "Finanzamt Österreich",
+    "subject": "Das Finanzamt hat eine Vorauszahlung auf deine Einkommensteuer gebucht.",
+    "summary": "Deliberately wrong canned answer: the deadline below is not the one in the letter. Used to test that invented deadlines are flagged.",
+    "actionRequired": true,
+    "actions": ["Überweise 1.245,00 Euro an das Finanzamt."],
+    "deadline": "2026-11-30 – Der Betrag ist am 15.11.2026 fällig.",
+    "amount": "1.245,00 Euro",
+    "legalReferences": ["§ 217 BAO"],
+    "questionsToAsk": []
+}

@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% set e = result.explanation %}
+
+{% block title %}{{ 'letter.result.title'|trans }}{% endblock %}
+
+{% block body %}
+    <p class="sender">{{ e.sender }}</p>
+    <h1>{{ e.subject }}</h1>
+
+    <section class="deadline {{ e.deadline is null ? 'deadline--none' : (result.deadlineStatedInLetter ? '' : 'deadline--unverified') }}" aria-labelledby="deadline-heading">
+        <h2 id="deadline-heading">{{ 'letter.result.deadline'|trans }}</h2>
+        {% if e.deadline is null %}
+            <p>{{ 'letter.result.no_deadline'|trans }}</p>
+        {% else %}
+            <p class="deadline__value">{{ e.deadline }}</p>
+            {% if not result.deadlineStatedInLetter %}
+                <p class="warning">{{ 'letter.result.deadline_unverified'|trans }}</p>
+            {% endif %}
+        {% endif %}
+    </section>
+
+    {% if e.amount is not null %}
+        <p class="amount"><strong>{{ 'letter.result.amount'|trans }}:</strong> {{ e.amount }}</p>
+    {% endif %}
+
+    <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading">{{ 'letter.result.summary'|trans }}</h2>
+        <p>{{ e.summary }}</p>
+    </section>
+
+    <section aria-labelledby="actions-heading">
+        <h2 id="actions-heading">{{ 'letter.result.actions'|trans }}</h2>
+        {% if e.actionRequired and e.actions is not empty %}
+            <ol class="actions">
+                {% for action in e.actions %}<li>{{ action }}</li>{% endfor %}
+            </ol>
+        {% else %}
+            <p>{{ 'letter.result.no_action'|trans }}</p>
+        {% endif %}
+    </section>
+
+    {% if e.questionsToAsk is not empty %}
+        <section aria-labelledby="questions-heading">
+            <h2 id="questions-heading">{{ 'letter.result.questions'|trans }}</h2>
+            <ul>{% for question in e.questionsToAsk %}<li>{{ question }}</li>{% endfor %}</ul>
+        </section>
+    {% endif %}
+
+    {% if e.legalReferences is not empty %}
+        <section aria-labelledby="references-heading">
+            <h2 id="references-heading">{{ 'letter.result.legal_references'|trans }}</h2>
+            <ul class="references">{% for reference in e.legalReferences %}<li>{{ reference }}</li>{% endfor %}</ul>
+        </section>
+    {% endif %}
+
+    <aside class="disclaimer">
+        <p>{{ 'letter.result.disclaimer'|trans }}</p>
+        {% if result.extractionMethod.value == 'ocr' %}<p>{{ 'letter.result.ocr_note'|trans }}</p>{% endif %}
+    </aside>
+
+    <p><a href="{{ path('letter_upload') }}">{{ 'letter.result.again'|trans }}</a></p>
+{% endblock %}

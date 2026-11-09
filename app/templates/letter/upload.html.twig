@@ -8,6 +8,7 @@
 
     {# Turbo Drive expects a redirect after POST; we do not store letters, so there is nothing to redirect to. #}
     {{ form_start(form, {attr: {'data-turbo': 'false'}}) }}
+        {{ form_errors(form) }}
         {{ form_row(form.letter) }}
         <button type="submit">{{ 'letter.upload.submit'|trans }}</button>
     {{ form_end(form) }}

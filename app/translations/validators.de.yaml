@@ -4,3 +4,5 @@ letter:
         too_large: Die Datei ist zu groß (höchstens {{ limit }} {{ suffix }}).
         unsupported_type: Dieses Dateiformat wird nicht unterstützt. Bitte lade ein PDF oder ein Foto (PNG, JPEG, TIFF) hoch.
         unreadable: Wir konnten in dieser Datei keinen Text erkennen. Ist das Foto scharf und gut ausgeleuchtet?
+    explanation:
+        failed: Die Erklärung hat gerade nicht geklappt. Bitte versuche es in einer Minute noch einmal.
