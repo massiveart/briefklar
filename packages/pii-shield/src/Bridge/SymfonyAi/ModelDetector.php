@@ -93,6 +93,9 @@ final class ModelDetector implements DetectorInterface
             }
             $seen[$type->value."\0".$value] = true;
             foreach (RegexMatcher::matchAll(self::groundingPattern($value), $text) as $match) {
+                if (EntityType::BirthDate === $type && !self::hasBirthKeywordBefore($text, $match['offset'])) {
+                    continue; // deadlines and other dates must survive; models confuse them easily
+                }
                 $entities[] = new Entity($type, $match['value'], $match['offset'], self::CONFIDENCE, self::NAME);
             }
         }
@@ -117,8 +120,14 @@ final class ModelDetector implements DetectorInterface
             Answer with JSON only, no explanation:
             {"entities":[{"type":"<TYPE>","value":"<exact text from the input>"}]}
             TYPE is one of: {$types}.
-            Copy each value exactly as it appears in the text. Report each distinct value once.
+            Copy each value exactly as it appears in the text, without salutation ("Herr", "Mrs") and without
+            punctuation that belongs to the sentence. Report each distinct value once.
+            A date is a BIRTH_DATE only if the text says it is a birth date ("geb.", "born", "Geburtsdatum").
+            Names of people count even without salutation and in any language.
             If there is nothing to report, answer {"entities":[]}.
+
+            Example input: Frau Ana Kovač (geb. 02.05.1981) zahlt bis 15.11.2026 auf SI56 1910 0000 0123 438.
+            Example answer: {"entities":[{"type":"PERSON","value":"Ana Kovač"},{"type":"BIRTH_DATE","value":"02.05.1981"},{"type":"IBAN","value":"SI56 1910 0000 0123 438"}]}
             PROMPT;
     }
 
@@ -140,7 +149,7 @@ final class ModelDetector implements DetectorInterface
         $findings = [];
         foreach ($data['entities'] as $entity) {
             $type = \is_array($entity) && \is_string($entity['type'] ?? null) ? $entity['type'] : null;
-            $value = \is_array($entity) && \is_string($entity['value'] ?? null) ? trim($entity['value']) : '';
+            $value = \is_array($entity) && \is_string($entity['value'] ?? null) ? self::clean($entity['value']) : '';
             if (null === $type || mb_strlen($value) < 2) {
                 continue;
             }
@@ -148,6 +157,27 @@ final class ModelDetector implements DetectorInterface
         }
 
         return $findings;
+    }
+
+    private const string BIRTH_KEYWORDS = '/(?:geb\.|geboren|geburt|born|birth|dob|né|née|nato|nata|nacid[oa]|narozen|nar\.|urodzon|rođen|születés|f\.\s*d\.)/iu';
+
+    /**
+     * A date counts as a birth date only if a birth keyword appears shortly before it (any of several languages).
+     */
+    private static function hasBirthKeywordBefore(string $text, int $offset): bool
+    {
+        return 1 === preg_match(self::BIRTH_KEYWORDS, mb_substr($text, max(0, $offset - 30), min($offset, 30)));
+    }
+
+    /**
+     * Models often include a salutation ("Herr Jan Novák") or the sentence's punctuation ("Diabetes Typ 2.").
+     */
+    private static function clean(string $value): string
+    {
+        $value = trim($value, " \t\n\r\0\x0B\"'„“”‚‘’«»");
+        $value = (string) preg_replace('/^(?:(?:Herrn?|Frau|Mr|Mrs|Ms|Miss|Monsieur|Madame|Signora?|Señora?|pan|paní|pani)\.?\s+)+/iu', '', $value);
+
+        return rtrim($value, " \t\n\r.,;:!?");
     }
 
     private static function typeOf(string $label): EntityType

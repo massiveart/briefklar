@@ -49,6 +49,25 @@ final class ModelDetectorTest extends TestCase
         self::assertSame("Lindenweg 12\n6900 Bregenz", $entities[0]->value);
     }
 
+    public function testSalutationsAndTrailingPunctuationAreNotPartOfTheValue(): void
+    {
+        $detector = $this->detector('{"entities":[{"type":"PERSON","value":"Herr Jan Novák,"},{"type":"ADDRESS","value":"Lindenweg 12, 6900 Bregenz."}]}');
+
+        $values = array_map(static fn (Entity $e): string => $e->value, $detector->detect(self::TEXT));
+
+        self::assertSame(['Jan Novák', "Lindenweg 12\n6900 Bregenz", 'Jan Novák'], $values);
+    }
+
+    public function testDatesAreBirthDatesOnlyWithABirthKeyword(): void
+    {
+        $text = 'Login am 03.11.2026. Geboren am 02.05.1981, narozen 7. 3. 1990.';
+        $detector = $this->detector('{"entities":[{"type":"BIRTH_DATE","value":"03.11.2026"},{"type":"BIRTH_DATE","value":"02.05.1981"},{"type":"BIRTH_DATE","value":"7. 3. 1990"}]}');
+
+        $values = array_map(static fn (Entity $e): string => $e->value, $detector->detect($text));
+
+        self::assertSame(['02.05.1981', '7. 3. 1990'], $values);
+    }
+
     public function testInventedValuesAreDropped(): void
     {
         $detector = $this->detector('{"entities":[{"type":"PERSON","value":"Maria Musterfrau"}]}');
