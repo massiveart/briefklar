@@ -29,9 +29,18 @@ final class CustomEntityDetector implements DetectorInterface
             return [];
         }
 
+        // Learned patterns run with a small backtracking budget; exceeding it fails the request (fail closed).
+        $previous = \ini_get('pcre.backtrack_limit');
+        ini_set('pcre.backtrack_limit', '100000');
+        try {
+            $matches = RegexMatcher::matchAll($regex, $text);
+        } finally {
+            ini_set('pcre.backtrack_limit', false !== $previous ? $previous : '1000000');
+        }
+
         return array_map(
             fn (array $match): Entity => new Entity(EntityType::Other, $match['value'], $match['offset'], self::CONFIDENCE, self::NAME, $this->type->name),
-            RegexMatcher::matchAll($regex, $text),
+            $matches,
         );
     }
 }
