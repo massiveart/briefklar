@@ -145,6 +145,13 @@ final class ServiceApiTest extends TestCase
         self::assertSame(401, $api->handle('POST', '/v1/mask', ['text' => 'x'], null, '10.0.0.5')['status']);
     }
 
+    public function testServiceModeRefusesToRunWithoutAToken(): void
+    {
+        $api = new ServiceApi(new EncryptedVault(new Psr6CacheStorage(new ArrayAdapter()), EncryptedVault::generateKey()), new EntityLearner(new CacheCustomEntityStore(new ArrayAdapter())), null, null, requireToken: true);
+
+        self::assertSame(503, $api->handle('POST', '/v1/mask', ['text' => 'x'], null, '127.0.0.1')['status'], 'no loopback trust in service mode');
+    }
+
     public function testHealthNeedsNoTokenAndRevealsNothing(): void
     {
         $response = $this->call('GET', '/v1/health', token: null);

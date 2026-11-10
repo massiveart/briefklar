@@ -185,7 +185,7 @@ final class DemoServices
         }
         [$vault] = ($this->vaults())(self::env('PII_SERVICE_VAULT_STORE') ?? 'filesystem');
 
-        return new ServiceApi($vault, $this->learner(), $model, self::env('PII_SERVICE_TOKEN'), DemoApi::VAULT_TTL);
+        return new ServiceApi($vault, $this->learner(), $model, self::env('PII_SERVICE_TOKEN'), DemoApi::VAULT_TTL, self::serviceOnly());
     }
 
     /**
@@ -265,6 +265,14 @@ final class DemoServices
         return 'redis' === self::env('PII_SERVICE_LEARNED_STORE')
             ? new CacheCustomEntityStore($this->pool('redis'))
             : new JsonFileCustomEntityStore($this->varDir.'/learned-types.json');
+    }
+
+    /**
+     * Service mode (Docker image): only /v1, always with a token, no demo page.
+     */
+    public static function serviceOnly(): bool
+    {
+        return '1' === self::env('PII_SERVICE_ONLY');
     }
 
     private static function locationOf(string $endpoint): ModelLocation

@@ -1,7 +1,7 @@
 # pii-shield as a standalone HTTP service (/v1, see docs/openapi.yaml).
 #   docker build -t pii-shield packages/pii-shield
 #   docker run -p 8080:8080 -e PII_SERVICE_TOKEN=change-me pii-shield
-# Without PII_SERVICE_TOKEN the service answers nobody (it only trusts localhost, which a container has not).
+# Service mode: only /v1, the demo page is not included. Without PII_SERVICE_TOKEN every request gets 503.
 FROM php:8.4-cli
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -15,6 +15,7 @@ RUN composer dump-autoload --optimize && mkdir -p demo/var && chown -R www-data:
 
 USER www-data
 ENV PHP_CLI_SERVER_WORKERS=4 \
+    PII_SERVICE_ONLY=1 \
     PII_SERVICE_VAULT_STORE=filesystem \
     PII_SERVICE_LEARNED_STORE=file
 EXPOSE 8080
