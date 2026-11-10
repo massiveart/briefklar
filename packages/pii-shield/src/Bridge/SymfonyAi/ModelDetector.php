@@ -8,6 +8,8 @@ use Briefklar\PiiShield\Detector\DetectorInterface;
 use Briefklar\PiiShield\Detector\RegexMatcher;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
+use Briefklar\PiiShield\Learning\CustomEntityType;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\PlatformInterface;
@@ -46,8 +48,9 @@ final class ModelDetector implements DetectorInterface
     private readonly string $model;
 
     /**
-     * @param string               $model   model name as the platform knows it, e.g. "llama3.1:8b"
-     * @param array<string, mixed> $options passed to the platform as is (e.g. ['temperature' => 0] where the model accepts it)
+     * @param string                          $model        model name as the platform knows it, e.g. "llama3.1:8b"
+     * @param array<string, mixed>            $options      passed to the platform as is (e.g. ['temperature' => 0] where the model accepts it)
+     * @param CustomEntityStoreInterface|null $learnedTypes learned types, taught to the model with their examples
      */
     public function __construct(
         private readonly PlatformInterface $platform,
@@ -55,6 +58,7 @@ final class ModelDetector implements DetectorInterface
         private readonly ModelLocation $location = ModelLocation::Local,
         bool $acknowledgeExternalTransfer = false,
         private readonly array $options = [],
+        private readonly ?CustomEntityStoreInterface $learnedTypes = null,
     ) {
         if ('' === trim($model)) {
             throw new \InvalidArgumentException('The model name must not be empty.');
@@ -76,9 +80,11 @@ final class ModelDetector implements DetectorInterface
             return [];
         }
 
+        $learned = $this->learnedTypes?->all() ?? [];
+
         try {
             $answer = $this->platform->invoke($this->model, new MessageBag(
-                Message::forSystem(self::instructions()),
+                Message::forSystem(self::instructions($learned)),
                 Message::ofUser($text),
             ), $this->options)->asText();
         } catch (\Throwable $e) {
@@ -87,16 +93,16 @@ final class ModelDetector implements DetectorInterface
 
         $entities = [];
         $seen = [];
-        foreach ($this->parse($answer) as [$type, $value]) {
-            if (isset($seen[$type->value."\0".$value])) {
+        foreach ($this->parse($answer, $learned) as [$type, $value, $label]) {
+            if (isset($seen[($label ?? $type->value)."\0".$value])) {
                 continue;
             }
-            $seen[$type->value."\0".$value] = true;
+            $seen[($label ?? $type->value)."\0".$value] = true;
             foreach (RegexMatcher::matchAll(self::groundingPattern($value), $text) as $match) {
                 if (EntityType::BirthDate === $type && !self::hasBirthKeywordBefore($text, $match['offset'])) {
                     continue; // deadlines and other dates must survive; models confuse them easily
                 }
-                $entities[] = new Entity($type, $match['value'], $match['offset'], self::CONFIDENCE, self::NAME);
+                $entities[] = new Entity($type, $match['value'], $match['offset'], self::CONFIDENCE, self::NAME, $label);
             }
         }
 
@@ -105,9 +111,28 @@ final class ModelDetector implements DetectorInterface
         return $entities;
     }
 
-    private static function instructions(): string
+    /**
+     * @param list<CustomEntityType> $learned
+     */
+    private static function instructions(array $learned): string
     {
-        $types = implode(', ', array_map(static fn (EntityType $t): string => $t->value, EntityType::cases()));
+        $types = implode(', ', [
+            ...array_map(static fn (EntityType $t): string => $t->value, EntityType::cases()),
+            ...array_map(static fn (CustomEntityType $t): string => $t->name, $learned),
+        ]);
+        $teaching = '';
+        foreach ($learned as $type) {
+            $teaching .= \sprintf(
+                "\n- %s: %s. Examples: %s.%s",
+                $type->name,
+                '' !== $type->description ? $type->description : 'learned type',
+                implode(', ', array_map(static fn (string $e): string => '"'.$e.'"', $type->examples)),
+                [] !== $type->counterExamples ? ' Not this type: '.implode(', ', array_map(static fn (string $e): string => '"'.$e.'"', $type->counterExamples)).'.' : '',
+            );
+        }
+        if ('' !== $teaching) {
+            $teaching = "\nAlso report these types, taught by the user with examples. Report similar values too, not only the examples:".$teaching."\n";
+        }
 
         return <<<PROMPT
             You find personal data in the user's text so it can be redacted. Any language, any country.
@@ -116,7 +141,7 @@ final class ModelDetector implements DetectorInterface
             IP address, birth date, license plate and health information that relates to a person.
             Do NOT report: amounts of money, deadlines and other dates that are not birth dates, names of
             authorities, companies or courts, legal citations (e.g. "§ 49 VStG"), product names.
-
+            {$teaching}
             Answer with JSON only, no explanation:
             {"entities":[{"type":"<TYPE>","value":"<exact text from the input>"}]}
             TYPE is one of: {$types}.
@@ -132,9 +157,11 @@ final class ModelDetector implements DetectorInterface
     }
 
     /**
-     * @return list<array{EntityType, string}>
+     * @param list<CustomEntityType> $learned
+     *
+     * @return list<array{EntityType, string, string|null}> type, value, label of a learned type
      */
-    private function parse(string $answer): array
+    private function parse(string $answer, array $learned): array
     {
         // Reasoning models (qwen3, deepseek-r1, ...) think out loud first; only the final answer counts.
         $answer = (string) preg_replace('/<think>.*?<\/think>/s', '', $answer);
@@ -153,7 +180,8 @@ final class ModelDetector implements DetectorInterface
             if (null === $type || mb_strlen($value) < 2) {
                 continue;
             }
-            $findings[] = [self::typeOf($type), $value];
+            $learnedName = self::learnedName($type, $learned);
+            $findings[] = null !== $learnedName ? [EntityType::Other, $value, $learnedName] : [self::typeOf($type), $value, null];
         }
 
         return $findings;
@@ -178,6 +206,21 @@ final class ModelDetector implements DetectorInterface
         $value = (string) preg_replace('/^(?:(?:Herrn?|Frau|Mr|Mrs|Ms|Miss|Monsieur|Madame|Signora?|Señora?|pan|paní|pani)\.?\s+)+/iu', '', $value);
 
         return rtrim($value, " \t\n\r.,;:!?");
+    }
+
+    /**
+     * @param list<CustomEntityType> $learned
+     */
+    private static function learnedName(string $label, array $learned): ?string
+    {
+        $normalized = strtoupper((string) preg_replace('/[\s\-]+/', '_', trim($label)));
+        foreach ($learned as $type) {
+            if ($type->name === $normalized) {
+                return $type->name;
+            }
+        }
+
+        return null;
     }
 
     private static function typeOf(string $label): EntityType
