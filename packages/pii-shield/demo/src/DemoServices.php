@@ -29,6 +29,7 @@ use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\PdoAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 /**
@@ -41,6 +42,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
  *   PII_DEMO_GENERIC_KEY    optional API key for it
  *   OPENAI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY
  *   PII_DEMO_REDIS_URL      e.g. redis://127.0.0.1:6379 (needs ext-redis or predis)
+ *   PII_LOCAL_PEERS         addresses that count as this machine besides loopback; "gateway" = the Docker gateway
  */
 final class DemoServices
 {
@@ -219,6 +221,40 @@ final class DemoServices
     }
 
     /**
+     * Whether a request comes from this machine: loopback, or an address listed in PII_LOCAL_PEERS
+     * (comma-separated IPs or CIDRs; "gateway" = this container's default gateway). In Docker, a port
+     * published on the host's 127.0.0.1 arrives from the gateway (compose.yaml).
+     */
+    public static function isLocalPeer(?string $address): bool
+    {
+        $peers = [];
+        foreach (explode(',', self::env('PII_LOCAL_PEERS') ?? '') as $peer) {
+            $peer = trim($peer);
+            $peers[] = 'gateway' === $peer ? self::defaultGateway((string) @file_get_contents('/proc/net/route')) : $peer;
+        }
+        $peers = array_filter($peers, static fn (?string $p): bool => null !== $p && '' !== $p);
+
+        return null !== $address && IpUtils::checkIp($address, ['127.0.0.1', '::1', ...$peers]);
+    }
+
+    /**
+     * The default gateway from a Linux route table (/proc/net/route: addresses as little-endian hex).
+     */
+    public static function defaultGateway(string $routeTable): ?string
+    {
+        foreach (\array_slice(explode("\n", $routeTable), 1) as $line) {
+            $columns = preg_split('/\s+/', trim($line));
+            if (\is_array($columns) && isset($columns[2]) && '00000000' === $columns[1] && 8 === \strlen($columns[2]) && ctype_xdigit($columns[2])) {
+                $address = unpack('V', (string) hex2bin($columns[2]));
+
+                return false === $address ? null : long2ip((int) $address[1]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Extra host names the APIs answer to (PII_SERVICE_ALLOWED_HOSTS, comma-separated).
      *
      * @return list<string>
@@ -331,7 +367,8 @@ final class DemoServices
     {
         $host = parse_url($endpoint, \PHP_URL_HOST);
 
-        return \in_array($host, ['localhost', '127.0.0.1', '::1', '[::1]'], true) ? ModelLocation::Local : ModelLocation::OnPremise;
+        // host.docker.internal: the machine running the containers, e.g. Ollama on the Mac.
+        return \in_array($host, ['localhost', '127.0.0.1', '::1', '[::1]', 'host.docker.internal'], true) ? ModelLocation::Local : ModelLocation::OnPremise;
     }
 
     private function pool(string $store): CacheItemPoolInterface

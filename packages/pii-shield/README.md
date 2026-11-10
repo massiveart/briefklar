@@ -45,7 +45,8 @@ curl -s localhost:8080/v1/redact -H 'Authorization: Bearer change-me' -H 'Conten
 `learn_entity_type`, `list_entity_types` over STDIO or Streamable HTTP (`/mcp`):
 
 ```bash
-claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield
+claude mcp add pii-shield -- make -s -C /path/to/briefklar/packages/pii-shield mcp            # Docker
+claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield   # local PHP
 ```
 
 ## Demo
@@ -53,21 +54,27 @@ claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin
 A local playground for everything above: paste a text, choose regex, model or both for detection (provider, model, server URL), the vault store (filesystem, SQLite, Redis) and how to mask, see the findings highlighted in the original, click a finding for details or to keep it, and restore a model answer.
 
 ```bash
-make demo            # from the repository root, or: composer demo
+make demo            # from the repository root or packages/pii-shield; Docker, no PHP needed
 # open http://127.0.0.1:8088
 ```
 
-Runs on PHP's built-in server; the page talks only to its own local API, no web fonts, no CDN. Provider URLs and keys: copy `demo/.env.dist` to `demo/.env.local` (git-ignored) and fill in what you use, or set the same environment variables; they never reach the browser. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
+Runs on PHP's built-in server in a container (`compose.yaml`; with a local PHP: `make demo DOCKER=0`). Ollama on this
+machine is reached as `host.docker.internal`, Redis runs as a container; the page talks only to its own local API, no web fonts, no CDN. Provider URLs and keys: copy `demo/.env.dist` to `demo/.env.local` (git-ignored) and fill in what you use, or set the same environment variables; they never reach the browser. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
 
 ## Development
 
+PHP and Composer run in Docker (`compose.yaml`, dev stage of the `Dockerfile`); no PHP on the host needed.
+
 ```bash
-composer install
-composer test       # PHPUnit
-composer qa         # php-cs-fixer (@Symfony) check + PHPStan level 8
-composer cs-fix     # apply coding standard
+cd packages/pii-shield
+make install        # composer install
+make test           # PHPUnit
+make qa             # php-cs-fixer (@Symfony) check + PHPStan level 8
+make cs-fix         # apply coding standard
+make sh             # shell with PHP and Composer
 ```
 
+Each target also runs with a local PHP 8.4: `make test DOCKER=0` (or `composer test`, `composer qa`).
 From the repository root, `make test` and `make qa` run the same checks for all packages.
 
 Built for the Symfony AI & MCP Hackathon 2026. Decisions: `../../docs/adr/`.

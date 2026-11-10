@@ -131,6 +131,8 @@ final class RequestGuard implements EventSubscriberInterface
 
     private static function fromLoopback(Request $request): bool
     {
-        return \in_array($request->server->get('REMOTE_ADDR'), ['127.0.0.1', '::1'], true);
+        $address = $request->server->get('REMOTE_ADDR');
+
+        return DemoServices::isLocalPeer(\is_string($address) ? $address : null);
     }
 }

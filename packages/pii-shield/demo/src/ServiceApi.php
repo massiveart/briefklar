@@ -241,7 +241,7 @@ final class ServiceApi
     private function authorized(?string $authorization, string $remoteAddress): bool
     {
         if (null === $this->token || '' === $this->token) {
-            return \in_array($remoteAddress, ['127.0.0.1', '::1'], true);
+            return DemoServices::isLocalPeer($remoteAddress);
         }
 
         return null !== $authorization && hash_equals('Bearer '.$this->token, $authorization);

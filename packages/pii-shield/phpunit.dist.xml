@@ -4,6 +4,10 @@
          bootstrap="vendor/autoload.php"
          colors="true"
          cacheDirectory=".phpunit.cache">
+  <php>
+    <!-- the server kernel's default logger: errors only, no debug lines in the test output -->
+    <server name="SHELL_VERBOSITY" value="-1"/>
+  </php>
   <testsuites>
     <testsuite name="pii-shield">
       <directory>tests</directory>
