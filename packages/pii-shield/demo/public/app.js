@@ -45,6 +45,7 @@ const DETECTOR_LABEL = {
   postal_address: 'Adressblock',
   propagation: 'Weiteres Vorkommen eines Fundes',
   model: 'KI-Modell',
+  custom: 'Gelerntes Muster',
 };
 const STORAGE_KEY = 'pii-shield-demo-settings';
 
@@ -65,7 +66,15 @@ const els = {
   endpointField: $('endpointField'), location: $('location'), externalWarning: $('externalWarning'),
   acknowledgeExternal: $('acknowledgeExternal'), detectionHint: $('detectionHint'), store: $('store'),
   busy: $('busy'), busyText: $('busyText'), modelOptions: $('modelOptions'), modelHint: $('modelHint'),
+  learnSelection: $('learnSelection'), newType: $('newType'), learnedList: $('learnedList'), learnedEmpty: $('learnedEmpty'),
+  learnDialog: $('learnDialog'), learnForm: $('learnForm'), learnName: $('learnName'), learnDescription: $('learnDescription'),
+  learnExamples: $('learnExamples'), learnCounter: $('learnCounter'), learnPattern: $('learnPattern'),
+  learnPreview: $('learnPreview'), learnCancel: $('learnCancel'), learnSave: $('learnSave'),
 };
+
+/** Learned types are EntityType OTHER with a label; they get one shared colour and their own name. */
+const kindOf = (f) => (f.label ? 'LEARNED' : f.type);
+const nameOf = (f) => f.label || TYPE_LABEL[f.type] || f.type;
 
 const state = {
   mode: 'reversible',
@@ -152,7 +161,7 @@ function showError(message) {
 function renderTypeList() {
   els.typeList.innerHTML = '';
   const counts = {};
-  for (const f of state.analysis?.findings || []) counts[f.type] = (counts[f.type] || 0) + 1;
+  for (const f of state.analysis?.findings || []) if (!f.label) counts[f.type] = (counts[f.type] || 0) + 1;
 
   for (const [type, label] of TYPES) {
     const li = document.createElement('li');
@@ -340,7 +349,7 @@ function renderBackdrop() {
     html += escapeHtml(chars.slice(cursor, s.start).join(''));
     const inner = escapeHtml(chars.slice(s.start, s.end).join(''));
     html += s.finding
-      ? `<mark class="finding" data-type="${s.finding.type}" data-index="${s.finding.index}">${inner}</mark>`
+      ? `<mark class="finding" data-type="${kindOf(s.finding)}" data-index="${s.finding.index}">${inner}</mark>`
       : `<mark class="allowed" data-allowed="${escapeHtml(s.allowed)}">${inner}</mark>`;
     cursor = s.end;
   }
@@ -360,10 +369,13 @@ function renderLegend() {
     els.legend.innerHTML = '<span class="empty">Keine personenbezogenen Daten gefunden.</span>';
     return;
   }
-  const counts = {};
-  for (const f of findings) counts[f.type] = (counts[f.type] || 0) + 1;
-  els.legend.innerHTML = TYPES.filter(([t]) => counts[t])
-    .map(([t, label]) => `<span data-type="${t}"><span class="swatch"></span>${escapeHtml(label)} ${counts[t]}</span>`)
+  const counts = new Map();
+  for (const f of findings) {
+    const key = nameOf(f);
+    counts.set(key, { kind: kindOf(f), n: (counts.get(key)?.n || 0) + 1 });
+  }
+  els.legend.innerHTML = [...counts]
+    .map(([name, { kind, n }]) => `<span data-type="${kind}"><span class="swatch"></span>${escapeHtml(name)} ${n}</span>`)
     .join('');
 }
 
@@ -385,7 +397,7 @@ function renderResult(fresh) {
     if (s.finding === null) return escapeHtml(s.text);
     const f = byIndex[s.finding];
     const cls = reversible ? 'bar' : 'masked';
-    return `<span class="${cls}" data-type="${f.type}" title="${escapeHtml(TYPE_LABEL[f.type])}">${escapeHtml(s.text)}</span>`;
+    return `<span class="${cls}" data-type="${kindOf(f)}" title="${escapeHtml(nameOf(f))}">${escapeHtml(s.text)}</span>`;
   }).join('');
   if (fresh) {
     els.result.classList.remove('is-fresh');
@@ -431,7 +443,10 @@ async function restore() {
   }
   try {
     const response = await post('/api/restore', { text: els.answer.value, vaultId: a.vaultId, store: state.store });
-    const typeOf = (placeholder) => (placeholder.match(/^⟦([A-Z_]+)_\d+⟧$/) || [])[1];
+    const typeOf = (placeholder) => {
+      const type = (placeholder.match(/^⟦([A-Z0-9_]+)_\d+⟧$/) || [])[1];
+      return type && !TYPE_LABEL[type] ? 'LEARNED' : type;
+    };
     els.restored.classList.toggle('no-highlight', !state.highlight);
     els.restored.innerHTML = response.segments.map((s) => {
       if (s.status === 'plain') return escapeHtml(s.text);
@@ -493,8 +508,8 @@ function openPopover(mark, finding, allowedValue = null) {
 
   const p = els.popover;
   if (finding) {
-    p.dataset.type = finding.type;
-    els.popoverTitle.textContent = TYPE_LABEL[finding.type];
+    p.dataset.type = kindOf(finding);
+    els.popoverTitle.textContent = nameOf(finding);
     els.popoverValue.textContent = finding.value;
     els.popoverValue.className = 'value';
     els.popoverReplacementLabel.textContent = state.mode === 'reversible' ? 'Wird zu' : 'Maskiert als';
@@ -601,6 +616,101 @@ async function loadModels() {
   } catch (e) {
     if (request === modelsRequest) els.modelHint.textContent = e.message;
   }
+}
+
+// ---------- learn mode ----------
+function selectedText() {
+  const { selectionStart: start, selectionEnd: end, value } = els.input;
+  return start < end ? value.slice(start, end).trim() : '';
+}
+
+function updateLearnSelection() {
+  const text = selectedText();
+  const ok = text.length >= 2 && text.length <= 100 && !text.includes('\n');
+  els.learnSelection.disabled = !ok;
+  els.learnSelection.title = ok ? `„${text}“ als Beispiel für einen neuen Typ verwenden` : 'Erst im Text etwas markieren (eine Zeile, höchstens 100 Zeichen)';
+}
+
+function openLearnDialog(example = '') {
+  els.learnName.value = '';
+  els.learnDescription.value = '';
+  els.learnExamples.value = example;
+  els.learnCounter.value = '';
+  els.learnPattern.value = '';
+  els.learnPreview.textContent = example ? 'Prüfe Beispiel …' : 'Beispiele eintragen, dann erscheint hier das Muster.';
+  els.learnPreview.classList.remove('is-error');
+  els.learnDialog.showModal();
+  els.learnName.focus();
+  if (example) learnPreviewDebounced();
+}
+
+function learnRequest(dryRun) {
+  const lines = (el) => el.value.split('\n').map((l) => l.trim()).filter(Boolean);
+  return {
+    name: els.learnName.value.trim() || 'NEUER_TYP',
+    description: els.learnDescription.value.trim(),
+    examples: lines(els.learnExamples),
+    counterExamples: lines(els.learnCounter),
+    pattern: els.learnPattern.value.trim(),
+    dryRun,
+    text: els.input.value,
+  };
+}
+
+async function learnPreview() {
+  if (!els.learnDialog.open) return;
+  const request = learnRequest(true);
+  if (!request.examples.length) {
+    els.learnPreview.textContent = 'Beispiele eintragen, dann erscheint hier das Muster.';
+    return;
+  }
+  try {
+    const r = await post('/api/learn', request);
+    els.learnPreview.classList.remove('is-error');
+    els.learnPreview.textContent = r.type.pattern
+      ? `Muster ${r.type.pattern} – trifft im Original ${r.matches}×.`
+      : 'Kein Muster möglich (reine Wörter). Nur das KI-Modell lernt diesen Typ: Erkennung „KI-Modell“ oder „Beides“ wählen.';
+  } catch (e) {
+    els.learnPreview.classList.add('is-error');
+    els.learnPreview.textContent = e.message;
+  }
+}
+const learnPreviewDebounced = debounce(learnPreview, 400);
+
+async function learnSave(event) {
+  event.preventDefault();
+  if (!els.learnName.reportValidity()) return;
+  try {
+    await post('/api/learn', learnRequest(false));
+    els.learnDialog.close();
+    await loadEntities();
+    analyze();
+  } catch (e) {
+    els.learnPreview.classList.add('is-error');
+    els.learnPreview.textContent = e.message;
+  }
+}
+
+async function loadEntities(response = null) {
+  try {
+    const { types } = response || await post('/api/entities', {});
+    els.learnedList.innerHTML = '';
+    for (const t of types) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="swatch" data-type="LEARNED"></span><span>${escapeHtml(t.name)}<br><code>${escapeHtml(t.pattern || 'nur KI-Modell')}</code></span>`;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', `Typ ${t.name} vergessen`);
+      remove.addEventListener('click', async () => {
+        await loadEntities(await post('/api/entities/forget', { name: t.name }));
+        analyze();
+      });
+      li.append(remove);
+      els.learnedList.append(li);
+    }
+    els.learnedEmpty.hidden = types.length > 0;
+  } catch { /* list stays as it is */ }
 }
 
 // ---------- samples ----------
@@ -726,8 +836,20 @@ function init() {
   renderTypeList();
   renderAllowlist();
   render();
+  els.input.addEventListener('select', updateLearnSelection);
+  els.input.addEventListener('mouseup', updateLearnSelection);
+  els.input.addEventListener('keyup', updateLearnSelection);
+  els.learnSelection.addEventListener('mousedown', (e) => e.preventDefault()); // keep the selection
+  els.learnSelection.addEventListener('click', () => openLearnDialog(selectedText()));
+  els.newType.addEventListener('click', () => openLearnDialog());
+  for (const el of [els.learnName, els.learnExamples, els.learnCounter, els.learnPattern]) el.addEventListener('input', learnPreviewDebounced);
+  els.learnName.addEventListener('input', () => { els.learnName.value = els.learnName.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_'); });
+  els.learnCancel.addEventListener('click', () => els.learnDialog.close());
+  els.learnForm.addEventListener('submit', learnSave);
+
   loadSamples();
   loadConfig();
+  loadEntities();
 }
 
 init();

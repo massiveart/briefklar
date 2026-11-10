@@ -396,3 +396,31 @@ body { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
 #result { flex: 1 1 0; min-height: 6rem; }
 .restore-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); grid-auto-rows: minmax(5rem, 1fr); gap: 0.75rem 1.25rem; }
 .restore-grid textarea, .restore-grid .result { height: auto; min-height: 5rem; }
+
+/* ---------- Learned types ---------- */
+[data-type="LEARNED"] { --ink-color: #7fd1e6; }
+.learned-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.learned-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.5rem; align-items: center; font-size: var(--step--1); }
+.learned-list code { color: var(--muted); overflow-wrap: anywhere; }
+.learned-list button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; }
+
+.learn-dialog {
+  width: min(40rem, calc(100vw - 2rem));
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.5);
+}
+.learn-dialog::backdrop { background: rgb(18 24 30 / 0.45); }
+.learn-dialog form { display: grid; gap: 0.75rem; }
+.learn-dialog h3 { font-size: var(--step-1); }
+.learn-dialog textarea { width: 100%; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); padding: 0.4rem 0.5rem; font-family: var(--font-code); font-size: var(--step--1); resize: vertical; }
+.learn-dialog .field input { font-family: var(--font-code); }
+.learn-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.75rem; }
+.learn-preview { margin: 0; min-height: 2.6em; font-size: var(--step--1); padding: 0.5rem 0.7rem; border-radius: 6px; background: color-mix(in srgb, var(--desk) 55%, transparent); overflow-wrap: anywhere; }
+.learn-preview.is-error { background: var(--danger-bg); color: var(--danger); }
+.learn-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.learn-actions button { border: 1px solid var(--rule); background: var(--paper); border-radius: var(--radius-control); padding: 0.4rem 0.9rem; cursor: pointer; }
+.learn-actions button.primary { background: var(--stamp); border-color: var(--stamp); color: var(--stamp-ink); font-weight: 600; }

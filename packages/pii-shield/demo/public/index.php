@@ -88,7 +88,7 @@ if ('/api/samples' === $path) {
     return $json($samples);
 }
 
-if (!in_array($path, ['/api/analyze', '/api/restore', '/api/models'], true)) {
+if (!in_array($path, ['/api/analyze', '/api/restore', '/api/models', '/api/learn', '/api/entities', '/api/entities/forget'], true)) {
     return $json(['error' => 'Not found.'], 404);
 }
 if ('POST' !== ($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
@@ -104,7 +104,7 @@ if (!str_starts_with((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/jso
 
 // Local models can take a while; keep the request alive.
 set_time_limit(180);
-$api = new DemoApi($services->vaults(), $services->modelDetectors());
+$api = new DemoApi($services->vaults(), $services->modelDetectors(), $services->learner());
 
 try {
     $request = json_decode((string) file_get_contents('php://input'), true, 16, \JSON_THROW_ON_ERROR);
@@ -115,6 +115,9 @@ try {
     $response = match ($path) {
         '/api/analyze' => $api->analyze($request),
         '/api/restore' => $api->restore($request),
+        '/api/learn' => $api->learn($request),
+        '/api/entities' => $api->entities(),
+        '/api/entities/forget' => $api->forget($request),
         default => ['models' => $services->models(is_string($request['provider'] ?? null) ? $request['provider'] : '', is_string($request['endpoint'] ?? null) ? $request['endpoint'] : null)],
     };
 

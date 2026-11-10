@@ -19,6 +19,9 @@ use Briefklar\PiiShield\Detector\TaxNumberDetector;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityExtractor;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Learning\CustomEntityDetector;
+use Briefklar\PiiShield\Learning\CustomEntityType;
+use Briefklar\PiiShield\Learning\EntityLearner;
 use Briefklar\PiiShield\Masking\MaskingStrategyInterface;
 use Briefklar\PiiShield\Masking\PartialMask;
 use Briefklar\PiiShield\Masking\TypeLabelMask;
@@ -33,7 +36,7 @@ use Briefklar\PiiShield\Vault\VaultInterface;
  * JSON API behind the demo page. Uses the public library API only, plus the vault storage
  * to show that it holds ciphertext.
  *
- * @phpstan-type Finding array{index: int, type: string, value: string, offset: int, length: int, detector: string, confidence: float, replacement: string}
+ * @phpstan-type Finding array{index: int, type: string, label: string|null, value: string, offset: int, length: int, detector: string, confidence: float, replacement: string}
  * @phpstan-type Segment array{text: string, finding: int|null}
  * @phpstan-type RestoreSegment array{text: string, status: 'plain'|'restored'|'unknown', placeholder: string|null}
  */
@@ -49,7 +52,56 @@ final class DemoApi
     public function __construct(
         private readonly \Closure $vaults,
         private readonly \Closure $modelDetectors,
+        private readonly EntityLearner $learner,
     ) {
+    }
+
+    /**
+     * Learns (or with dryRun previews) a type from examples; counts its matches in "text" if given.
+     *
+     * @param array<string, mixed> $request
+     *
+     * @return array{type: array{name: string, description: string, examples: list<string>, counterExamples: list<string>, pattern: string|null}, note: string|null, saved: bool, matches: int}
+     */
+    public function learn(array $request): array
+    {
+        $args = [
+            \is_string($request['name'] ?? null) ? $request['name'] : '',
+            \is_string($request['description'] ?? null) ? $request['description'] : '',
+            self::stringList($request['examples'] ?? []),
+            self::stringList($request['counterExamples'] ?? []),
+            \is_string($request['pattern'] ?? null) && '' !== trim($request['pattern']) ? $request['pattern'] : null,
+        ];
+        $dryRun = true === ($request['dryRun'] ?? false);
+        $result = $dryRun ? $this->learner->preview(...$args) : $this->learner->learn(...$args);
+        $text = \is_string($request['text'] ?? null) ? $request['text'] : '';
+
+        return [
+            'type' => $result->type->toArray(),
+            'note' => $result->note,
+            'saved' => !$dryRun,
+            'matches' => \count((new CustomEntityDetector($result->type))->detect($text)),
+        ];
+    }
+
+    /**
+     * @return array{types: list<array{name: string, description: string, examples: list<string>, counterExamples: list<string>, pattern: string|null}>}
+     */
+    public function entities(): array
+    {
+        return ['types' => array_map(static fn (CustomEntityType $t): array => $t->toArray(), $this->learner->types())];
+    }
+
+    /**
+     * @param array<string, mixed> $request
+     *
+     * @return array{types: list<array{name: string, description: string, examples: list<string>, counterExamples: list<string>, pattern: string|null}>}
+     */
+    public function forget(array $request): array
+    {
+        $this->learner->forget(\is_string($request['name'] ?? null) ? $request['name'] : '');
+
+        return $this->entities();
     }
 
     /**
@@ -144,6 +196,7 @@ final class DemoApi
             $findings[] = [
                 'index' => $i,
                 'type' => $entity->type->value,
+                'label' => $entity->label,
                 'value' => $entity->value,
                 'offset' => $entity->offset,
                 'length' => $entity->length(),
@@ -201,7 +254,8 @@ final class DemoApi
             throw new \InvalidArgumentException('Unknown detection. Use "regex", "model" or "both".');
         }
 
-        $detectors = [];
+        // Learned types always apply; they are not part of the built-in type selection.
+        $detectors = [new RequestScopedDetector($this->learner->detector(), [EntityType::Other])];
         if ('model' !== $detection) {
             $keepAuthorityContacts = (bool) ($request['keepAuthorityContacts'] ?? true);
             foreach ($types as $type) {
@@ -229,7 +283,7 @@ final class DemoApi
                 throw new \InvalidArgumentException('"model" settings are required for model-based detection.');
             }
             /* @var array<string, mixed> $model */
-            $detectors[] = new RequestScopedDetector(($this->modelDetectors)($model), $types);
+            $detectors[] = new RequestScopedDetector(($this->modelDetectors)($model), [...$types, EntityType::Other]);
         }
 
         return $detectors;
