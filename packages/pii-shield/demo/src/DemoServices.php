@@ -122,12 +122,12 @@ final class DemoServices
                     $names = array_map(static fn (mixed $m): string => \is_array($m) && \is_string($m['name'] ?? null) ? $m['name'] : '', \is_array($data['models'] ?? null) ? $data['models'] : []);
                     break;
                 case 'generic':
-                    $configured = self::env('PII_DEMO_GENERIC_URL');
-                    $url = $endpoint ?? $configured;
+                    $configured = self::openAiBase(self::env('PII_DEMO_GENERIC_URL'));
+                    $url = self::openAiBase($endpoint) ?? $configured;
                     if (null === $url) {
                         return [];
                     }
-                    $key = null !== $configured && rtrim($configured, '/') === $url ? self::env('PII_DEMO_GENERIC_KEY') : null;
+                    $key = $configured === $url ? self::env('PII_DEMO_GENERIC_KEY') : null;
                     $data = $http->request('GET', $url.'/v1/models', null !== $key ? ['auth_bearer' => $key] : [])->toArray();
                     $names = array_map(static fn (mixed $m): string => \is_array($m) && \is_string($m['id'] ?? null) ? $m['id'] : '', \is_array($data['data'] ?? null) ? $data['data'] : []);
                     break;
@@ -242,10 +242,10 @@ final class DemoServices
                 // No chain-of-thought (faster). No JSON mode: not every model supports it; the prompt asks for JSON.
                 return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), [...$deterministic, 'think' => false]];
             case 'generic':
-                $configured = self::env('PII_DEMO_GENERIC_URL');
-                $endpoint ??= $configured ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
+                $configured = self::openAiBase(self::env('PII_DEMO_GENERIC_URL'));
+                $endpoint = self::openAiBase($endpoint) ?? $configured ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
                 // The server's key only ever goes to the server it was configured for.
-                $apiKey = null !== $configured && rtrim($configured, '/') === $endpoint ? self::env('PII_DEMO_GENERIC_KEY') : null;
+                $apiKey = $configured === $endpoint ? self::env('PII_DEMO_GENERIC_KEY') : null;
 
                 return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $deterministic];
             case 'mistral':
@@ -273,6 +273,14 @@ final class DemoServices
     public static function serviceOnly(): bool
     {
         return '1' === self::env('PII_SERVICE_ONLY');
+    }
+
+    /**
+     * Base URL without a trailing "/v1": many guides give the base URL with it, the bridge adds it itself.
+     */
+    private static function openAiBase(?string $url): ?string
+    {
+        return null === $url ? null : (string) preg_replace('~/v1/?$~', '', rtrim($url, '/'));
     }
 
     private static function locationOf(string $endpoint): ModelLocation
