@@ -56,6 +56,14 @@ final class DemoApi
     ) {
     }
 
+    /** The model detector of the current analysis, to report its duration. */
+    private ?RequestScopedDetector $modelDetector = null;
+
+    private function modelDuration(): ?float
+    {
+        return $this->modelDetector?->durationMs;
+    }
+
     /**
      * Learns (or with dryRun previews) a type from examples; counts its matches in "text" if given.
      *
@@ -107,9 +115,28 @@ final class DemoApi
     /**
      * @param array<string, mixed> $request
      *
-     * @return array{findings: list<Finding>, output: string, segments: list<Segment>, vaultId: string|null, mapping: array<string, string>|null, storedPayload: string|null}
+     * @return array{findings: list<Finding>, output: string, segments: list<Segment>, vaultId: string|null, mapping: array<string, string>|null, storedPayload: string|null, timings: array{totalMs: float, modelMs: float|null}}
      */
     public function analyze(array $request): array
+    {
+        $start = hrtime(true);
+        $this->modelDetector = null;
+        $response = $this->doAnalyze($request);
+        $modelMs = $this->modelDuration();
+        $response['timings'] = [
+            'totalMs' => round((hrtime(true) - $start) / 1e6, 1),
+            'modelMs' => null !== $modelMs ? round($modelMs, 1) : null,
+        ];
+
+        return $response;
+    }
+
+    /**
+     * @param array<string, mixed> $request
+     *
+     * @return array{findings: list<Finding>, output: string, segments: list<Segment>, vaultId: string|null, mapping: array<string, string>|null, storedPayload: string|null}
+     */
+    private function doAnalyze(array $request): array
     {
         $text = self::text($request);
         $mode = $request['mode'] ?? 'reversible';
@@ -283,7 +310,7 @@ final class DemoApi
                 throw new \InvalidArgumentException('"model" settings are required for model-based detection.');
             }
             /* @var array<string, mixed> $model */
-            $detectors[] = new RequestScopedDetector(($this->modelDetectors)($model), [...$types, EntityType::Other]);
+            $detectors[] = $this->modelDetector = new RequestScopedDetector(($this->modelDetectors)($model), [...$types, EntityType::Other]);
         }
 
         return $detectors;

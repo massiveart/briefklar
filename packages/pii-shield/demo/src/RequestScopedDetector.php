@@ -19,6 +19,9 @@ final class RequestScopedDetector implements DetectorInterface
     /** @var list<Entity> */
     private array $lastEntities = [];
 
+    /** Milliseconds the inner detector needed for the last new text. */
+    public ?float $durationMs = null;
+
     /**
      * @param list<EntityType> $types
      */
@@ -31,10 +34,12 @@ final class RequestScopedDetector implements DetectorInterface
     public function detect(string $text): array
     {
         if ($text !== $this->lastText) {
+            $start = hrtime(true);
             $this->lastEntities = array_values(array_filter(
                 $this->inner->detect($text),
                 fn (Entity $e): bool => \in_array($e->type, $this->types, true),
             ));
+            $this->durationMs = (hrtime(true) - $start) / 1e6;
             $this->lastText = $text;
         }
 
