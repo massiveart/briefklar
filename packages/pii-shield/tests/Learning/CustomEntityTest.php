@@ -108,6 +108,9 @@ final class CustomEntityTest extends TestCase
         yield 'quoting' => ['\\Q(a)\\E-\\d', '(a)-1'];
         yield 'anchor' => ['^VN-\\d+', 'VN-1'];
         yield 'lazy quantifier' => ['\\d+?X', '1X'];
+        yield 'two unbounded quantifiers (polynomial backtracking)' => ['\\d+\\d+X', '12X'];
+        yield 'two unbounded quantifiers in alternatives' => ['(?:A\\d+|B\\w*)-\\d', 'A1-2'];
+        yield 'huge upper bound' => ['\\d{1,500}X', '1X'];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('unsafePatternProvider')]

@@ -23,6 +23,7 @@ final class PatternLearnerTest extends TestCase
         yield 'mixed case letters' => [['Ab12', 'Cd34'], '[A-Z][a-z]\d{2}'];
         yield 'different shapes become alternatives' => [['A123', 'AB-12'], '(?:[A-Z]\d{3}|[A-Z]{2}-\d{2})'];
         yield 'umlauts count as letters' => [['ÄÖ-12', 'XY-34'], '[A-ZÄÖÜ]{2}-\d{2}'];
+        yield 'varying whitespace stays bounded' => [['AB 12', 'AB   34'], 'AB\s{1,3}\d{2}'];
     }
 
     /**
