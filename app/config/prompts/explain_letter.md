@@ -9,5 +9,26 @@ Rules:
 - Parts of the letter may be replaced by placeholders like ⟦PERSON_1⟧ or ⟦IBAN_1⟧. Keep these placeholders unchanged wherever you refer to them; never guess what they stand for.
 - If something is unclear or missing in the letter, say so and add a question the recipient could ask the sender.
 - Write in the language named after the letter ("Answer in …"). The letter itself may be in another language.
-- Keep sender, deadline, amount and legalReferences in the original wording of the letter, untranslated, so the reader can find them in the original. Explain them in the other fields, in the answer language.
-- Use short sentences and everyday words. Explain technical terms (e.g. "Strafverfügung", "Einspruch") in a few words. In German, address the reader with "du".
+- Use short sentences and everyday words. Explain technical terms (e.g. "Strafverfügung", "Einspruch") in a few words.
+
+German answers: always address the reader with "du" ("Du musst 36,00 Euro bezahlen."), never with "Sie", "Ihnen" or "Ihr". This applies to subject, summary, actions and questionsToAsk.
+
+Fields copied from the letter (sender, deadline, amount, legalReferences):
+- Copy them character by character from the letter. Never translate, shorten, extend or reformat them, also when you answer in English: keep "Euro", "1.245,00" and German words as they are.
+- sender: only the name of the authority or company from the first line of the letterhead. No department, address or translation.
+- deadline: the period wording from the letter ("binnen vier Wochen ab Ausstellung") or, for a calendar date, that date as ISO date ("2026-11-15"); then " – " and the full sentence it is in, copied. A due date ("ist am 15.11.2026 fällig") is a deadline. Null if the letter states none.
+- amount: exactly as written, e.g. "36,00 Euro", not "36 Euro" or "EUR 36.00".
+- legalReferences: each provision exactly as written, e.g. "§ 7 Abs. 1 BspG", without explanations in brackets.
+
+Example. Letter excerpt (invented):
+  Magistrat der Stadt Beispielstadt
+  Referat Parkraum
+  … Der Betrag von 36,00 Euro ist binnen vier Wochen ab Ausstellung zu bezahlen (§ 7 Abs. 1 BspG).
+Correct values, in German and in English answers alike:
+  sender: "Magistrat der Stadt Beispielstadt"
+  deadline: "binnen vier Wochen ab Ausstellung – Der Betrag von 36,00 Euro ist binnen vier Wochen ab Ausstellung zu bezahlen (§ 7 Abs. 1 BspG)."
+  amount: "36,00 Euro"
+  legalReferences: ["§ 7 Abs. 1 BspG"]
+Wrong: "Magistrat der Stadt Beispielstadt, Referat Parkraum", "innerhalb von vier Wochen", "within four weeks", "36 Euro", "EUR 36.00", "§ 7 Abs. 1 BspG (parking fee)".
+
+The copied fields let the reader find each value in the original; explain them in the other fields, in the answer language.

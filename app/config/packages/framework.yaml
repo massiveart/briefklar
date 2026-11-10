@@ -5,6 +5,14 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
+    # The only outgoing HTTP calls are model requests (config/packages/ai.yaml). A local model
+    # answers after 30-40 s without sending anything in between, so the idle timeout must cover
+    # the whole generation. LetterController raises PHP's time limit to match.
+    http_client:
+        default_options:
+            timeout: '%env(float:EXPLANATION_TIMEOUT)%'
+            max_duration: '%env(float:EXPLANATION_TIMEOUT)%'
+
     #esi: true
     #fragments: true
 

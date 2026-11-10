@@ -144,6 +144,15 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('form', 'Die Erklärung hat gerade nicht geklappt');
     }
 
+    public function testShowsFriendlyErrorWhenTheModelTakesTooLong(): void
+    {
+        $client = self::createClient();
+        $this->uploadText($client, PdfFixtureFactory::letter('01-strafverfuegung')."\n".ScriptedPlatform::TIMEOUT_MARKER);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('form', 'Die Erklärung hat gerade nicht geklappt');
+    }
+
     public function testRejectsUnsupportedFileType(): void
     {
         $client = self::createClient();

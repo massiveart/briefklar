@@ -51,7 +51,20 @@ Provider and model come from env, no code change needed:
 |---|---|---|
 | `huggingface` (default) | `HUGGINGFACE_API_KEY` | `Qwen/Qwen3-235B-A22B-Instruct-2507` |
 | `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-5-5` |
-| `ollama` | none (`docker compose --profile local up -d`) | `qwen3:8b` |
+| `ollama` | none; Ollama on the host (`brew install ollama`, `ollama pull qwen3:8b`), `OLLAMA_ENDPOINT=http://host.docker.internal:11434`. Or `docker compose --profile local up -d` (CPU only, slow on a Mac) | `qwen3:8b` |
+
+A local model needs 30–50 s per letter on a laptop, without sending anything in between. `EXPLANATION_TIMEOUT` (default 120 s) is the idle and total timeout of the model request (`config/packages/framework.yaml`); `LetterController` raises PHP's time limit to that plus 60 s for OCR, so a slow model is not cut off at PHP's default 30 s. A model that takes longer ends with the friendly error message.
+
+### Evaluating prompts against a real model
+
+```bash
+make console c="app:evaluate-explanations"            # all fixtures, both styles, both languages
+make console c="app:evaluate-explanations 01-strafverfuegung --style=easy_language --language=de -v"
+```
+
+Runs the synthetic fixture letters through the configured provider (pii-shield included, the provider sees placeholders only) and checks each answer with `ExplanationRules`: deadline verified by `DeadlineCheck`, amount, legal references and sender copied verbatim, no placeholder left, "du" instead of "Sie" in German, middle dots in Leichte Sprache. `-v` prints the answers. It exits non-zero if any rule is broken, so prompt changes can be compared by numbers. Model answers vary between runs; run it more than once before drawing conclusions.
+
+With `qwen3:8b` on a MacBook (11.11.2026), the "fields copied from the letter" section with a worked example in both prompts raised the result from 23 of 46 to 44 of 46 kept rules; middle dots in Leichte Sprache stay unreliable with a model of this size.
 
 `DeadlineCheck` verifies that the reported deadline is written in the letter (verbatim period, or an ISO date that appears as `28.10.2026`, `5.1.2027` or `14. November 2026`). If not, the result page shows a warning instead of silently trusting the model.
 

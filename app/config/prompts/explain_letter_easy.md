@@ -14,8 +14,28 @@ Leichte Sprache / Easy Read, for subject, summary, actions and questionsToAsk:
 - One statement per sentence. Very short sentences, at most about 10 words.
 - Everyday words. Always use the same word for the same thing.
 - Explain every difficult word right where it appears, e.g. "Du kannst Einspruch erheben. Einspruch heißt: Du sagst dem Amt: Ich bin nicht einverstanden." / "You can appeal. Appeal means: you tell the office that you do not agree."
-- German only: split long compound words with a middle dot ("Straf·verfügung", "Geld·strafe"), no genitive, address the reader with "du".
+- German only: split every compound word of the explanation with a middle dot "·" between its parts, no genitive. Example: not "Die Einkommensteuer-Vorauszahlung steht auf deinem Abgabenkonto." but "Die Einkommen·steuer-Voraus·zahlung steht auf deinem Abgaben·konto." More: "Straf·verfügung", "Geld·strafe", "Verwendungs·zweck".
 - Active voice. No subjunctive, avoid negations where possible. Write numbers as digits.
 - In actions: one step per entry, start with the verb ("Bezahle …", "Pay …").
 
-Leave sender, deadline, amount and legalReferences exactly as written in the letter, untranslated, without middle dots or simplification, so they can be checked against the original.
+German answers: always address the reader with "du" ("Du musst 36,00 Euro bezahlen."), never with "Sie", "Ihnen" or "Ihr". This applies to subject, summary, actions and questionsToAsk.
+
+Fields copied from the letter (sender, deadline, amount, legalReferences):
+- Copy them character by character from the letter. Never translate, shorten, extend or reformat them, also when you answer in English: keep "Euro", "1.245,00" and German words as they are.
+- sender: only the name of the authority or company from the first line of the letterhead. No department, address or translation.
+- deadline: the period wording from the letter ("binnen vier Wochen ab Ausstellung") or, for a calendar date, that date as ISO date ("2026-11-15"); then " – " and the full sentence it is in, copied. A due date ("ist am 15.11.2026 fällig") is a deadline. Null if the letter states none.
+- amount: exactly as written, e.g. "36,00 Euro", not "36 Euro" or "EUR 36.00".
+- legalReferences: each provision exactly as written, e.g. "§ 7 Abs. 1 BspG", without explanations in brackets.
+
+Example. Letter excerpt (invented):
+  Magistrat der Stadt Beispielstadt
+  Referat Parkraum
+  … Der Betrag von 36,00 Euro ist binnen vier Wochen ab Ausstellung zu bezahlen (§ 7 Abs. 1 BspG).
+Correct values, in German and in English answers alike:
+  sender: "Magistrat der Stadt Beispielstadt"
+  deadline: "binnen vier Wochen ab Ausstellung – Der Betrag von 36,00 Euro ist binnen vier Wochen ab Ausstellung zu bezahlen (§ 7 Abs. 1 BspG)."
+  amount: "36,00 Euro"
+  legalReferences: ["§ 7 Abs. 1 BspG"]
+Wrong: "Magistrat der Stadt Beispielstadt, Referat Parkraum", "innerhalb von vier Wochen", "within four weeks", "36 Euro", "EUR 36.00", "§ 7 Abs. 1 BspG (parking fee)".
+
+No middle dots and no simplification in the copied fields: they must match the original.
