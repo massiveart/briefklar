@@ -157,6 +157,26 @@ final class DemoServices
         return array_values(array_filter($names, static fn (string $n): bool => '' !== $n));
     }
 
+    /**
+     * Appends one line to demo/var/log/demo.log. Metadata only; the model's raw answer is added by the
+     * caller only with PII_DEMO_DEBUG=1, because it can contain personal data.
+     *
+     * @param array<string, mixed> $event
+     */
+    public function log(array $event): void
+    {
+        $dir = $this->varDir.'/log';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0700, true);
+        }
+        file_put_contents($dir.'/demo.log', json_encode(['time' => date('c'), ...$event], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)."\n", \FILE_APPEND | \LOCK_EX);
+    }
+
+    public static function debug(): bool
+    {
+        return '1' === self::env('PII_DEMO_DEBUG');
+    }
+
     public static function validEndpoint(string $endpoint): string
     {
         $endpoint = rtrim(trim($endpoint), '/');
@@ -216,9 +236,12 @@ final class DemoServices
         return function (array $settings): ModelDetector {
             $provider = \is_string($settings['provider'] ?? null) ? $settings['provider'] : '';
             $model = \is_string($settings['model'] ?? null) && '' !== trim($settings['model']) ? trim($settings['model']) : (self::PROVIDERS[$provider]['model'] ?? '');
+            if ('' === $model) {
+                throw new \InvalidArgumentException('Choose a model first.');
+            }
             $endpoint = \is_string($settings['endpoint'] ?? null) && '' !== trim($settings['endpoint']) ? self::validEndpoint($settings['endpoint']) : null;
 
-            [$platform, $location, $options] = $this->platform($provider, $endpoint);
+            [$platform, $location, $options] = $this->platform($provider, $endpoint, false !== ($settings['fast'] ?? true));
 
             return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options, $this->learnedStore());
         };
@@ -227,7 +250,7 @@ final class DemoServices
     /**
      * @return array{PlatformInterface, ModelLocation, array<string, mixed>}
      */
-    private function platform(string $provider, ?string $endpoint): array
+    private function platform(string $provider, ?string $endpoint, bool $fast): array
     {
         $key = static fn (string $name): string => self::env($name) ?? throw new \InvalidArgumentException(\sprintf('Set %s in the environment of the demo server to use this provider.', $name));
         // Self-hosted models answer only when done; allow for large models on modest hardware.
@@ -240,14 +263,15 @@ final class DemoServices
                 $endpoint ??= self::env('PII_DEMO_OLLAMA_URL') ?? 'http://127.0.0.1:11434';
 
                 // No chain-of-thought (faster). No JSON mode: not every model supports it; the prompt asks for JSON.
-                return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), [...$deterministic, 'think' => false]];
+                return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), $fast ? [...$deterministic, 'think' => false] : $deterministic];
             case 'generic':
                 $configured = self::openAiBase(self::env('PII_DEMO_GENERIC_URL'));
                 $endpoint = self::openAiBase($endpoint) ?? $configured ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
                 // The server's key only ever goes to the server it was configured for.
                 $apiKey = $configured === $endpoint ? self::env('PII_DEMO_GENERIC_KEY') : null;
 
-                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $deterministic];
+                // Fast: no reasoning tokens (Ollama's /v1 understands "none"; turn off for servers that do not).
+                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $fast ? [...$deterministic, 'reasoning_effort' => 'none'] : $deterministic];
             case 'mistral':
                 return [MistralFactory::createPlatform($key('MISTRAL_API_KEY')), ModelLocation::External, $deterministic];
             case 'openai':

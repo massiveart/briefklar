@@ -10,4 +10,14 @@ namespace Briefklar\PiiShield\Exception;
  */
 final class DetectionFailedException extends \RuntimeException implements ExceptionInterface
 {
+    /**
+     * @param string|null $modelAnswer the model's raw answer, for debugging only: it may contain personal data
+     */
+    public function __construct(
+        string $message,
+        ?\Throwable $previous = null,
+        public readonly ?string $modelAnswer = null,
+    ) {
+        parent::__construct($message, 0, $previous);
+    }
 }
