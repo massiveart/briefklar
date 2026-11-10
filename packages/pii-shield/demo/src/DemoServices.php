@@ -265,7 +265,7 @@ final class DemoServices
         return match ($store) {
             'filesystem' => true,
             'sqlite' => \extension_loaded('pdo_sqlite'),
-            'redis' => null !== self::env('PII_DEMO_REDIS_URL') && (\extension_loaded('redis') || class_exists(\Predis\Client::class)),
+            'redis' => null !== self::env('PII_DEMO_REDIS_URL') && (\extension_loaded('redis') || class_exists(\Predis\Client::class)), // Predis: pure PHP fallback
             default => false,
         };
     }
