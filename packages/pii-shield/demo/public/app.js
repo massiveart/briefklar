@@ -70,7 +70,7 @@ const els = {
   learnDialog: $('learnDialog'), learnForm: $('learnForm'), learnName: $('learnName'), learnDescription: $('learnDescription'),
   learnExamples: $('learnExamples'), learnCounter: $('learnCounter'), learnPattern: $('learnPattern'),
   learnPreview: $('learnPreview'), learnCancel: $('learnCancel'), learnSave: $('learnSave'),
-  timing: $('timing'),
+  timing: $('timing'), errorText: $('errorText'), retry: $('retry'), log: $('log'), fast: $('fast'),
 };
 
 /** Learned types are EntityType OTHER with a label; they get one shared colour and their own name. */
@@ -95,6 +95,7 @@ const state = {
   models: {},
   endpoints: {},
   acknowledgeExternal: false, // deliberately not persisted
+  fast: true,
   store: 'filesystem',
   config: { providers: [], stores: [] },
   runs: [], // last response times, to compare models
@@ -121,6 +122,7 @@ function loadSettings() {
     state.models = saved.models || {};
     state.endpoints = saved.endpoints || {};
     state.store = saved.store || 'filesystem';
+    state.fast = saved.fast !== false;
   } catch { /* storage unavailable: defaults */ }
 }
 function saveSettings() {
@@ -128,7 +130,7 @@ function saveSettings() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       mode: state.mode, types: [...state.types], knownTypes: TYPES.map(([t]) => t), strategies: state.strategies,
       keepAuthority: state.keepAuthority, highlight: state.highlight, live: state.live,
-      detection: state.detection, provider: state.provider, models: state.models, endpoints: state.endpoints, store: state.store,
+      detection: state.detection, provider: state.provider, models: state.models, endpoints: state.endpoints, store: state.store, fast: state.fast,
     }));
   } catch { /* ignore */ }
 }
@@ -155,8 +157,17 @@ async function post(path, body, signal = undefined) {
 }
 
 function showError(message) {
-  els.error.textContent = message;
+  els.errorText.textContent = message;
   els.error.hidden = !message;
+}
+
+/** Small event log in the page (no text, only what happened), newest first. */
+function logEvent(message, isError = false) {
+  const li = document.createElement('li');
+  li.textContent = `${new Date().toLocaleTimeString('de-AT')}  ${message}`;
+  if (isError) li.className = 'is-error';
+  els.log.prepend(li);
+  while (els.log.children.length > 50) els.log.lastChild.remove();
 }
 
 // ---------- settings panel ----------
@@ -267,6 +278,7 @@ function modelSettings() {
     model: els.modelName.value.trim() || state.models[state.provider] || provider?.model || '',
     endpoint: state.endpoints[state.provider] || '',
     acknowledgeExternal: state.acknowledgeExternal,
+    fast: state.fast,
   };
 }
 
@@ -277,6 +289,10 @@ async function analyze() {
   if (!text.trim()) {
     state.analysis = null;
     render();
+    return;
+  }
+  if (usesModel() && !modelSettings().model) {
+    showError('Erst ein Modell wählen.');
     return;
   }
   if (usesModel() && currentLocation() === 'external' && !state.acknowledgeExternal) {
@@ -305,9 +321,13 @@ async function analyze() {
     state.analysis = { ...analysis, text };
     showError('');
     recordTiming(analysis.timings);
+    logEvent(`Prüfung ${usesModel() ? `${state.provider}/${modelSettings().model}` : 'Muster'}: ${analysis.findings.length} Funde, ${formatMs(analysis.timings?.totalMs ?? 0)}`);
     render(true);
   } catch (e) {
-    if (e.name !== 'AbortError') showError(`Prüfung fehlgeschlagen: ${e.message}`);
+    if (e.name !== 'AbortError') {
+      showError(`Prüfung fehlgeschlagen: ${e.message}`);
+      logEvent(`Fehler ${usesModel() ? `${state.provider}/${modelSettings().model}` : 'Muster'}: ${e.message}`, true);
+    }
   } finally {
     if (state.request === controller) setBusy(false);
   }
@@ -617,14 +637,19 @@ async function loadModels() {
   try {
     const { models } = await post('/api/models', { provider, endpoint: state.endpoints[provider] || '' });
     if (request !== modelsRequest) return;
+    logEvent(`Modelle ${provider}: ${models.length} gefunden`);
     els.modelOptions.innerHTML = models.map((m) => `<option value="${escapeHtml(m)}"></option>`).join('');
     let current = els.modelName.value.trim();
-    if (provider === 'ollama' && !state.models[provider] && models.length && !models.includes(current)) {
+    // Detection needs a chat model: no embedding or reranker models; prefer plain ones over rag/coder variants.
+    const usable = models.filter((m) => !/embed|rerank/i.test(m))
+      .sort((a, b) => Number(/rag|coder/i.test(a)) - Number(/rag|coder/i.test(b)));
+    if ((provider === 'ollama' || provider === 'generic') && usable.length && !usable.includes(current) && !(state.models[provider] && models.includes(state.models[provider]))) {
       // Nothing chosen yet and the default is not installed: take an installed model.
-      current = models[0];
+      current = usable[0];
       els.modelName.value = current;
       state.models[provider] = current; // what the field shows is what gets sent
       saveSettings();
+      analyze(); // the provider changed and now has a model
     }
     if (!models.length) {
       els.modelHint.textContent = provider === 'ollama' || provider === 'generic'
@@ -777,8 +802,8 @@ function init() {
     state.provider = els.provider.value;
     state.acknowledgeExternal = false;
     saveSettings();
-    renderModelSettings();
-    analyze();
+    renderModelSettings(); // loads the model list; analyses once a model is known
+    if (state.models[state.provider]) analyze();
   });
   els.modelName.addEventListener('change', () => {
     state.models[state.provider] = els.modelName.value.trim();
@@ -793,6 +818,9 @@ function init() {
     renderModelSettings();
     analyze();
   });
+  els.fast.checked = state.fast;
+  els.fast.addEventListener('change', () => { state.fast = els.fast.checked; saveSettings(); analyze(); });
+  els.retry.addEventListener('click', () => analyze());
   els.acknowledgeExternal.addEventListener('change', () => {
     state.acknowledgeExternal = els.acknowledgeExternal.checked;
     analyze();

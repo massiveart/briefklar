@@ -133,6 +133,20 @@ if (!str_starts_with((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/jso
 set_time_limit(180);
 $api = new DemoApi($services->vaults(), $services->modelDetectors(), $services->learner());
 
+// Request log (demo/var/log/demo.log): what was asked, how long it took, what failed. Never the text.
+$started = hrtime(true);
+$model = null;
+$logEvent = static function (int $status, ?string $error = null, ?string $modelAnswer = null) use ($services, $path, &$model, $started): void {
+    $services->log(array_filter([
+        'path' => $path,
+        'status' => $status,
+        'ms' => round((hrtime(true) - $started) / 1e6, 1),
+        'model' => $model,
+        'error' => $error,
+        'modelAnswer' => DemoServices::debug() ? $modelAnswer : null,
+    ], static fn (mixed $v): bool => null !== $v));
+};
+
 try {
     $request = json_decode((string) file_get_contents('php://input'), true, 16, \JSON_THROW_ON_ERROR);
     if (!is_array($request)) {
@@ -145,6 +159,9 @@ try {
     if ('' !== $serviceToken && ('/api/entities/forget' === $path || ('/api/learn' === $path && true !== ($request['dryRun'] ?? false)))) {
         return $json(['error' => 'Learned types are managed through the /v1 API with a token on this server.'], 403);
     }
+    if (is_array($request['model'] ?? null) && 'regex' !== ($request['detection'] ?? 'regex')) {
+        $model = sprintf('%s/%s', is_string($request['model']['provider'] ?? null) ? $request['model']['provider'] : '?', is_string($request['model']['model'] ?? null) ? $request['model']['model'] : '?');
+    }
     $response = match ($path) {
         '/api/analyze' => $api->analyze($request),
         '/api/restore' => $api->restore($request),
@@ -154,9 +171,15 @@ try {
         default => ['models' => $services->models(is_string($request['provider'] ?? null) ? $request['provider'] : '', is_string($request['endpoint'] ?? null) ? $request['endpoint'] : null)],
     };
 
+    $logEvent(200);
+
     return $json($response);
 } catch (InvalidArgumentException|JsonException $e) {
+    $logEvent(400, $e->getMessage());
+
     return $json(['error' => $e->getMessage()], 400);
 } catch (DetectionFailedException $e) {
-    return $json(['error' => $e->getMessage()], 502);
+    $logEvent(502, $e->getMessage(), $e->modelAnswer);
+
+    return $json(['error' => $e->getMessage().(DemoServices::debug() ? '' : ' Details: demo/var/log/demo.log (raw model answer with PII_DEMO_DEBUG=1).')], 502);
 }

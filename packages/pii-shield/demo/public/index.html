@@ -44,6 +44,7 @@
           <datalist id="modelOptions"></datalist>
           <p class="hint" id="modelHint"></p>
           <label class="field" id="endpointField"><span>Server-URL</span><input id="endpoint" autocomplete="off" spellcheck="false" placeholder="http://gpu-server:8000"></label>
+          <label class="switch"><input type="checkbox" id="fast" checked><span>Schnell (ohne Reasoning)<small>Reasoning-Modelle denken sonst lange nach</small></span></label>
           <p class="location" id="location"></p>
           <div class="warning" id="externalWarning" hidden>
             <p>Zur Erkennung geht der <strong>ungeschwärzte</strong> Text an diesen Anbieter. Das braucht einen Auftragsverarbeitungsvertrag und ist außerhalb der EU eine Drittlandübermittlung.</p>
@@ -148,7 +149,14 @@
         </div>
         <p class="notice" id="restoreNotice" hidden></p>
       </article>
-      <p class="notice notice-error" id="error" role="alert" hidden></p>
+      <div class="notice notice-error" id="error" role="alert" hidden>
+        <span id="errorText"></span>
+        <button type="button" id="retry">Erneut prüfen</button>
+      </div>
+      <details class="log" id="logPanel">
+        <summary>Protokoll</summary>
+        <ol class="log-list" id="log"></ol>
+      </details>
     </main>
   </div>
 

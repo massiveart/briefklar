@@ -171,7 +171,7 @@ final class ModelDetector implements DetectorInterface
         $data = false !== $start && false !== $end ? json_decode(substr($answer, $start, $end - $start + 1), true) : null;
 
         if (!\is_array($data) || !\is_array($data['entities'] ?? null)) {
-            throw new DetectionFailedException(\sprintf('The detection model "%s" did not return the expected JSON.', $this->model));
+            throw new DetectionFailedException(\sprintf('The detection model "%s" did not return the expected JSON.', $this->model), modelAnswer: $answer);
         }
 
         $findings = [];
