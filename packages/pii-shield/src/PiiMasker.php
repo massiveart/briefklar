@@ -57,7 +57,7 @@ final class PiiMasker implements PiiMaskerInterface
     /**
      * @return array<string, MaskingStrategyInterface>
      */
-    private static function defaultStrategies(): array
+    public static function defaultStrategies(): array
     {
         return [
             EntityType::Iban->value => new PartialMask(4, 4),

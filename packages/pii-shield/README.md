@@ -125,6 +125,17 @@ Validators (`AtSvnrValidator`, `IbanValidator`, `DeTaxIdValidator`) can be used 
 
 `restore()` tolerates what models do to placeholders: case changes, inner whitespace, space instead of underscore, markdown-escaped underscores (`⟦PERSON\_1⟧`) and ASCII brackets (`[[PERSON_1]]`). Placeholders not in the vault are left as they are and reported in `unknownPlaceholders`; vault entries not used in the text are listed in `unusedPlaceholders`.
 
+## Demo
+
+A local playground for everything above: paste a text, choose what to detect and how to mask it, see the findings highlighted in the original, click a finding for details or to keep it, and restore a model answer.
+
+```bash
+make demo            # from the repository root, or: composer demo
+# open http://127.0.0.1:8088
+```
+
+Runs on PHP's built-in server and talks only to its own local API; no model provider, no web fonts, no CDN. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
+
 ## Development
 
 ```bash
