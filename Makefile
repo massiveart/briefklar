@@ -1,6 +1,6 @@
 PACKAGES := packages/pii-shield packages/ris-client
 
-.PHONY: install test qa cs-check cs-fix phpstan up down
+.PHONY: install test qa cs-check cs-fix phpstan demo up down
 
 install:
 	@set -e; for p in $(PACKAGES); do if [ -f $$p/composer.json ]; then (cd $$p && composer install); fi; done
@@ -20,6 +20,10 @@ cs-fix:
 
 phpstan:
 	@set -e; for p in $(PACKAGES); do if [ -f $$p/phpstan.dist.neon ]; then echo "== phpstan $$p"; (cd $$p && vendor/bin/phpstan analyse --no-progress); fi; done
+
+demo:
+	@echo "pii-shield demo: http://127.0.0.1:8088"
+	cd packages/pii-shield && php -S 127.0.0.1:8088 -t demo/public demo/public/index.php
 
 up:
 	docker compose up -d --build

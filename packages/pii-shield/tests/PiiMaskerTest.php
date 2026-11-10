@@ -34,6 +34,13 @@ final class PiiMaskerTest extends TestCase
         self::assertSame($expected, PiiMasker::withDefaultDetectors()->mask($text));
     }
 
+    public function testAllowlistedValuesAreNotMasked(): void
+    {
+        $masker = new PiiMasker(EntityExtractor::defaultDetectors(), allowlist: ['4568 150392']);
+
+        self::assertSame('SVNR 4568 150392', $masker->mask('SVNR 4568 150392'));
+    }
+
     public function testStrategiesCanBeOverriddenPerType(): void
     {
         $masker = new PiiMasker(EntityExtractor::defaultDetectors(), [EntityType::Iban->value => new TypeLabelMask()]);

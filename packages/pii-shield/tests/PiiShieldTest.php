@@ -6,6 +6,7 @@ namespace Briefklar\PiiShield\Tests;
 
 use Briefklar\PiiShield\Detector\DetectorInterface;
 use Briefklar\PiiShield\Entity;
+use Briefklar\PiiShield\EntityExtractor;
 use Briefklar\PiiShield\EntityType;
 use Briefklar\PiiShield\PiiShield;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -97,6 +98,24 @@ final class PiiShieldTest extends TestCase
         $result = PiiShield::withDefaultDetectors()->redact($text);
 
         self::assertSame('Wir haben Herrn ⟦PERSON_1⟧ gegeben. Der Bescheid ist rechtskräftig.', $result->redactedText);
+    }
+
+    public function testAllowlistedValuesAreNeverRedacted(): void
+    {
+        $shield = new PiiShield(EntityExtractor::defaultDetectors(), allowlist: ['AT61 1904 3002 3457 3201']);
+
+        $result = $shield->redact('IBAN AT61 1904 3002 3457 3201, SVNR 4568 150392');
+
+        self::assertSame('IBAN AT61 1904 3002 3457 3201, SVNR ⟦SVNR_1⟧', $result->redactedText);
+    }
+
+    public function testAllowlistAlsoAppliesToPropagatedSurnames(): void
+    {
+        $shield = new PiiShield(EntityExtractor::defaultDetectors(), allowlist: ['Musterfrau']);
+
+        $result = $shield->redact("Frau\nMaria Musterfrau\n\nMusterfrau wurde verständigt.");
+
+        self::assertSame("Frau\n⟦PERSON_1⟧\n\nMusterfrau wurde verständigt.", $result->redactedText);
     }
 
     public function testLongerOverlappingEntityWins(): void

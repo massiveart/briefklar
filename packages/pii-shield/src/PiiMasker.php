@@ -24,13 +24,15 @@ final class PiiMasker implements PiiMaskerInterface
     /**
      * @param iterable<DetectorInterface>             $detectors
      * @param array<string, MaskingStrategyInterface> $strategies keyed by EntityType value; merged over the defaults
+     * @param list<string>                            $allowlist  values that are never masked (exact match)
      */
     public function __construct(
         iterable $detectors,
         array $strategies = [],
         private readonly MaskingStrategyInterface $fallback = new TypeLabelMask(),
+        array $allowlist = [],
     ) {
-        $this->extractor = new EntityExtractor($detectors);
+        $this->extractor = new EntityExtractor($detectors, $allowlist);
         $this->strategies = [...self::defaultStrategies(), ...$strategies];
     }
 
@@ -55,7 +57,7 @@ final class PiiMasker implements PiiMaskerInterface
     /**
      * @return array<string, MaskingStrategyInterface>
      */
-    private static function defaultStrategies(): array
+    public static function defaultStrategies(): array
     {
         return [
             EntityType::Iban->value => new PartialMask(4, 4),

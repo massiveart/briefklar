@@ -3,7 +3,15 @@
   "description": "Reversible PII redaction for Symfony AI with DACH recognizers (AT SVNR, IBAN, tax numbers) and checksum validation.",
   "type": "library",
   "license": "MIT",
-  "keywords": ["symfony-ai", "pii", "gdpr", "dsgvo", "redaction", "anonymization", "llm"],
+  "keywords": [
+    "symfony-ai",
+    "pii",
+    "gdpr",
+    "dsgvo",
+    "redaction",
+    "anonymization",
+    "llm"
+  ],
   "require": {
     "php": ">=8.4",
     "ext-sodium": "*",
@@ -26,17 +34,29 @@
     "symfony/ai-platform": "To use the NER detector via Hugging Face"
   },
   "autoload": {
-    "psr-4": { "Briefklar\\PiiShield\\": "src/" }
+    "psr-4": {
+      "Briefklar\\PiiShield\\": "src/"
+    }
   },
   "autoload-dev": {
-    "psr-4": { "Briefklar\\PiiShield\\Tests\\": "tests/" }
+    "psr-4": {
+      "Briefklar\\PiiShield\\Tests\\": "tests/",
+      "Briefklar\\PiiShield\\Demo\\": "demo/src/"
+    }
   },
   "scripts": {
     "test": "phpunit",
     "cs-check": "php-cs-fixer check --diff",
     "cs-fix": "php-cs-fixer fix",
     "phpstan": "phpstan analyse --no-progress",
-    "qa": ["@cs-check", "@phpstan"]
+    "qa": [
+      "@cs-check",
+      "@phpstan"
+    ],
+    "demo": [
+      "Composer\\Config::disableProcessTimeout",
+      "php -S 127.0.0.1:8088 -t demo/public demo/public/index.php"
+    ]
   },
   "config": {
     "sort-packages": true
