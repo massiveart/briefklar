@@ -47,14 +47,14 @@ final class ModelDetector implements DetectorInterface
 
     /**
      * @param string               $model   model name as the platform knows it, e.g. "llama3.1:8b"
-     * @param array<string, mixed> $options passed to the platform (e.g. temperature)
+     * @param array<string, mixed> $options passed to the platform as is (e.g. ['temperature' => 0] where the model accepts it)
      */
     public function __construct(
         private readonly PlatformInterface $platform,
         string $model,
         private readonly ModelLocation $location = ModelLocation::Local,
         bool $acknowledgeExternalTransfer = false,
-        private readonly array $options = ['temperature' => 0],
+        private readonly array $options = [],
     ) {
         if ('' === trim($model)) {
             throw new \InvalidArgumentException('The model name must not be empty.');
