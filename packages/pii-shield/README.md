@@ -70,6 +70,34 @@ PiiMasker::withDefaultDetectors()->mask('IBAN AT61 1904 3002 3457 3201, Frau Mus
 
 Defaults: IBAN keeps first and last 4 characters, phone keeps the last 2, everything else becomes `[TYPE]`. Override per type: `new PiiMasker($detectors, [EntityType::Iban->value => new TypeLabelMask()])`. Partial masks leak length and some characters by design; never send masked text instead of redacted text to a model provider.
 
+## Detection with a model of your choice
+
+Regex and checksums cover DACH formats. Everything else (names without salutation, foreign ID numbers, health data, any language) needs a model. `ModelDetector` uses any model reachable through Symfony AI Platform and runs next to the regex detectors:
+
+```php
+use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
+use Briefklar\PiiShield\EntityExtractor;
+use Briefklar\PiiShield\PiiShield;
+use Symfony\AI\Platform\Bridge\Ollama\Factory;
+
+// Local or on your own GPU server (Ollama; for vLLM use the Generic bridge with its URL)
+$platform = Factory::createPlatform('http://gpu-server:11434');
+$model = new ModelDetector($platform, 'qwen2.5:14b', ModelLocation::OnPremise, options: ['temperature' => 0, 'think' => false]);
+
+$shield = new PiiShield([...EntityExtractor::defaultDetectors(), $model], $vault);
+```
+
+| Where the model runs | `ModelLocation` | Bridge |
+|---|---|---|
+| this machine | `Local` | `symfony/ai-ollama-platform` |
+| your infrastructure (e.g. GPU server with Ollama or vLLM) | `OnPremise` | Ollama or `symfony/ai-generic-platform` (OpenAI-compatible) |
+| public provider | `External` + `acknowledgeExternalTransfer: true` | Mistral, OpenAI, Anthropic, … |
+
+Detection is the one step that sees the **unredacted** text. An external provider therefore needs an explicit acknowledgement (data processing agreement, possibly a third-country transfer); without it the detector refuses to start. Values the model invents are dropped (every finding is located in the original text), reasoning output (`<think>`) is ignored, and an unusable answer throws `DetectionFailedException` instead of silently continuing. See ADR 0006.
+
+Tested end-to-end with `qwen3.8:27b` on a local Ollama: Czech passport number, credit card, health data, IP address and a Czech phone number were found; amounts, deadlines and legal citations were kept.
+
 ## Symfony AI agents
 
 Register one `PiiShieldProcessor` as input **and** output processor. The provider only sees placeholders; the agent's result comes back with the original values.
@@ -127,14 +155,14 @@ Validators (`AtSvnrValidator`, `IbanValidator`, `DeTaxIdValidator`) can be used 
 
 ## Demo
 
-A local playground for everything above: paste a text, choose what to detect and how to mask it, see the findings highlighted in the original, click a finding for details or to keep it, and restore a model answer.
+A local playground for everything above: paste a text, choose regex, model or both for detection (provider, model, server URL), the vault store (filesystem, SQLite, Redis) and how to mask, see the findings highlighted in the original, click a finding for details or to keep it, and restore a model answer.
 
 ```bash
 make demo            # from the repository root, or: composer demo
 # open http://127.0.0.1:8088
 ```
 
-Runs on PHP's built-in server and talks only to its own local API; no model provider, no web fonts, no CDN. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
+Runs on PHP's built-in server; the page talks only to its own local API, no web fonts, no CDN. Provider keys come from the server environment (`PII_DEMO_OLLAMA_URL`, `PII_DEMO_GENERIC_URL` / `PII_DEMO_GENERIC_KEY`, `MISTRAL_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `PII_DEMO_REDIS_URL`) and never reach the browser. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
 
 ## Development
 

@@ -12,7 +12,22 @@ const TYPES = [
   ['PHONE', 'Telefon'],
   ['BIRTH_DATE', 'Geburtsdatum'],
   ['LICENSE_PLATE', 'Kennzeichen'],
+  ['ID_NUMBER', 'Ausweis-/ID-Nummer'],
+  ['CREDIT_CARD', 'Kreditkarte'],
+  ['IP_ADDRESS', 'IP-Adresse'],
+  ['HEALTH', 'Gesundheitsdaten'],
+  ['OTHER', 'Sonstiges'],
 ];
+const LOCATION_LABEL = {
+  local: 'Läuft auf diesem Rechner.',
+  on_premise: 'Läuft auf eigener Infrastruktur.',
+  external: 'Externer Anbieter: der Text verlässt das Haus.',
+};
+const DETECTION_HINT = {
+  regex: 'Muster und Prüfziffern für AT/DE, offline.',
+  model: 'Das Modell erkennt Daten in jeder Sprache und jedem Format.',
+  both: 'Modell und Muster zusammen. Bei Überschneidung gewinnt der längere Fund.',
+};
 const TYPE_LABEL = Object.fromEntries(TYPES);
 const DEFAULT_STRATEGY = { IBAN: { kind: 'partial', keepStart: 4, keepEnd: 4 }, PHONE: { kind: 'partial', keepStart: 0, keepEnd: 2 } };
 const DETECTOR_LABEL = {
@@ -29,6 +44,7 @@ const DETECTOR_LABEL = {
   salutation_inline: 'Anrede im Text',
   postal_address: 'Adressblock',
   propagation: 'Weiteres Vorkommen eines Fundes',
+  model: 'KI-Modell',
 };
 const STORAGE_KEY = 'pii-shield-demo-settings';
 
@@ -45,6 +61,10 @@ const els = {
   popover: $('popover'), popoverSwatch: $('popoverSwatch'), popoverTitle: $('popoverTitle'), popoverClose: $('popoverClose'),
   popoverValue: $('popoverValue'), popoverReplacement: $('popoverReplacement'), popoverReplacementLabel: $('popoverReplacementLabel'),
   popoverDetector: $('popoverDetector'), popoverAction: $('popoverAction'),
+  modelSettings: $('modelSettings'), provider: $('provider'), modelName: $('modelName'), endpoint: $('endpoint'),
+  endpointField: $('endpointField'), location: $('location'), externalWarning: $('externalWarning'),
+  acknowledgeExternal: $('acknowledgeExternal'), detectionHint: $('detectionHint'), store: $('store'),
+  busy: $('busy'), busyText: $('busyText'),
 };
 
 const state = {
@@ -60,6 +80,13 @@ const state = {
   sampleIndex: 0,
   answerEdited: false,
   request: null,
+  detection: 'regex',
+  provider: 'ollama',
+  models: {},
+  endpoints: {},
+  acknowledgeExternal: false, // deliberately not persisted
+  store: 'filesystem',
+  config: { providers: [], stores: [] },
 };
 
 // ---------- settings persistence (no text, ever) ----------
@@ -68,18 +95,29 @@ function loadSettings() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (!saved) return;
     state.mode = saved.mode === 'irreversible' ? 'irreversible' : 'reversible';
-    state.types = new Set((saved.types || []).filter((t) => TYPE_LABEL[t]));
+    // Types added after the settings were saved start enabled.
+    const known = new Set(saved.knownTypes || TYPES.slice(0, 10).map(([t]) => t));
+    state.types = new Set([
+      ...(saved.types || []).filter((t) => TYPE_LABEL[t]),
+      ...TYPES.map(([t]) => t).filter((t) => !known.has(t)),
+    ]);
     state.strategies = saved.strategies || {};
     state.keepAuthority = saved.keepAuthority !== false;
     state.highlight = saved.highlight !== false;
     state.live = saved.live !== false;
+    state.detection = ['regex', 'model', 'both'].includes(saved.detection) ? saved.detection : 'regex';
+    state.provider = saved.provider || 'ollama';
+    state.models = saved.models || {};
+    state.endpoints = saved.endpoints || {};
+    state.store = saved.store || 'filesystem';
   } catch { /* storage unavailable: defaults */ }
 }
 function saveSettings() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      mode: state.mode, types: [...state.types], strategies: state.strategies,
+      mode: state.mode, types: [...state.types], knownTypes: TYPES.map(([t]) => t), strategies: state.strategies,
       keepAuthority: state.keepAuthority, highlight: state.highlight, live: state.live,
+      detection: state.detection, provider: state.provider, models: state.models, endpoints: state.endpoints, store: state.store,
     }));
   } catch { /* ignore */ }
 }
@@ -193,6 +231,33 @@ function unallow(value) {
 
 // ---------- analysis ----------
 const analyzeDebounced = debounce(() => analyze(), 300);
+const analyzeModelDebounced = debounce(() => analyze(), 1200); // models are slower; ask less often
+const usesModel = () => state.detection !== 'regex';
+const currentProvider = () => state.config.providers.find((p) => p.id === state.provider);
+
+function locationOfEndpoint(endpoint, fallback) {
+  try {
+    const host = new URL(endpoint).hostname;
+    return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(host) ? 'local' : 'on_premise';
+  } catch { return fallback; }
+}
+function currentLocation() {
+  const provider = currentProvider();
+  if (!provider) return null;
+  if (provider.id === 'ollama' || provider.id === 'generic') {
+    return locationOfEndpoint(state.endpoints[provider.id] || provider.endpoint || '', provider.location);
+  }
+  return 'external';
+}
+function modelSettings() {
+  const provider = currentProvider();
+  return {
+    provider: state.provider,
+    model: state.models[state.provider] || provider?.model || '',
+    endpoint: state.endpoints[state.provider] || '',
+    acknowledgeExternal: state.acknowledgeExternal,
+  };
+}
 
 async function analyze() {
   const text = els.input.value;
@@ -203,8 +268,13 @@ async function analyze() {
     render();
     return;
   }
+  if (usesModel() && currentLocation() === 'external' && !state.acknowledgeExternal) {
+    showError('Ein externer Anbieter bekäme den ungeschwärzten Text. Bestätige den Hinweis bei „Erkennung“ oder wähle ein lokales Modell.');
+    return;
+  }
   const controller = new AbortController();
   state.request = controller;
+  setBusy(usesModel());
   const strategies = {};
   for (const type of state.types) strategies[type] = strategyFor(type);
 
@@ -216,6 +286,9 @@ async function analyze() {
       strategies,
       keepAuthorityContacts: state.keepAuthority,
       allowlist: state.allowlist,
+      detection: state.detection,
+      model: usesModel() ? modelSettings() : null,
+      store: state.store,
     }, controller.signal);
     if (controller.signal.aborted) return;
     state.analysis = { ...analysis, text };
@@ -223,7 +296,14 @@ async function analyze() {
     render(true);
   } catch (e) {
     if (e.name !== 'AbortError') showError(`Prüfung fehlgeschlagen: ${e.message}`);
+  } finally {
+    if (state.request === controller) setBusy(false);
   }
+}
+
+function setBusy(busy) {
+  els.busy.hidden = !busy;
+  if (busy) els.busyText.textContent = `${modelSettings().model || 'Modell'} prüft …`;
 }
 
 function render(fresh = false) {
@@ -350,7 +430,7 @@ async function restore() {
     return;
   }
   try {
-    const response = await post('/api/restore', { text: els.answer.value, vaultId: a.vaultId });
+    const response = await post('/api/restore', { text: els.answer.value, vaultId: a.vaultId, store: state.store });
     const typeOf = (placeholder) => (placeholder.match(/^⟦([A-Z_]+)_\d+⟧$/) || [])[1];
     els.restored.classList.toggle('no-highlight', !state.highlight);
     els.restored.innerHTML = response.segments.map((s) => {
@@ -419,7 +499,8 @@ function openPopover(mark, finding, allowedValue = null) {
     els.popoverValue.className = 'value';
     els.popoverReplacementLabel.textContent = state.mode === 'reversible' ? 'Wird zu' : 'Maskiert als';
     els.popoverReplacement.textContent = finding.replacement;
-    els.popoverDetector.textContent = `${DETECTOR_LABEL[finding.detector] || finding.detector}, Sicherheit ${Math.round(finding.confidence * 100)} %`;
+    const detector = finding.detector === 'model' ? `KI-Modell ${modelSettings().model}` : (DETECTOR_LABEL[finding.detector] || finding.detector);
+    els.popoverDetector.textContent = `${detector}, Sicherheit ${Math.round(finding.confidence * 100)} %`;
     els.popoverAction.textContent = 'Nicht schwärzen';
     els.popoverAction.onclick = () => { closePopover(); allow(finding.value); };
   } else {
@@ -451,6 +532,43 @@ function closePopover() {
 function syncScroll() {
   els.backdrop.scrollTop = els.input.scrollTop;
   els.backdrop.scrollLeft = els.input.scrollLeft;
+}
+
+// ---------- detection and store settings ----------
+async function loadConfig() {
+  try {
+    state.config = await (await fetch('/api/config')).json();
+  } catch { state.config = { providers: [], stores: [] }; }
+  if (!state.config.providers.some((p) => p.id === state.provider)) state.provider = state.config.providers[0]?.id || 'ollama';
+  if (!state.config.stores.some((s) => s.id === state.store && s.available)) state.store = 'filesystem';
+
+  els.provider.innerHTML = state.config.providers
+    .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.label)}${p.ready ? '' : ' (nicht eingerichtet)'}</option>`).join('');
+  els.store.innerHTML = state.config.stores
+    .map((s) => `<option value="${escapeHtml(s.id)}" ${s.available ? '' : 'disabled'}>${escapeHtml(s.label)}${s.available ? '' : ' (nicht verfügbar)'}</option>`).join('');
+  els.store.value = state.store;
+  renderModelSettings();
+}
+
+function renderModelSettings() {
+  document.querySelector(`input[name="detection"][value="${state.detection}"]`).checked = true;
+  els.detectionHint.textContent = DETECTION_HINT[state.detection];
+  els.modelSettings.hidden = !usesModel();
+  const provider = currentProvider();
+  if (!provider) return;
+  els.provider.value = provider.id;
+  els.modelName.value = state.models[provider.id] || provider.model;
+  els.modelName.placeholder = provider.model || 'Modellname, z. B. qwen2.5:14b';
+  const hasEndpoint = provider.id === 'ollama' || provider.id === 'generic';
+  els.endpointField.hidden = !hasEndpoint;
+  els.endpoint.value = state.endpoints[provider.id] || provider.endpoint || '';
+  const location = currentLocation();
+  els.location.dataset.location = location;
+  els.location.textContent = provider.ready || state.endpoints[provider.id]
+    ? LOCATION_LABEL[location]
+    : 'Auf dem Demo-Server ist für diesen Anbieter noch nichts eingerichtet (API-Key bzw. URL).';
+  els.externalWarning.hidden = location !== 'external';
+  els.acknowledgeExternal.checked = state.acknowledgeExternal;
 }
 
 // ---------- samples ----------
@@ -496,12 +614,46 @@ function init() {
     analyze();
   }));
   els.keepAuthority.addEventListener('change', () => { state.keepAuthority = els.keepAuthority.checked; saveSettings(); analyze(); });
+  document.querySelectorAll('input[name="detection"]').forEach((radio) => radio.addEventListener('change', () => {
+    state.detection = radio.value;
+    saveSettings();
+    renderModelSettings();
+    analyze();
+  }));
+  els.provider.addEventListener('change', () => {
+    state.provider = els.provider.value;
+    state.acknowledgeExternal = false;
+    saveSettings();
+    renderModelSettings();
+    analyze();
+  });
+  els.modelName.addEventListener('change', () => {
+    state.models[state.provider] = els.modelName.value.trim();
+    saveSettings();
+    analyze();
+  });
+  els.endpoint.addEventListener('change', () => {
+    state.endpoints[state.provider] = els.endpoint.value.trim();
+    state.acknowledgeExternal = false;
+    saveSettings();
+    renderModelSettings();
+    analyze();
+  });
+  els.acknowledgeExternal.addEventListener('change', () => {
+    state.acknowledgeExternal = els.acknowledgeExternal.checked;
+    analyze();
+  });
+  els.store.addEventListener('change', () => {
+    state.store = els.store.value;
+    saveSettings();
+    analyze();
+  });
   els.highlight.addEventListener('change', () => { state.highlight = els.highlight.checked; saveSettings(); closePopover(); render(); });
   els.live.addEventListener('change', () => { state.live = els.live.checked; els.analyzeNow.hidden = state.live; saveSettings(); if (state.live) analyze(); });
 
   els.input.addEventListener('input', () => {
     renderBackdrop(); // keep layout in sync immediately; highlights return after the next analysis
-    if (state.live) analyzeDebounced();
+    if (state.live) (usesModel() ? analyzeModelDebounced : analyzeDebounced)();
   });
   els.input.addEventListener('scroll', syncScroll);
   els.input.addEventListener('click', openPopoverAtCaret);
@@ -553,6 +705,7 @@ function init() {
   renderAllowlist();
   render();
   loadSamples();
+  loadConfig();
 }
 
 init();
