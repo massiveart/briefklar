@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Briefklar\PiiShield\Detector;
+
+/**
+ * Heuristic: is a contact detail (e-mail, phone) the sender authority's own contact?
+ *
+ * Authority contact data is needed for the action steps ("where do I send my objection?")
+ * and is not the recipient's personal data, so it is kept by default. A line counts as
+ * authority context if it speaks in first person plural ("erreichen Sie uns") or refers
+ * to an authority or to filing something ("einzubringen").
+ *
+ * @internal
+ */
+final class AuthorityContext
+{
+    private const string KEYWORDS = '/\b(?:uns|wir|unser\w*|einzubringen|Einspruch|Beschwerde|Bezirkshauptmannschaft|Finanzamt\w*|Magistrat\w*|Behörde\w*|Gericht\w*|Amt)\b/iu';
+
+    public static function isAuthorityContact(string $text, int $offset): bool
+    {
+        return 1 === preg_match(self::KEYWORDS, RegexMatcher::lineAround($text, $offset));
+    }
+}
