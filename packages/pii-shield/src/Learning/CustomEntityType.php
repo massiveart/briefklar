@@ -15,6 +15,11 @@ use Briefklar\PiiShield\EntityType;
  */
 final readonly class CustomEntityType
 {
+    public const int MAX_DESCRIPTION_LENGTH = 300;
+    public const int MAX_EXAMPLES = 20;
+    public const int MAX_EXAMPLE_LENGTH = 100;
+    public const int MAX_PATTERN_LENGTH = 200;
+
     /**
      * @param string       $name            UPPER_SNAKE_CASE, becomes the placeholder name (⟦NAME_1⟧)
      * @param list<string> $examples        values that are this type
@@ -39,9 +44,18 @@ final readonly class CustomEntityType
         if ([] === $examples) {
             throw new LearningFailedException('At least one example is needed.');
         }
+        // Description and examples reach the detection model: keep them short, single-line data.
+        self::assertSingleLine($description, self::MAX_DESCRIPTION_LENGTH, 'The description');
+        if (\count($examples) > self::MAX_EXAMPLES || \count($counterExamples) > self::MAX_EXAMPLES) {
+            throw new LearningFailedException(\sprintf('At most %d examples and %d counter-examples.', self::MAX_EXAMPLES, self::MAX_EXAMPLES));
+        }
+        foreach ([...$examples, ...$counterExamples] as $example) {
+            self::assertSingleLine($example, self::MAX_EXAMPLE_LENGTH, 'An example');
+        }
         if (null === $pattern) {
             return;
         }
+        self::assertSafePattern($pattern);
         if (false === @preg_match('~(?:'.$pattern.')~u', '')) {
             throw new LearningFailedException(\sprintf('The pattern %s is not a valid regular expression.', $pattern));
         }
@@ -54,6 +68,31 @@ final readonly class CustomEntityType
             if (1 === preg_match('~^(?:'.$pattern.')$~u', $counter)) {
                 throw new LearningFailedException(\sprintf('The pattern %s also matches the counter-example "%s".', $pattern, $counter));
             }
+        }
+    }
+
+    private static function assertSingleLine(string $value, int $maxLength, string $what): void
+    {
+        if (mb_strlen($value) > $maxLength || 1 === preg_match('/[\x00-\x1F\x7F]/u', $value)) {
+            throw new LearningFailedException(\sprintf('%s must be one line of at most %d characters.', $what, $maxLength));
+        }
+    }
+
+    /**
+     * Patterns run on every text: no constructs that can backtrack catastrophically (ReDoS).
+     * PatternLearner never produces any of these; hand-written patterns are checked here.
+     */
+    private static function assertSafePattern(string $pattern): void
+    {
+        $reason = match (true) {
+            mb_strlen($pattern) > self::MAX_PATTERN_LENGTH => \sprintf('longer than %d characters', self::MAX_PATTERN_LENGTH),
+            1 === preg_match('/\\\\[1-9]|\\\\[gk][<{\'\d-]/', $pattern) => 'backreferences are not allowed',
+            1 === preg_match('/\(\?(?!:)/', $pattern) => 'only plain (…) and (?:…) groups are allowed (no lookarounds, flags or named groups)',
+            1 === preg_match('/\((?:[^()\\\\]|\\\\.)*(?<!\\\\)[*+}](?:[^()\\\\]|\\\\.)*\)\s*[*+{?]/', $pattern) => 'a repeated group must not contain a repetition itself (catastrophic backtracking)',
+            default => null,
+        };
+        if (null !== $reason) {
+            throw new LearningFailedException(\sprintf('The pattern %s is not allowed: %s.', $pattern, $reason));
         }
     }
 
