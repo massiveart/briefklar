@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Console of the pii-shield server. MCP over STDIO for Claude Desktop / Claude Code:
+ *   php packages/pii-shield/demo/bin/console mcp:server pii_shield
+ */
+
+use Briefklar\PiiShield\Demo\Kernel;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Dotenv\Dotenv;
+
+require is_file(dirname(__DIR__).'/vendor/autoload.php') ? dirname(__DIR__).'/vendor/autoload.php' : dirname(__DIR__, 2).'/vendor/autoload.php';
+
+if (is_file(dirname(__DIR__).'/.env.local')) {
+    (new Dotenv())->load(dirname(__DIR__).'/.env.local');
+}
+
+$env = $_SERVER['APP_ENV'] ?? 'dev'; // the Docker image sets prod
+(new Application(new Kernel(is_string($env) ? $env : 'dev', 'prod' !== $env)))->run();
