@@ -55,7 +55,11 @@ final class Kernel extends BaseKernel
                     'instructions' => 'Before giving text with personal data to a model, call redact_text and work with the placeholders. Call restore_text with the vaultId to put the original values back into the final answer.',
                     'registry' => ['tools' => ['Briefklar\\PiiShield\\Demo\\Mcp\\']],
                     'transports' => ['stdio' => true, 'http' => true],
-                    'http' => ['path' => '/mcp', 'allowed_hosts' => ['127.0.0.1', 'localhost', ...DemoServices::allowedHosts()]],
+                    'http' => [
+                        'path' => '/mcp',
+                        'allowed_hosts' => ['127.0.0.1', 'localhost', ...DemoServices::allowedHosts()],
+                        'allowed_origins' => EventSubscriber\RequestGuard::MCP_BROWSER_ORIGINS,
+                    ],
                 ],
             ],
         ]);

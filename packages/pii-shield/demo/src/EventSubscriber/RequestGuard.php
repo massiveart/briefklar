@@ -18,8 +18,9 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * - Service mode (PII_SERVICE_ONLY=1, Docker): only the service routes (/v1, /mcp) exist.
  * - DNS rebinding: APIs answer known host names only (PII_SERVICE_ALLOWED_HOSTS adds more).
- * - CSRF: /v1 and /api take JSON only and no foreign Origin.
- * - /mcp needs the bearer token like /v1 (localhost only without a token); the MCP bundle checks origins.
+ * - CSRF: /v1, /mcp and /api take JSON only and no foreign Origin (/mcp also accepts the MCP Inspector's origin).
+ * - /mcp needs the bearer token like /v1 (localhost only without a token).
+ * - No wildcard CORS: no other website may read API responses.
  * - The demo API serves this machine only (real peer address, not just the Host header).
  */
 final class RequestGuard implements EventSubscriberInterface
@@ -28,6 +29,9 @@ final class RequestGuard implements EventSubscriberInterface
     private const array SERVICE_ROUTES = ['v1', 'v1_openapi'];
     private const array DEMO_API_ROUTES = ['demo_api', 'demo_config', 'demo_samples'];
     private const string MCP_ROUTE_PREFIX = '_mcp_endpoint_';
+
+    /** Browser-based MCP tools allowed besides same-origin requests (MCP Inspector's default). Kept in sync with the MCP bundle config. */
+    public const array MCP_BROWSER_ORIGINS = ['http://localhost:6274', 'http://127.0.0.1:6274'];
 
     public function __construct(
         private readonly DemoServices $services,
@@ -70,16 +74,17 @@ final class RequestGuard implements EventSubscriberInterface
 
             return;
         }
-        if ($isMcp) {
-            $this->guardMcp($request, $deny);
-
-            return;
-        }
         $origin = $request->headers->get('Origin');
-        $foreignOrigin = null !== $origin && $origin !== $request->getSchemeAndHttpHost();
+        $foreignOrigin = null !== $origin && $origin !== $request->getSchemeAndHttpHost()
+            && !($isMcp && \in_array($origin, self::MCP_BROWSER_ORIGINS, true));
         $notJson = 'POST' === $request->getMethod() && !str_starts_with((string) $request->headers->get('Content-Type'), 'application/json');
         if ($foreignOrigin || $notJson) {
             $deny(403, $isService ? 'Send JSON (Content-Type: application/json) from a non-browser client or this page.' : 'Only JSON requests from this page are accepted.');
+
+            return;
+        }
+        if ($isMcp) {
+            $this->guardMcp($request, $deny);
 
             return;
         }
@@ -96,6 +101,9 @@ final class RequestGuard implements EventSubscriberInterface
         $headers->set('Referrer-Policy', 'no-referrer');
         if ($event->getResponse() instanceof JsonResponse) {
             $headers->set('Cache-Control', 'no-store');
+        }
+        if ('*' === $headers->get('Access-Control-Allow-Origin')) {
+            $headers->remove('Access-Control-Allow-Origin'); // never let any website read API responses
         }
     }
 
