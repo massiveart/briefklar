@@ -262,7 +262,7 @@ function modelSettings() {
   const provider = currentProvider();
   return {
     provider: state.provider,
-    model: state.models[state.provider] || provider?.model || '',
+    model: els.modelName.value.trim() || state.models[state.provider] || provider?.model || '',
     endpoint: state.endpoints[state.provider] || '',
     acknowledgeExternal: state.acknowledgeExternal,
   };
@@ -603,6 +603,8 @@ async function loadModels() {
       // Nothing chosen yet and the default is not installed: take an installed model.
       current = models[0];
       els.modelName.value = current;
+      state.models[provider] = current; // what the field shows is what gets sent
+      saveSettings();
     }
     if (!models.length) {
       els.modelHint.textContent = provider === 'ollama' || provider === 'generic'
