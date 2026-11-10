@@ -70,6 +70,7 @@ const els = {
   learnDialog: $('learnDialog'), learnForm: $('learnForm'), learnName: $('learnName'), learnDescription: $('learnDescription'),
   learnExamples: $('learnExamples'), learnCounter: $('learnCounter'), learnPattern: $('learnPattern'),
   learnPreview: $('learnPreview'), learnCancel: $('learnCancel'), learnSave: $('learnSave'),
+  timing: $('timing'),
 };
 
 /** Learned types are EntityType OTHER with a label; they get one shared colour and their own name. */
@@ -96,6 +97,7 @@ const state = {
   acknowledgeExternal: false, // deliberately not persisted
   store: 'filesystem',
   config: { providers: [], stores: [] },
+  runs: [], // last response times, to compare models
 };
 
 // ---------- settings persistence (no text, ever) ----------
@@ -302,12 +304,30 @@ async function analyze() {
     if (controller.signal.aborted) return;
     state.analysis = { ...analysis, text };
     showError('');
+    recordTiming(analysis.timings);
     render(true);
   } catch (e) {
     if (e.name !== 'AbortError') showError(`Prüfung fehlgeschlagen: ${e.message}`);
   } finally {
     if (state.request === controller) setBusy(false);
   }
+}
+
+const formatMs = (ms) => (ms < 1000
+  ? `${Math.round(ms).toLocaleString('de-AT')} ms`
+  : `${(ms / 1000).toLocaleString('de-AT', { maximumFractionDigits: 1 })} s`);
+
+function recordTiming(timings) {
+  if (!timings) return;
+  const label = timings.modelMs === null ? 'Muster' : modelSettings().model;
+  state.runs = [{ label, ms: timings.totalMs }, ...state.runs].slice(0, 5);
+  const current = timings.modelMs === null
+    ? `${formatMs(timings.totalMs)} (Muster)`
+    : `${formatMs(timings.totalMs)} gesamt, davon ${formatMs(timings.modelMs)} ${label}`;
+  const history = state.runs.length > 1
+    ? ` <span class="history">· zuletzt: ${state.runs.slice(1).map((r) => `${escapeHtml(r.label)} ${formatMs(r.ms)}`).join(', ')}</span>`
+    : '';
+  els.timing.innerHTML = `${escapeHtml(current)}${history}`;
 }
 
 function setBusy(busy) {
