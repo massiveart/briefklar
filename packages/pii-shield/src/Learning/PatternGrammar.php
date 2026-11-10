@@ -19,6 +19,7 @@ namespace Briefklar\PiiShield\Learning;
  */
 final class PatternGrammar
 {
+    private const int MAX_BOUND = 100;
     private const string ESCAPABLE = '.^$|()[]{}*+?\\-/~#';
     private const string CLASS_SHORTHANDS = 'dDwWsS';
 
@@ -32,6 +33,7 @@ final class PatternGrammar
         $depth = 0;
         $lastWasAtom = false;   // a quantifier may follow
         $afterGroup = false;    // a quantifier here would repeat a group
+        $unbounded = 0;         // *, + and {n,} in the whole pattern
 
         for ($i = 0; $i < $count; ++$i) {
             $c = $chars[$i];
@@ -92,12 +94,18 @@ final class PatternGrammar
                     if (!$lastWasAtom) {
                         return 'a quantifier must follow a single character or class';
                     }
+                    $isUnbounded = '*' === $c || '+' === $c;
                     if ('{' === $c) {
                         $end = self::boundedQuantifierEnd($chars, $i);
                         if (null === $end) {
-                            return 'use {n}, {n,} or {n,m} with numbers';
+                            return \sprintf('use {n}, {n,} or {n,m} with numbers up to %d', self::MAX_BOUND);
                         }
+                        $isUnbounded = ',' === $chars[$end - 1];
                         $i = $end;
+                    }
+                    // Two unbounded repetitions can backtrack polynomially (\d+\d+ on a long digit run).
+                    if ($isUnbounded && ++$unbounded > 1) {
+                        return 'at most one unbounded repetition (*, + or {n,}) per pattern; use {n,m}';
                     }
                     if (\in_array($chars[$i + 1] ?? null, ['?', '+'], true)) {
                         return 'lazy and possessive quantifiers are not allowed';
@@ -165,7 +173,10 @@ final class PatternGrammar
         for (; $i < \count($chars) && '}' !== $chars[$i]; ++$i) {
             $body .= $chars[$i];
         }
-        if (($chars[$i] ?? null) !== '}' || 1 !== preg_match('/^\d{1,3}(?:,\d{0,3})?$/', $body)) {
+        if (($chars[$i] ?? null) !== '}' || 1 !== preg_match('/^(\d{1,3})(?:,(\d{0,3}))?$/', $body, $m)) {
+            return null;
+        }
+        if ((int) $m[1] > self::MAX_BOUND || (isset($m[2]) && '' !== $m[2] && (int) $m[2] > self::MAX_BOUND)) {
             return null;
         }
 

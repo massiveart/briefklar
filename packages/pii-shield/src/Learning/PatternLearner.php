@@ -99,7 +99,7 @@ final class PatternLearner
 
             $pattern .= match (true) {
                 'P' === $token['kind'] => self::escape($token['text']),
-                'S' === $token['kind'] => max($lengths) > 1 ? '\s+' : '\s',
+                'S' === $token['kind'] => '\s'.self::quantifier(min($lengths), max($lengths)), // bounded on purpose
                 \count($examples) > 1 && 1 === \count(array_unique($texts)) => self::escape($token['text']),
                 default => self::classFor($token['kind'], $texts).self::quantifier(min($lengths), max($lengths)),
             };

@@ -54,6 +54,13 @@ if ((str_starts_with($path, '/api/') || str_starts_with($path, '/v1/')) && !in_a
     return $json(['error' => 'Unknown host.'], 421);
 }
 
+if ('/v1/openapi.yaml' === $path) {
+    header('Content-Type: application/yaml; charset=utf-8');
+    readfile(dirname(__DIR__, 2).'/docs/openapi.yaml');
+
+    return true;
+}
+
 // Versioned HTTP API for apps (see docs/openapi.yaml). Token auth; JSON only, so browsers cannot send it cross-site.
 if (str_starts_with($path, '/v1/')) {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

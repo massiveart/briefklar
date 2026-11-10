@@ -34,7 +34,8 @@
     "symfony/ai-platform": "1.0.0-BETA1",
     "symfony/cache": "^8.1",
     "symfony/clock": "^8.1",
-    "symfony/dotenv": "^8.1"
+    "symfony/dotenv": "^8.1",
+    "symfony/yaml": "^8.1"
   },
   "suggest": {
     "symfony/ai-agent": "To use PiiShieldProcessor in Symfony AI agents",
