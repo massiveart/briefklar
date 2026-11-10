@@ -25,7 +25,10 @@ $shield->restore('⟦PERSON_1⟧, Ihre SVNR ist ⟦SVNR_1⟧.', $redaction)->tex
 // "Johann Beispielmann, Ihre SVNR ist 4568 150392."
 ```
 
-→ [docs/library.md](docs/library.md): vaults, masking, model-based detection, Symfony AI agents, learning, detectors, rules.
+In a Symfony app, register `Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle` and configure `config/packages/pii_shield.yaml`:
+your Symfony AI agents get redaction and restore automatically.
+
+→ [docs/library.md](docs/library.md): bundle configuration, vaults, masking, model-based detection, Symfony AI agents, learning, detectors, rules.
 
 **As a standalone service** (HTTP, any language):
 
