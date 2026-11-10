@@ -70,6 +70,27 @@ PiiMasker::withDefaultDetectors()->mask('IBAN AT61 1904 3002 3457 3201, Frau Mus
 
 Defaults: IBAN keeps first and last 4 characters, phone keeps the last 2, everything else becomes `[TYPE]`. Override per type: `new PiiMasker($detectors, [EntityType::Iban->value => new TypeLabelMask()])`. Partial masks leak length and some characters by design; never send masked text instead of redacted text to a model provider.
 
+## Symfony AI agents
+
+Register one `PiiShieldProcessor` as input **and** output processor. The provider only sees placeholders; the agent's result comes back with the original values.
+
+```php
+use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
+use Briefklar\PiiShield\PiiShield;
+use Symfony\AI\Agent\Agent;
+
+$pii = new PiiShieldProcessor(PiiShield::withDefaultDetectors());
+$agent = new Agent($platform, 'claude-sonnet-5-5', inputProcessors: [$pii], outputProcessors: [$pii]);
+
+$result = $agent->call($messages)->getResult(); // placeholders restored
+$result->getMetadata()->get(PiiShieldProcessor::METADATA_KEY)['unknown_placeholders']; // invented by the model
+```
+
+- **Input:** all text in system, user, assistant and tool messages is redacted in one pass, so the same value has the same placeholder across messages. Images, audio, video, documents and URLs are rejected with `UnsupportedContentException`: extract text locally (OCR) and send text only. System prompt templates are passed through; don't put personal data into template variables.
+- **Output:** `TextResult` and `ObjectResult` are restored, structured output DTOs deeply (readonly properties included, dates and enums untouched).
+- **Not yet:** streamed results are passed through unrestored. Tools receive placeholders as arguments.
+- Tested against `symfony/ai-agent` / `symfony/ai-platform` **1.0.0-BETA1** (pinned, see ADR 0004), including a test that inspects the exact payload sent to a mocked platform.
+
 ## Detectors
 
 | Entity | Detector | How |
