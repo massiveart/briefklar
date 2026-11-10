@@ -43,13 +43,14 @@ final class PiiProtectionTest extends WebTestCase
         $client = self::createClient();
         $this->upload($client, self::document($letter, $kind), $easyLanguage);
 
-        self::assertResponseIsSuccessful();
+        // The request first: if anything leaked, that is the failure to see, not a follow-up error page.
         $requests = self::getContainer()->get(ScriptedPlatform::class)->requests();
         self::assertCount(1, $requests);
         foreach (self::piiValues($letter) as $value) {
             self::assertStringNotContainsString($value, $requests[0], \sprintf('"%s" was sent to the provider.', $value));
         }
         self::assertStringContainsString('⟦', $requests[0]);
+        self::assertResponseIsSuccessful();
     }
 
     /**
