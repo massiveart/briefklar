@@ -54,6 +54,7 @@ const els = {
   typeList: $('typeList'), keepAuthority: $('keepAuthority'), highlight: $('highlight'), live: $('live'),
   allowlist: $('allowlist'), allowlistEmpty: $('allowlistEmpty'),
   input: $('input'), backdrop: $('backdrop'), legend: $('legend'),
+  localNote: $('localNote'), localNoteText: $('localNoteText'),
   loadSample: $('loadSample'), clearText: $('clearText'), analyzeNow: $('analyzeNow'),
   result: $('result'), resultTitle: $('resultTitle'), resultIntro: $('resultIntro'), copyResult: $('copyResult'),
   vault: $('vault'), vaultId: $('vaultId'), vaultCipher: $('vaultCipher'), vaultTtl: $('vaultTtl'), mapping: $('mapping'),
@@ -631,7 +632,24 @@ async function loadConfig() {
   renderModelSettings();
 }
 
+/** Header note: where the unredacted text goes for detection. */
+function renderLocalNote() {
+  const provider = currentProvider();
+  const location = usesModel() && provider ? currentLocation() : 'local';
+  els.localNote.dataset.location = location;
+  if (location === 'local') {
+    els.localNoteText.textContent = 'Läuft lokal. Kein Text verlässt diesen Rechner.';
+    return;
+  }
+  let target = provider.label;
+  try { target = new URL(state.endpoints[provider.id] || provider.endpoint).hostname; } catch { /* hosted provider */ }
+  els.localNoteText.textContent = location === 'on_premise'
+    ? `Zur Erkennung geht der Text an ${target} (eigene Infrastruktur).`
+    : `Zur Erkennung geht der ungeschwärzte Text an ${target} (externer Anbieter).`;
+}
+
 function renderModelSettings() {
+  renderLocalNote();
   document.querySelector(`input[name="detection"][value="${state.detection}"]`).checked = true;
   els.detectionHint.textContent = DETECTION_HINT[state.detection];
   els.modelSettings.hidden = !usesModel();

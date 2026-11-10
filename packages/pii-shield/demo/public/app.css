@@ -104,7 +104,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .brand-mark { width: 30px; height: 30px; fill: var(--bar); }
 .brand-mark-ink { fill: var(--t-person); }
 .local-note { margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: var(--step--1); }
-.local-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.local-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+.local-note[data-location="on_premise"] .local-dot { background: var(--stamp); }
+.local-note[data-location="external"] { color: var(--danger); }
+.local-note[data-location="external"] .local-dot { background: var(--danger); }
 
 
 /* Controls */
