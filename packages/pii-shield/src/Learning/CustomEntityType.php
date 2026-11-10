@@ -58,7 +58,7 @@ final readonly class CustomEntityType
         if (false === @preg_match('~(?:'.$pattern.')~u', '')) {
             throw new LearningFailedException(\sprintf('The pattern %s is not a valid regular expression.', $pattern));
         }
-        self::assertSafePattern($pattern);
+        self::assertSafePattern($pattern, $examples);
         foreach ($examples as $example) {
             if (1 !== preg_match('~^(?:'.$pattern.')$~u', $example)) {
                 throw new LearningFailedException(\sprintf('The pattern %s does not match the example "%s".', $pattern, $example));
@@ -83,17 +83,17 @@ final readonly class CustomEntityType
      * Patterns run on every text: no constructs that can backtrack catastrophically (ReDoS).
      * PatternLearner never produces any of these; hand-written patterns are checked here.
      */
-    private static function assertSafePattern(string $pattern): void
+    /**
+     * @param list<string> $examples
+     */
+    private static function assertSafePattern(string $pattern, array $examples): void
     {
-        $reason = match (true) {
-            mb_strlen($pattern) > self::MAX_PATTERN_LENGTH => \sprintf('longer than %d characters', self::MAX_PATTERN_LENGTH),
-            1 === preg_match('/\\\\[1-9]|\\\\[gk][<{\'\d-]/', $pattern) => 'backreferences are not allowed',
-            1 === preg_match('/\(\?(?!:)/', $pattern) => 'only plain (…) and (?:…) groups are allowed (no lookarounds, flags or named groups)',
-            // Strict grammar instead of guessing: a group may not be repeated at all.
-            1 === preg_match('/(?<!\\\\)\)\s*[*+?{]/', $pattern) => 'groups must not be repeated; repeat single characters or classes instead',
-            !self::runsInBoundedTime($pattern) => 'it takes too long on adversarial input',
-            default => null,
-        };
+        $reason = mb_strlen($pattern) > self::MAX_PATTERN_LENGTH
+            ? \sprintf('longer than %d characters', self::MAX_PATTERN_LENGTH)
+            : PatternGrammar::violation($pattern);
+        if (null === $reason && !self::runsInBoundedTime($pattern, $examples)) {
+            $reason = 'it takes too long on adversarial input';
+        }
         if (null !== $reason) {
             throw new LearningFailedException(\sprintf('The pattern %s is not allowed: %s.', $pattern, $reason));
         }
@@ -102,13 +102,22 @@ final readonly class CustomEntityType
     /**
      * Second line of defence: the pattern must finish on long, near-miss inputs within a small backtrack budget.
      */
-    private static function runsInBoundedTime(string $pattern): bool
+    /**
+     * @param list<string> $examples
+     */
+    private static function runsInBoundedTime(string $pattern, array $examples): bool
     {
+        // Fixed near-misses plus near-misses built from the type's own examples.
+        $inputs = [str_repeat('a', 5000).'!', str_repeat('A', 5000).'!', str_repeat('1', 5000).'!', str_repeat('A1-', 2000).'!', str_repeat(' ', 5000).'x'];
+        foreach ($examples as $example) {
+            $inputs[] = str_repeat($example, intdiv(5000, max(1, mb_strlen($example)))).'!';
+            $inputs[] = str_repeat(mb_substr($example, 0, -1), intdiv(5000, max(1, mb_strlen($example)))).'!';
+        }
         $regex = '~(?<![\p{L}\p{N}])(?:'.$pattern.')(?![\p{L}\p{N}])~u';
         $previous = \ini_get('pcre.backtrack_limit');
         ini_set('pcre.backtrack_limit', '100000');
         try {
-            foreach ([str_repeat('a', 5000).'!', str_repeat('A', 5000).'!', str_repeat('1', 5000).'!', str_repeat('A1-', 2000).'!', str_repeat(' ', 5000).'x'] as $input) {
+            foreach ($inputs as $input) {
                 if (false === preg_match($regex, $input)) {
                     return false;
                 }

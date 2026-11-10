@@ -104,6 +104,10 @@ final class CustomEntityTest extends TestCase
         yield 'too long' => [str_repeat('A', 201), str_repeat('A', 201)];
         yield 'any repeated group' => ['(?:AB)+-\\d', 'ABAB-1'];
         yield 'alternation under repetition' => ['(?:\\d|\\d\\d)*X', '12X'];
+        yield 'escaped backslash before a repeated group' => ['(\\d\\\\)+X', '1\\2\\X'];
+        yield 'quoting' => ['\\Q(a)\\E-\\d', '(a)-1'];
+        yield 'anchor' => ['^VN-\\d+', 'VN-1'];
+        yield 'lazy quantifier' => ['\\d+?X', '1X'];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('unsafePatternProvider')]
