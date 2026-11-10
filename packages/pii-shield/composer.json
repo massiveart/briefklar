@@ -34,8 +34,10 @@
     "symfony/ai-ollama-platform": "1.0.0-BETA1",
     "symfony/ai-open-ai-platform": "1.0.0-BETA1",
     "symfony/ai-platform": "1.0.0-BETA1",
+    "symfony/browser-kit": "^8.1",
     "symfony/cache": "^8.1",
     "symfony/clock": "^8.1",
+    "symfony/css-selector": "^8.1",
     "symfony/dotenv": "^8.1",
     "symfony/framework-bundle": "^8.1",
     "symfony/yaml": "^8.1"
@@ -71,7 +73,7 @@
     ],
     "demo": [
       "Composer\\Config::disableProcessTimeout",
-      "PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php"
+      "APP_ENV=dev PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php"
     ]
   },
   "config": {

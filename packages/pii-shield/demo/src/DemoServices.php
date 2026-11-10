@@ -208,6 +208,26 @@ final class DemoServices
         return new ServiceApi($vault, $this->learner(), $model, self::env('PII_SERVICE_TOKEN'), DemoApi::VAULT_TTL, self::serviceOnly());
     }
 
+    public function demoApi(): DemoApi
+    {
+        return new DemoApi($this->vaults(), $this->modelDetectors(), $this->learner());
+    }
+
+    public function serviceToken(): ?string
+    {
+        return self::env('PII_SERVICE_TOKEN');
+    }
+
+    /**
+     * Extra host names the APIs answer to (PII_SERVICE_ALLOWED_HOSTS, comma-separated).
+     *
+     * @return list<string>
+     */
+    public static function allowedHosts(): array
+    {
+        return array_values(array_filter(array_map(trim(...), explode(',', self::env('PII_SERVICE_ALLOWED_HOSTS') ?? '')), static fn (string $h): bool => '' !== $h));
+    }
+
     /**
      * Learned entity types: JSON file in demo/var by default, Redis with PII_SERVICE_LEARNED_STORE=redis.
      */

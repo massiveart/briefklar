@@ -24,6 +24,7 @@
     "symfony/ai-platform": "1.0.0-BETA1",
     "symfony/cache": "^8.1",
     "symfony/dotenv": "^8.1",
+    "symfony/framework-bundle": "^8.1",
     "symfony/http-client": "^8.1"
   },
   "autoload": {

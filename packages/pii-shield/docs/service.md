@@ -25,6 +25,14 @@ curl -s http://localhost:8080/v1/redact \
 Typical flow: `redact` → send `text` to your model → `restore` the model's answer with the `vaultId`
 → optionally `DELETE /v1/vault/{vaultId}`.
 
+## How it is built
+
+A small Symfony application in `demo/` (`MicroKernelTrait`, FrameworkBundle): `Controller\ServiceController` (`/v1`),
+`Controller\DemoController` (page and `/api`), `EventSubscriber\RequestGuard` (host allowlist, JSON-only, origin check,
+service mode, security headers). The logic is framework-free in `ServiceApi` and `DemoApi`, unit-tested on their own.
+Providers, models and stores are resolved at runtime from the environment, so changes to `.env.local` apply without
+clearing the cache. The Docker image installs only the server's runtime dependencies (`demo/composer.json`, ~176 MB).
+
 ## Configuration
 
 Environment variables (or `demo/.env.local`, template `demo/.env.dist`):
