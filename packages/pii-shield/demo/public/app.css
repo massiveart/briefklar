@@ -34,8 +34,6 @@
   --step-0: 0.9375rem;
   --step-1: 1.0625rem;
   --step-2: 1.375rem;
-  /* All panes share one height that fits the window, so nothing important sits below the fold. */
-  --pane-h: clamp(16rem, calc(100vh - 17rem), 40rem);
   --radius-sheet: 3px;
   --radius-control: 8px;
   color-scheme: light;
@@ -108,21 +106,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .local-note { margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: var(--step--1); }
 .local-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 
-/* Layout */
-.layout {
-  display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
-  gap: clamp(1rem, 2vw, 1.75rem);
-  padding: 0 clamp(1rem, 3vw, 2rem) 3rem;
-  align-items: start;
-}
-@media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; }
-}
 
 /* Controls */
-.controls { display: grid; gap: 1.5rem; position: sticky; top: 1rem; }
-@media (max-width: 860px) { .controls { position: static; } }
 .control-group h2 { font-size: var(--step-0); margin-bottom: 0.6rem; }
 .group-head { display: flex; justify-content: space-between; align-items: baseline; }
 .link-buttons { display: flex; gap: 0.75rem; }
@@ -175,9 +160,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .allowlist button { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 0.3rem; font-size: 1rem; line-height: 1; }
 
 /* Desk and sheets */
-.desk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.75rem); align-items: start; }
-@media (max-width: 999px) { .desk { grid-template-columns: 1fr; } }
-.sheet-wide, .desk > .notice { grid-column: 1 / -1; }
 
 
 .sheet {
@@ -224,7 +206,7 @@ button.primary:hover { filter: brightness(1.08); }
 }
 
 /* Editor: transparent textarea over a backdrop that carries the highlights */
-.editor { position: relative; height: var(--pane-h); border-top: 1px solid var(--rule); }
+
 .editor textarea, .backdrop {
   position: absolute; inset: 0;
   margin: 0; padding: 1rem 0.25rem; border: 0;
@@ -253,7 +235,6 @@ mark.allowed { color: transparent; background: none; border-radius: 2px; outline
 
 /* Result */
 .result { min-height: 6rem; padding: 1rem 0.25rem; border-top: 1px solid var(--rule); overflow: auto; }
-#result { height: var(--pane-h); }
 .result:empty::before { content: attr(data-empty); color: var(--muted); font-family: var(--font-ui); font-size: var(--step--1); }
 .bar {
   background: var(--bar);
@@ -294,8 +275,6 @@ mark.allowed { color: transparent; background: none; border-radius: 2px; outline
 .mapping td:last-child { white-space: pre-wrap; }
 
 /* Restore */
-.restore-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
-@media (max-width: 860px) { .restore-grid { grid-template-columns: 1fr; } }
 .restore-grid textarea {
   min-height: 12rem; width: 100%;
   border: 0; border-top: 1px solid var(--rule);
@@ -340,39 +319,6 @@ mark.allowed { color: transparent; background: none; border-radius: 2px; outline
 [data-type="BIRTH_DATE"] { --ink-color: var(--t-birth); }
 [data-type="LICENSE_PLATE"] { --ink-color: var(--t-plate); }
 
-/* ---------- Layout: original, result and restore always side by side ---------- */
-.settings-toggle { display: none; }
-.settings-body { display: grid; gap: 1.5rem; }
-
-@media (min-width: 1000px) {
-  .desk { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .sheet-wide { grid-column: auto; }
-  .restore-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-  /* reserve room for the notice below, so the sheet height does not jump */
-  .restore-grid textarea, .restore-grid .result { height: calc((var(--pane-h) - 0.75rem - 3.25rem) / 2); min-height: 0; }
-  .sheet { display: flex; flex-direction: column; }
-}
-
-/* Below 1500px the settings fold into a bar above the three panes. */
-@media (max-width: 1499px) {
-  .layout { grid-template-columns: 1fr; }
-  .controls { position: static; }
-  .settings {
-    background: color-mix(in srgb, var(--paper) 60%, transparent);
-    border: 1px solid var(--rule);
-    border-radius: var(--radius-control);
-    padding: 0.6rem 1rem;
-  }
-  .settings-toggle { display: list-item; cursor: pointer; font-weight: 600; }
-  .settings[open] .settings-toggle { margin-bottom: 1rem; }
-  .settings-body { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: start; }
-}
-
-/* Account for the folded settings bar so all three panes end above the fold. */
-@media (max-width: 1499px) {
-  :root { --pane-h: clamp(14rem, calc(100vh - 21rem), 40rem); }
-}
-
 /* ---------- Detection settings ---------- */
 .segmented-row { grid-template-columns: repeat(3, 1fr); }
 .segmented-row span { text-align: center; padding: 0.45rem 0.4rem; font-size: var(--step--1); }
@@ -407,3 +353,43 @@ mark.allowed { color: transparent; background: none; border-radius: 2px; outline
 [data-type="IP_ADDRESS"] { --ink-color: #b9e3d0; }
 [data-type="HEALTH"] { --ink-color: #f2a7e0; }
 [data-type="OTHER"] { --ink-color: #c9d1d9; }
+
+/* ---------- Fluid layout: no fixed widths, no breakpoints ---------- */
+/* The page fills the window; panes take the remaining height and scroll inside. */
+/* Height of masthead plus bottom padding; the only fixed measure, and a vertical one. */
+:root { --chrome-h: 6.5rem; }
+body { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+
+/* Sidebar pattern: settings beside the panes while the panes keep at least 60 %, otherwise they wrap above. */
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(1rem, 2vw, 1.75rem);
+  padding: 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem);
+  min-height: 0;
+}
+/* Settings scroll on their own, so they never stretch the panes. */
+.controls { flex: 1 1 16rem; min-width: 0; max-height: calc(100dvh - var(--chrome-h)); overflow: auto; overscroll-behavior: contain; }
+.desk {
+  flex: 999 1 0;
+  min-width: min(100%, 60%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  grid-auto-rows: minmax(26rem, 1fr);
+  /* window height minus the masthead: the panes end at the bottom edge */
+  min-height: calc(100dvh - var(--chrome-h));
+  gap: clamp(1rem, 2vw, 1.75rem);
+}
+.desk > .notice { grid-column: 1 / -1; align-self: start; }
+
+.settings-toggle { cursor: pointer; font-weight: 600; margin-bottom: 1rem; }
+.settings:not([open]) .settings-toggle { margin-bottom: 0; }
+.settings-body { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); align-items: start; }
+
+/* Sheets: header, then a pane that takes all remaining height. */
+.sheet { display: flex; flex-direction: column; min-height: 0; }
+.editor { position: relative; flex: 1 1 0; min-height: 10rem; border-top: 1px solid var(--rule); }
+#result { flex: 1 1 0; min-height: 6rem; }
+.restore-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 0.75rem; }
+.restore-grid textarea, .restore-grid .result { height: auto; min-height: 5rem; }

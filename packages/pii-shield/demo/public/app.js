@@ -581,18 +581,7 @@ async function loadSamples() {
 }
 
 // ---------- wiring ----------
-function initSettingsPanel() {
-  // Wide: settings always open beside the panes. Narrower: folded bar, so all three panes fit.
-  const wide = window.matchMedia('(min-width: 1500px)');
-  const settings = $('settings');
-  const apply = () => { settings.open = wide.matches; };
-  apply();
-  wide.addEventListener('change', apply);
-  settings.addEventListener('toggle', () => { if (wide.matches && !settings.open) settings.open = true; });
-}
-
 function init() {
-  initSettingsPanel();
   loadSettings();
   document.querySelector(`input[name="mode"][value="${state.mode}"]`).checked = true;
   els.keepAuthority.checked = state.keepAuthority;
