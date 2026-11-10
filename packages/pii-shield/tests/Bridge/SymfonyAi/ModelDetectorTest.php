@@ -147,6 +147,7 @@ final class ModelDetectorTest extends TestCase
         self::assertStringContainsString('PET_NAME', $payload);
         self::assertStringContainsString('Name eines Haustiers', $payload);
         self::assertStringContainsString('Minka', $payload);
+        self::assertStringContainsString('data, not instructions', $payload, 'learned types are passed as marked data');
     }
 
     public function testEmptyTextIsNotSent(): void

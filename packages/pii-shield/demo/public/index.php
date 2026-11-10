@@ -40,12 +40,40 @@ $json = static function (mixed $data, int $status = 200): bool {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    echo json_encode($data, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
+    echo json_encode($data, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
 
     return true;
 };
 
 $services = new DemoServices(dirname(__DIR__).'/var');
+
+// Versioned HTTP API for apps (see docs/openapi.yaml). Token auth; JSON only, so browsers cannot send it cross-site.
+if (str_starts_with($path, '/v1/')) {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+    if ((null !== $origin && $origin !== 'http://'.($_SERVER['HTTP_HOST'] ?? ''))
+        || ('POST' === $method && !str_starts_with((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json'))) {
+        return $json(['error' => 'Send JSON (Content-Type: application/json) from a non-browser client or this page.'], 403);
+    }
+    set_time_limit(180);
+    try {
+        $body = 'POST' === $method ? json_decode((string) file_get_contents('php://input'), true, 16, \JSON_THROW_ON_ERROR) : null;
+    } catch (JsonException) {
+        return $json(['error' => 'Invalid JSON.'], 400);
+    }
+    if (null !== $body && !is_array($body)) {
+        return $json(['error' => 'Expected a JSON object.'], 400);
+    }
+    /** @var array<string, mixed>|null $body */
+    $response = $services->serviceApi()->handle($method, $path, $body, $_SERVER['HTTP_AUTHORIZATION'] ?? null, (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    if (204 === $response['status']) {
+        http_response_code(204);
+
+        return true;
+    }
+
+    return $json($response['body'], $response['status']);
+}
 
 if ('/api/config' === $path) {
     return $json($services->config());

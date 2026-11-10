@@ -6,6 +6,10 @@ namespace Briefklar\PiiShield\Demo;
 
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
+use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
+use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
+use Briefklar\PiiShield\Learning\EntityLearner;
+use Briefklar\PiiShield\Learning\JsonFileCustomEntityStore;
 use Briefklar\PiiShield\Vault\EncryptedVault;
 use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
 use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
@@ -164,6 +168,35 @@ final class DemoServices
     }
 
     /**
+     * The /v1 HTTP API, configured from the environment (see demo/.env.dist).
+     */
+    public function serviceApi(): ServiceApi
+    {
+        $model = null;
+        $provider = self::env('PII_SERVICE_MODEL_PROVIDER');
+        if (null !== $provider) {
+            $settings = [
+                'provider' => $provider,
+                'model' => self::env('PII_SERVICE_MODEL') ?? '',
+                'endpoint' => self::env('PII_SERVICE_MODEL_URL'),
+                'acknowledgeExternal' => 'true' === self::env('PII_SERVICE_ACKNOWLEDGE_EXTERNAL'),
+            ];
+            $model = fn (): ModelDetector => ($this->modelDetectors())($settings);
+        }
+        [$vault] = ($this->vaults())(self::env('PII_SERVICE_VAULT_STORE') ?? 'filesystem');
+
+        return new ServiceApi($vault, $this->learner(), $model, self::env('PII_SERVICE_TOKEN'), DemoApi::VAULT_TTL);
+    }
+
+    /**
+     * Learned entity types: JSON file in demo/var by default, Redis with PII_SERVICE_LEARNED_STORE=redis.
+     */
+    public function learner(): EntityLearner
+    {
+        return new EntityLearner($this->learnedStore());
+    }
+
+    /**
      * @return \Closure(string): array{VaultInterface, VaultStorageInterface}
      */
     public function vaults(): \Closure
@@ -187,7 +220,7 @@ final class DemoServices
 
             [$platform, $location, $options] = $this->platform($provider, $endpoint);
 
-            return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options);
+            return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options, $this->learnedStore());
         };
     }
 
@@ -225,6 +258,13 @@ final class DemoServices
             default:
                 throw new \InvalidArgumentException(\sprintf('Unknown provider "%s".', $provider));
         }
+    }
+
+    private function learnedStore(): CustomEntityStoreInterface
+    {
+        return 'redis' === self::env('PII_SERVICE_LEARNED_STORE')
+            ? new CacheCustomEntityStore($this->pool('redis'))
+            : new JsonFileCustomEntityStore($this->varDir.'/learned-types.json');
     }
 
     private static function locationOf(string $endpoint): ModelLocation
