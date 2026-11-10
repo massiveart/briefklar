@@ -120,6 +120,17 @@ final class ServiceApiTest extends TestCase
         self::assertSame('⟦PERSON_1⟧ zahlt.', ((array) $response['body'])['text']);
     }
 
+    public function testModelErrorsDoNotLeakDetails(): void
+    {
+        $client = new MockModelClient(static fn (): string => 'not json, internal detail: http://10.0.0.7:11434');
+        $platform = new Platform([new Provider('mock', [$client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
+        $api = new ServiceApi(new EncryptedVault(new Psr6CacheStorage(new ArrayAdapter()), EncryptedVault::generateKey()), new EntityLearner(new CacheCustomEntityStore(new ArrayAdapter())), static fn (): ModelDetector => new ModelDetector($platform, 'secret-model-name'), self::TOKEN);
+
+        $response = $api->handle('POST', '/v1/redact', ['text' => 'x', 'detection' => 'model'], 'Bearer '.self::TOKEN, '10.0.0.5');
+
+        self::assertSame(['status' => 502, 'body' => ['error' => 'Model-based detection failed.']], $response);
+    }
+
     public function testTokenIsRequired(): void
     {
         self::assertSame(401, $this->call('POST', '/v1/mask', ['text' => 'x'], token: null)['status']);
