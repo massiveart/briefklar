@@ -9,6 +9,8 @@ letter:
         label: Letter (PDF or photo)
         help: PDF, PNG, JPEG or TIFF, up to 10 MB.
         submit: Explain letter
+        submitting: Explaining letter …
+        progress: We are reading your letter, removing personal data and having it explained. This can take up to a minute. Please do not reload the page.
         easy_language: Explanation in Easy Read
         easy_language_help: Very short sentences, simple words, difficult words are explained.
     result:

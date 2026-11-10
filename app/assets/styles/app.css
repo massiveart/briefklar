@@ -187,6 +187,7 @@ a:hover { color: var(--color-accent-800); }
     border-radius: var(--radius-md);
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.upload-form[aria-busy="true"] .btn:disabled { opacity: 1; cursor: progress; }
 .btn-primary { color: var(--color-accent-700); border-color: var(--color-accent); }
 .btn-primary:hover { color: var(--color-accent-800); background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
 .btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
@@ -447,3 +448,27 @@ form ul li::before {
 .lang-switch a { color: var(--color-text-muted); text-decoration: none; }
 .lang-switch a:hover { color: var(--color-accent-700); text-decoration: underline; }
 .lang-switch__current { color: var(--color-text); border-bottom: 1px solid var(--color-accent); }
+
+/* Upload in progress (upload-progress controller) */
+.upload-status {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    margin: var(--space-4) 0 0;
+    color: var(--color-neutral-700);
+}
+.upload-status[hidden] { display: none; }
+.spinner {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    border: 2px solid var(--color-divider);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation: none; border-top-color: var(--color-divider); border-color: var(--color-accent); }
+}

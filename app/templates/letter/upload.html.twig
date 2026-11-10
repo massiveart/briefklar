@@ -7,7 +7,13 @@
     <p class="lead prose">{{ 'letter.upload.intro'|trans }}</p>
 
     {# Turbo Drive expects a redirect after POST; we do not store letters, so there is nothing to redirect to. #}
-    {{ form_start(form, {attr: {'data-turbo': 'false', class: 'upload-form card elev-sm'}}) }}
+    {{ form_start(form, {attr: {
+        'data-turbo': 'false',
+        class: 'upload-form card elev-sm',
+        'data-controller': 'upload-progress',
+        'data-action': 'submit->upload-progress#start',
+        'data-upload-progress-busy-label-value': 'letter.upload.submitting'|trans,
+    }}) }}
         {{ form_errors(form) }}
         {{ form_row(form.letter, {row_attr: {class: 'field'}, attr: {class: 'input'}}) }}
         <div class="field field--checkbox">
@@ -18,8 +24,13 @@
             </div>
         </div>
         <div>
-            <button type="submit" class="btn btn-primary">{{ 'letter.upload.submit'|trans }}</button>
+            <button type="submit" class="btn btn-primary" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
         </div>
+        {# Shown by the upload-progress controller while the request runs; announced by screen readers. #}
+        <p class="upload-status" role="status" data-upload-progress-target="status" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <span>{{ 'letter.upload.progress'|trans }}</span>
+        </p>
     {{ form_end(form) }}
 
     <p class="privacy">
