@@ -115,6 +115,9 @@ final class DemoServices
             $provider = \is_string($settings['provider'] ?? null) ? $settings['provider'] : '';
             $model = \is_string($settings['model'] ?? null) && '' !== trim($settings['model']) ? trim($settings['model']) : (self::PROVIDERS[$provider]['model'] ?? '');
             $endpoint = \is_string($settings['endpoint'] ?? null) && '' !== trim($settings['endpoint']) ? rtrim(trim($settings['endpoint']), '/') : null;
+            if (null !== $endpoint && !\in_array(parse_url($endpoint, \PHP_URL_SCHEME), ['http', 'https'], true)) {
+                throw new \InvalidArgumentException('The server URL must start with http:// or https://.');
+            }
 
             [$platform, $location, $options] = $this->platform($provider, $endpoint);
 
@@ -129,7 +132,8 @@ final class DemoServices
     {
         $key = static fn (string $name): string => self::env($name) ?? throw new \InvalidArgumentException(\sprintf('Set %s in the environment of the demo server to use this provider.', $name));
         // Self-hosted models answer only when done; allow for large models on modest hardware.
-        $selfHosted = HttpClient::create(['timeout' => 170]);
+        // No redirects: the URL may be typed in the browser and must not bounce elsewhere.
+        $selfHosted = HttpClient::create(['timeout' => 170, 'max_redirects' => 0]);
         $deterministic = ['temperature' => 0];
 
         switch ($provider) {
@@ -139,9 +143,12 @@ final class DemoServices
                 // No chain-of-thought (faster). No JSON mode: not every model supports it; the prompt asks for JSON.
                 return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), [...$deterministic, 'think' => false]];
             case 'generic':
-                $endpoint ??= self::env('PII_DEMO_GENERIC_URL') ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
+                $configured = self::env('PII_DEMO_GENERIC_URL');
+                $endpoint ??= $configured ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
+                // The server's key only ever goes to the server it was configured for.
+                $apiKey = null !== $configured && rtrim($configured, '/') === $endpoint ? self::env('PII_DEMO_GENERIC_KEY') : null;
 
-                return [GenericFactory::createPlatform($endpoint, self::env('PII_DEMO_GENERIC_KEY'), $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $deterministic];
+                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $deterministic];
             case 'mistral':
                 return [MistralFactory::createPlatform($key('MISTRAL_API_KEY')), ModelLocation::External, $deterministic];
             case 'openai':

@@ -61,6 +61,13 @@ if (!in_array($path, ['/api/analyze', '/api/restore'], true)) {
 if ('POST' !== ($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
     return $json(['error' => 'Use POST.'], 405);
 }
+// CSRF: other websites in the same browser must not drive this API. JSON requests from a foreign
+// origin need a CORS preflight, which this server never grants; a foreign Origin is rejected outright.
+$origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+$ownOrigin = 'http://'.($_SERVER['HTTP_HOST'] ?? '');
+if (!str_starts_with((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json') || (null !== $origin && $origin !== $ownOrigin)) {
+    return $json(['error' => 'Only JSON requests from this page are accepted.'], 403);
+}
 
 // Local models can take a while; keep the request alive.
 set_time_limit(180);
