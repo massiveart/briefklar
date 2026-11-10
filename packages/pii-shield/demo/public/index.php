@@ -11,7 +11,8 @@ use Briefklar\PiiShield\Demo\DemoApi;
 use Briefklar\PiiShield\Demo\DemoServices;
 use Briefklar\PiiShield\Exception\DetectionFailedException;
 
-require dirname(__DIR__, 2).'/vendor/autoload.php';
+// Standalone (Docker): the server's own vendor/; locally (`make demo`): the package's vendor/.
+require is_file(dirname(__DIR__).'/vendor/autoload.php') ? dirname(__DIR__).'/vendor/autoload.php' : dirname(__DIR__, 2).'/vendor/autoload.php';
 
 // Provider keys and URLs: demo/.env.local (git-ignored), see demo/.env.dist. Real environment variables win.
 if (is_file(dirname(__DIR__).'/.env.local')) {
@@ -65,7 +66,8 @@ if ((str_starts_with($path, '/api/') || str_starts_with($path, '/v1/')) && !in_a
 
 if ('/v1/openapi.yaml' === $path) {
     header('Content-Type: application/yaml; charset=utf-8');
-    readfile(dirname(__DIR__, 2).'/docs/openapi.yaml');
+    $spec = dirname(__DIR__, 2).'/docs/openapi.yaml';
+    readfile(is_file($spec) ? $spec : dirname(__DIR__).'/vendor/briefklar/pii-shield/docs/openapi.yaml');
 
     return true;
 }
