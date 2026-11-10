@@ -40,8 +40,8 @@
         </div>
         <div class="model-settings" id="modelSettings" hidden>
           <label class="field"><span>Anbieter</span><select id="provider"></select></label>
-          <label class="field"><span>Modell</span><input id="modelName" list="modelOptions" autocomplete="off" spellcheck="false"></label>
-          <datalist id="modelOptions"></datalist>
+          <label class="field" id="modelSelectField" hidden><span>Modell</span><select id="modelSelect"></select></label>
+          <label class="field" id="modelNameField"><span id="modelNameLabel">Modell</span><input id="modelName" autocomplete="off" spellcheck="false"></label>
           <p class="hint" id="modelHint"></p>
           <label class="field" id="endpointField"><span>Server-URL</span><input id="endpoint" autocomplete="off" spellcheck="false" placeholder="http://gpu-server:8000"></label>
           <label class="switch"><input type="checkbox" id="fast" checked><span>Schnell (ohne Reasoning)<small>Reasoning-Modelle denken sonst lange nach</small></span></label>
