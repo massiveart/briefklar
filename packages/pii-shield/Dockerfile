@@ -3,6 +3,14 @@
 #   docker run -p 8080:8080 -e PII_SERVICE_TOKEN=change-me pii-shield
 # Service mode: only /v1, the demo page is not included. Without PII_SERVICE_TOKEN every request gets 503.
 
+# Development (compose.yaml, make): PHP and Composer; the package is mounted as in the monorepo. No host PHP needed.
+FROM php:8.4-cli-alpine AS dev
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apk add --no-cache git unzip \
+ && echo 'memory_limit=1G' > "$PHP_INI_DIR/conf.d/dev.ini"
+ENV COMPOSER_HOME=/tmp/composer
+WORKDIR /srv/packages/pii-shield
+
 # Build: runtime dependencies of the server only (demo/composer.json), no dev tools.
 FROM php:8.4-cli-alpine AS build
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

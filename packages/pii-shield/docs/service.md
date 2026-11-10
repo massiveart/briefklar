@@ -11,7 +11,7 @@ learned types and one place handles personal data. The API is described in [open
 docker build -t pii-shield packages/pii-shield
 docker run -p 8080:8080 -e PII_SERVICE_TOKEN=$(openssl rand -hex 24) pii-shield
 
-# Local, with the demo page (http://127.0.0.1:8088)
+# Local, with the demo page (http://127.0.0.1:8088), in Docker (DOCKER=0: local PHP)
 make demo
 ```
 
@@ -107,7 +107,8 @@ The mapping stays on the server; tools return placeholders and a `vaultId`, neve
 **Claude Code** (STDIO):
 
 ```bash
-claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield
+claude mcp add pii-shield -- make -s -C /path/to/briefklar/packages/pii-shield mcp            # Docker
+claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield   # local PHP
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`, STDIO):
@@ -151,6 +152,7 @@ Environment variables (or `demo/.env.local`, template `demo/.env.dist`):
 | `PII_SERVICE_TOKEN` | Bearer token. Without it only requests from localhost are answered; in service mode every request gets 503. |
 | `PII_SERVICE_ONLY` | `1` = service mode (set in the Docker image): only `/v1`, no demo page, token required. |
 | `PII_SERVICE_ALLOWED_HOSTS` | Extra host names the service answers to, comma-separated (e.g. behind a reverse proxy). |
+| `PII_LOCAL_PEERS` | Addresses treated like localhost (no token needed), comma-separated IPs or CIDRs; `gateway` = the container's Docker gateway. Only for a port bound to the host's `127.0.0.1` (as in `compose.yaml`). |
 | `PII_SERVICE_VAULT_STORE` | `filesystem` (default), `sqlite`, `redis` |
 | `PII_SERVICE_LEARNED_STORE` | `file` (default, `demo/var/learned-types.json`) or `redis` |
 | `PII_DEMO_REDIS_URL` | Redis connection for the `redis` stores |

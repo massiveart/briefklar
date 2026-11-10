@@ -275,7 +275,7 @@ const currentProvider = () => state.config.providers.find((p) => p.id === state.
 function locationOfEndpoint(endpoint, fallback) {
   try {
     const host = new URL(endpoint).hostname;
-    return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(host) ? 'local' : 'on_premise';
+    return ['localhost', '127.0.0.1', '[::1]', '::1', 'host.docker.internal'].includes(host) ? 'local' : 'on_premise';
   } catch { return fallback; }
 }
 function currentLocation() {
