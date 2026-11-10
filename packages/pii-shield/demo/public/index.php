@@ -101,6 +101,15 @@ if (!in_array($path, ['/api/analyze', '/api/restore', '/api/models', '/api/learn
 if ('POST' !== ($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
     return $json(['error' => 'Use POST.'], 405);
 }
+// The demo page is for the local user only: check the real peer address, not just the Host header.
+if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+    return $json(['error' => 'The demo API is available on this machine only.'], 403);
+}
+// With a service token configured, learned types are managed through /v1 only (same store, same rules).
+$serviceToken = $_SERVER['PII_SERVICE_TOKEN'] ?? $_ENV['PII_SERVICE_TOKEN'] ?? '';
+if (in_array($path, ['/api/learn', '/api/entities/forget'], true) && '' !== $serviceToken && true !== (json_decode((string) file_get_contents('php://input'), true)['dryRun'] ?? false)) {
+    return $json(['error' => 'Learning is managed through the /v1 API with a token on this server.'], 403);
+}
 // CSRF: other websites in the same browser must not drive this API. JSON requests from a foreign
 // origin need a CORS preflight, which this server never grants; a foreign Origin is rejected outright.
 $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
