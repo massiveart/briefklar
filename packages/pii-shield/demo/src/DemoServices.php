@@ -45,7 +45,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 final class DemoServices
 {
     private const array PROVIDERS = [
-        'ollama' => ['label' => 'Ollama', 'model' => 'qwen3:4b', 'key' => null],
+        'ollama' => ['label' => 'Ollama', 'model' => 'qwen3:4b-instruct', 'key' => null],
         'generic' => ['label' => 'OpenAI-kompatibler Server (vLLM, Ollama, …)', 'model' => '', 'key' => 'PII_DEMO_GENERIC_KEY'],
         'mistral' => ['label' => 'Mistral (EU)', 'model' => 'mistral-small-latest', 'key' => 'MISTRAL_API_KEY'],
         'openai' => ['label' => 'OpenAI', 'model' => 'gpt-5', 'key' => 'OPENAI_API_KEY'],
