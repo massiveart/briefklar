@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Demo;
 
+use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Detector\AtSvnrDetector;
 use Briefklar\PiiShield\Detector\BirthDateDetector;
 use Briefklar\PiiShield\Detector\DetectorInterface;
@@ -41,9 +42,13 @@ final class DemoApi
     public const int VAULT_TTL = 900;
     private const int MAX_TEXT_LENGTH = 50_000;
 
+    /**
+     * @param \Closure(string): array{VaultInterface, VaultStorageInterface} $vaults         vault and its storage by store name
+     * @param \Closure(array<string, mixed>): ModelDetector                  $modelDetectors model detector from the request's model settings
+     */
     public function __construct(
-        private readonly VaultInterface $vault,
-        private readonly VaultStorageInterface $storage,
+        private readonly \Closure $vaults,
+        private readonly \Closure $modelDetectors,
     ) {
     }
 
@@ -59,7 +64,7 @@ final class DemoApi
         if (!\in_array($mode, ['reversible', 'irreversible'], true)) {
             throw new \InvalidArgumentException('Unknown mode. Use "reversible" or "irreversible".');
         }
-        $detectors = self::detectors(self::types($request), (bool) ($request['keepAuthorityContacts'] ?? true));
+        $detectors = $this->detectors($request);
         $allowlist = self::stringList($request['allowlist'] ?? []);
         $entities = (new EntityExtractor($detectors, $allowlist))->extract($text);
 
@@ -75,7 +80,8 @@ final class DemoApi
             return [...self::render($text, $entities, $replacements), 'output' => $output, 'vaultId' => null, 'mapping' => null, 'storedPayload' => null];
         }
 
-        $redaction = (new PiiShield($detectors, $this->vault, self::VAULT_TTL, $allowlist))->redact($text);
+        [$vault, $storage] = ($this->vaults)(self::store($request));
+        $redaction = (new PiiShield($detectors, $vault, self::VAULT_TTL, $allowlist))->redact($text);
         $vaultId = (string) $redaction->vaultId;
 
         return [
@@ -84,7 +90,7 @@ final class DemoApi
             'vaultId' => $vaultId,
             // Demo only: shows what the vault holds. A real app never sends the mapping anywhere.
             'mapping' => $redaction->vault,
-            'storedPayload' => base64_encode((string) $this->storage->get($vaultId)),
+            'storedPayload' => base64_encode((string) $storage->get($vaultId)),
         ];
     }
 
@@ -98,9 +104,10 @@ final class DemoApi
         $text = self::text($request);
         $vaultId = \is_string($request['vaultId'] ?? null) ? $request['vaultId'] : '';
 
+        [$vault] = ($this->vaults)(self::store($request));
         try {
-            $mapping = $this->vault->fetch($vaultId) ?? throw new VaultException('Unknown or expired vault id.');
-            $restored = (new PiiShield([], $this->vault))->restoreFromVault($text, $vaultId);
+            $mapping = $vault->fetch($vaultId) ?? throw new VaultException('Unknown or expired vault id.');
+            $restored = (new PiiShield([], $vault))->restoreFromVault($text, $vaultId);
         } catch (VaultException $e) {
             throw new \InvalidArgumentException('The mapping has expired or does not exist. Mask the text again.', previous: $e);
         }
@@ -179,24 +186,63 @@ final class DemoApi
     }
 
     /**
-     * @param list<EntityType> $types
+     * Regex detectors, the model detector or both, limited to the selected types.
+     * Each detector is asked once per request (see RequestScopedDetector).
+     *
+     * @param array<string, mixed> $request
      *
      * @return list<DetectorInterface>
      */
-    private static function detectors(array $types, bool $keepAuthorityContacts): array
+    private function detectors(array $request): array
     {
-        return array_map(static fn (EntityType $type): DetectorInterface => match ($type) {
-            EntityType::AtSvnr => new AtSvnrDetector(),
-            EntityType::Iban => new IbanDetector(),
-            EntityType::TaxNumber => new TaxNumberDetector(),
-            EntityType::Email => new EmailDetector($keepAuthorityContacts),
-            EntityType::Phone => new PhoneDetector($keepAuthorityContacts),
-            EntityType::BirthDate => new BirthDateDetector(),
-            EntityType::FileNumber => new FileNumberDetector(),
-            EntityType::LicensePlate => new LicensePlateDetector(),
-            EntityType::Person => new SalutationPersonDetector(),
-            EntityType::Address => new PostalAddressDetector(),
-        }, $types);
+        $types = self::types($request);
+        $detection = $request['detection'] ?? 'regex';
+        if (!\in_array($detection, ['regex', 'model', 'both'], true)) {
+            throw new \InvalidArgumentException('Unknown detection. Use "regex", "model" or "both".');
+        }
+
+        $detectors = [];
+        if ('model' !== $detection) {
+            $keepAuthorityContacts = (bool) ($request['keepAuthorityContacts'] ?? true);
+            foreach ($types as $type) {
+                $regex = match ($type) {
+                    EntityType::AtSvnr => new AtSvnrDetector(),
+                    EntityType::Iban => new IbanDetector(),
+                    EntityType::TaxNumber => new TaxNumberDetector(),
+                    EntityType::Email => new EmailDetector($keepAuthorityContacts),
+                    EntityType::Phone => new PhoneDetector($keepAuthorityContacts),
+                    EntityType::BirthDate => new BirthDateDetector(),
+                    EntityType::FileNumber => new FileNumberDetector(),
+                    EntityType::LicensePlate => new LicensePlateDetector(),
+                    EntityType::Person => new SalutationPersonDetector(),
+                    EntityType::Address => new PostalAddressDetector(),
+                    EntityType::IdNumber, EntityType::CreditCard, EntityType::IpAddress, EntityType::Health, EntityType::Other => null,
+                };
+                if (null !== $regex) {
+                    $detectors[] = new RequestScopedDetector($regex, $types);
+                }
+            }
+        }
+        if ('regex' !== $detection) {
+            $model = $request['model'] ?? null;
+            if (!\is_array($model)) {
+                throw new \InvalidArgumentException('"model" settings are required for model-based detection.');
+            }
+            /* @var array<string, mixed> $model */
+            $detectors[] = new RequestScopedDetector(($this->modelDetectors)($model), $types);
+        }
+
+        return $detectors;
+    }
+
+    /**
+     * @param array<string, mixed> $request
+     */
+    private static function store(array $request): string
+    {
+        $store = $request['store'] ?? 'filesystem';
+
+        return \is_string($store) ? $store : throw new \InvalidArgumentException('"store" must be a string.');
     }
 
     /**

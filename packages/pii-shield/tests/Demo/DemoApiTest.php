@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Tests\Demo;
 
+use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Demo\DemoApi;
 use Briefklar\PiiShield\Vault\EncryptedVault;
 use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Platform\ModelCatalog\FallbackModelCatalog;
+use Symfony\AI\Platform\ModelRouter\CatalogBasedModelRouter;
+use Symfony\AI\Platform\Platform;
+use Symfony\AI\Platform\Provider;
+use Symfony\AI\Platform\Test\MockModelClient;
+use Symfony\AI\Platform\Test\MockResultConverter;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 final class DemoApiTest extends TestCase
@@ -16,10 +23,63 @@ final class DemoApiTest extends TestCase
 
     private DemoApi $api;
 
+    private MockModelClient $client;
+
+    /** @var list<string> */
+    private array $storesUsed = [];
+
     protected function setUp(): void
     {
         $storage = new Psr6CacheStorage(new ArrayAdapter());
-        $this->api = new DemoApi(new EncryptedVault($storage, EncryptedVault::generateKey()), $storage);
+        $vault = new EncryptedVault($storage, EncryptedVault::generateKey());
+        $this->client = new MockModelClient(static fn (): string => '{"entities":[{"type":"passport","value":"CZ1234567"},{"type":"PERSON","value":"Johann Beispielmann"}]}');
+        $platform = new Platform([new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
+
+        $this->api = new DemoApi(
+            function (string $store) use ($vault, $storage): array {
+                $this->storesUsed[] = $store;
+
+                return [$vault, $storage];
+            },
+            static fn (array $model): ModelDetector => new ModelDetector($platform, (string) ($model['model'] ?? '')),
+        );
+    }
+
+    public function testModelDetectionFindsWhatRegexCannot(): void
+    {
+        $response = $this->api->analyze([
+            'text' => self::LETTER."\nPass: CZ1234567",
+            'mode' => 'reversible',
+            'detection' => 'model',
+            'model' => ['model' => 'llama3.1:8b'],
+        ]);
+
+        self::assertSame([['PERSON', 'model'], ['PERSON', 'propagation'], ['ID_NUMBER', 'model']], array_map(static fn (array $f): array => [$f['type'], $f['detector']], $response['findings']));
+        self::assertStringContainsString('Pass: ⟦ID_NUMBER_1⟧', $response['output']);
+        self::assertCount(1, $this->client->getCalls(), 'the model is asked once per request');
+    }
+
+    public function testBothDetectorsCombineFindings(): void
+    {
+        $response = $this->api->analyze([
+            'text' => self::LETTER."\nPass: CZ1234567",
+            'mode' => 'reversible',
+            'detection' => 'both',
+            'model' => ['model' => 'llama3.1:8b'],
+        ]);
+
+        $types = array_column($response['findings'], 'type');
+        self::assertContains('ID_NUMBER', $types);
+        self::assertContains('SVNR', $types);
+        self::assertContains('IBAN', $types);
+    }
+
+    public function testTheChosenStoreIsUsedForMaskingAndRestore(): void
+    {
+        $vaultId = (string) $this->api->analyze(['text' => self::LETTER, 'mode' => 'reversible', 'store' => 'sqlite'])['vaultId'];
+        $this->api->restore(['text' => '⟦SVNR_1⟧', 'vaultId' => $vaultId, 'store' => 'sqlite']);
+
+        self::assertSame(['sqlite', 'sqlite'], $this->storesUsed);
     }
 
     public function testReversibleAnalysisReturnsPlaceholdersPerFinding(): void

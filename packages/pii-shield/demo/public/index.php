@@ -7,10 +7,9 @@ declare(strict_types=1);
  * Runs on PHP's built-in server only. Nothing is sent to any external service.
  */
 
+use Briefklar\PiiShield\Bridge\SymfonyAi\DetectionFailedException;
 use Briefklar\PiiShield\Demo\DemoApi;
-use Briefklar\PiiShield\Vault\EncryptedVault;
-use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Briefklar\PiiShield\Demo\DemoServices;
 
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 
@@ -41,6 +40,12 @@ $json = static function (mixed $data, int $status = 200): bool {
     return true;
 };
 
+$services = new DemoServices(dirname(__DIR__).'/var');
+
+if ('/api/config' === $path) {
+    return $json($services->config());
+}
+
 if ('/api/samples' === $path) {
     $samples = [];
     foreach (glob(dirname(__DIR__, 4).'/fixtures/letters/*.txt') ?: [] as $file) {
@@ -57,17 +62,9 @@ if ('POST' !== ($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
     return $json(['error' => 'Use POST.'], 405);
 }
 
-$varDir = dirname(__DIR__).'/var';
-if (!is_dir($varDir)) {
-    mkdir($varDir, 0700, true);
-}
-$keyFile = $varDir.'/vault.key';
-if (!is_file($keyFile)) {
-    file_put_contents($keyFile, base64_encode(EncryptedVault::generateKey()));
-    chmod($keyFile, 0600);
-}
-$storage = new Psr6CacheStorage(new FilesystemAdapter('vault', DemoApi::VAULT_TTL, $varDir.'/cache'));
-$api = new DemoApi(new EncryptedVault($storage, (string) base64_decode((string) file_get_contents($keyFile), true)), $storage);
+// Local models can take a while; keep the request alive.
+set_time_limit(180);
+$api = new DemoApi($services->vaults(), $services->modelDetectors());
 
 try {
     $request = json_decode((string) file_get_contents('php://input'), true, 16, \JSON_THROW_ON_ERROR);
@@ -80,4 +77,6 @@ try {
     return $json($response);
 } catch (InvalidArgumentException|JsonException $e) {
     return $json(['error' => $e->getMessage()], 400);
+} catch (DetectionFailedException $e) {
+    return $json(['error' => $e->getMessage()], 502);
 }

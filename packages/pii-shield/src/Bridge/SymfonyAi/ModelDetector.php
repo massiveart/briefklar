@@ -1,0 +1,173 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Briefklar\PiiShield\Bridge\SymfonyAi;
+
+use Briefklar\PiiShield\Detector\DetectorInterface;
+use Briefklar\PiiShield\Detector\RegexMatcher;
+use Briefklar\PiiShield\Entity;
+use Briefklar\PiiShield\EntityType;
+use Symfony\AI\Platform\Message\Message;
+use Symfony\AI\Platform\Message\MessageBag;
+use Symfony\AI\Platform\PlatformInterface;
+
+/**
+ * Detects personal data with any model reachable through Symfony AI Platform:
+ * a local Ollama, an on-premise GPU server (Ollama, vLLM via the generic OpenAI-compatible bridge)
+ * or a public provider. Works for any language and country, not only DACH formats.
+ *
+ * The model returns type + value; every value is grounded in the original text (whitespace and
+ * commas may differ, e.g. a one-line address for a two-line one). Values the model invented are
+ * dropped. Invalid answers fail closed (DetectionFailedException).
+ *
+ * Combine with the regex detectors in one PiiShield: checksum-validated findings win on overlap.
+ */
+final class ModelDetector implements DetectorInterface
+{
+    public const string NAME = 'model';
+    private const float CONFIDENCE = 0.85;
+
+    /** Labels models commonly use instead of ours. */
+    private const array ALIASES = [
+        'NAME' => EntityType::Person, 'FULL_NAME' => EntityType::Person, 'PER' => EntityType::Person,
+        'LOCATION' => EntityType::Address, 'STREET_ADDRESS' => EntityType::Address, 'POSTAL_ADDRESS' => EntityType::Address,
+        'PASSPORT' => EntityType::IdNumber, 'PASSPORT_NUMBER' => EntityType::IdNumber, 'ID_CARD' => EntityType::IdNumber,
+        'NATIONAL_ID' => EntityType::IdNumber, 'SSN' => EntityType::IdNumber, 'SOCIAL_SECURITY_NUMBER' => EntityType::AtSvnr,
+        'DRIVER_LICENSE' => EntityType::IdNumber, 'BANK_ACCOUNT' => EntityType::Iban, 'ACCOUNT_NUMBER' => EntityType::Iban,
+        'TAX_ID' => EntityType::TaxNumber, 'DATE_OF_BIRTH' => EntityType::BirthDate, 'DOB' => EntityType::BirthDate,
+        'PHONE_NUMBER' => EntityType::Phone, 'TELEPHONE' => EntityType::Phone, 'EMAIL_ADDRESS' => EntityType::Email,
+        'CASE_NUMBER' => EntityType::FileNumber, 'REFERENCE_NUMBER' => EntityType::FileNumber, 'CUSTOMER_NUMBER' => EntityType::FileNumber,
+        'IP' => EntityType::IpAddress, 'CARD_NUMBER' => EntityType::CreditCard, 'MEDICAL' => EntityType::Health,
+        'HEALTH_DATA' => EntityType::Health, 'DIAGNOSIS' => EntityType::Health,
+    ];
+
+    /** @var non-empty-string */
+    private readonly string $model;
+
+    /**
+     * @param string               $model   model name as the platform knows it, e.g. "llama3.1:8b"
+     * @param array<string, mixed> $options passed to the platform (e.g. temperature)
+     */
+    public function __construct(
+        private readonly PlatformInterface $platform,
+        string $model,
+        private readonly ModelLocation $location = ModelLocation::Local,
+        bool $acknowledgeExternalTransfer = false,
+        private readonly array $options = ['temperature' => 0],
+    ) {
+        if ('' === trim($model)) {
+            throw new \InvalidArgumentException('The model name must not be empty.');
+        }
+        $this->model = $model;
+        if (ModelLocation::External === $location && !$acknowledgeExternalTransfer) {
+            throw new \InvalidArgumentException('Model-based detection sends the unredacted text to the model. For an external provider, confirm this with $acknowledgeExternalTransfer (requires a data processing agreement, possibly a third-country transfer).');
+        }
+    }
+
+    public function location(): ModelLocation
+    {
+        return $this->location;
+    }
+
+    public function detect(string $text): array
+    {
+        if ('' === trim($text)) {
+            return [];
+        }
+
+        try {
+            $answer = $this->platform->invoke($this->model, new MessageBag(
+                Message::forSystem(self::instructions()),
+                Message::ofUser($text),
+            ), $this->options)->asText();
+        } catch (\Throwable $e) {
+            throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
+        }
+
+        $entities = [];
+        $seen = [];
+        foreach ($this->parse($answer) as [$type, $value]) {
+            if (isset($seen[$type->value."\0".$value])) {
+                continue;
+            }
+            $seen[$type->value."\0".$value] = true;
+            foreach (RegexMatcher::matchAll(self::groundingPattern($value), $text) as $match) {
+                $entities[] = new Entity($type, $match['value'], $match['offset'], self::CONFIDENCE, self::NAME);
+            }
+        }
+
+        usort($entities, static fn (Entity $a, Entity $b): int => $a->offset <=> $b->offset);
+
+        return $entities;
+    }
+
+    private static function instructions(): string
+    {
+        $types = implode(', ', array_map(static fn (EntityType $t): string => $t->value, EntityType::cases()));
+
+        return <<<PROMPT
+            You find personal data in the user's text so it can be redacted. Any language, any country.
+            Report every person name, postal address, identification number (passport, ID card, social security,
+            tax, customer, case or file numbers), bank account or IBAN, card number, phone number, e-mail address,
+            IP address, birth date, license plate and health information that relates to a person.
+            Do NOT report: amounts of money, deadlines and other dates that are not birth dates, names of
+            authorities, companies or courts, legal citations (e.g. "§ 49 VStG"), product names.
+
+            Answer with JSON only, no explanation:
+            {"entities":[{"type":"<TYPE>","value":"<exact text from the input>"}]}
+            TYPE is one of: {$types}.
+            Copy each value exactly as it appears in the text. Report each distinct value once.
+            If there is nothing to report, answer {"entities":[]}.
+            PROMPT;
+    }
+
+    /**
+     * @return list<array{EntityType, string}>
+     */
+    private function parse(string $answer): array
+    {
+        // Reasoning models (qwen3, deepseek-r1, ...) think out loud first; only the final answer counts.
+        $answer = (string) preg_replace('/<think>.*?<\/think>/s', '', $answer);
+        $start = strpos($answer, '{');
+        $end = strrpos($answer, '}');
+        $data = false !== $start && false !== $end ? json_decode(substr($answer, $start, $end - $start + 1), true) : null;
+
+        if (!\is_array($data) || !\is_array($data['entities'] ?? null)) {
+            throw new DetectionFailedException(\sprintf('The detection model "%s" did not return the expected JSON.', $this->model));
+        }
+
+        $findings = [];
+        foreach ($data['entities'] as $entity) {
+            $type = \is_array($entity) && \is_string($entity['type'] ?? null) ? $entity['type'] : null;
+            $value = \is_array($entity) && \is_string($entity['value'] ?? null) ? trim($entity['value']) : '';
+            if (null === $type || mb_strlen($value) < 2) {
+                continue;
+            }
+            $findings[] = [self::typeOf($type), $value];
+        }
+
+        return $findings;
+    }
+
+    private static function typeOf(string $label): EntityType
+    {
+        $normalized = strtoupper((string) preg_replace('/[\s\-]+/', '_', trim($label)));
+
+        return EntityType::tryFrom($normalized) ?? self::ALIASES[$normalized] ?? EntityType::Other;
+    }
+
+    /**
+     * Matches the value as a whole word sequence; whitespace and commas between words may differ.
+     *
+     * @return non-empty-string
+     */
+    private static function groundingPattern(string $value): string
+    {
+        $words = preg_split('/[\s,]+/u', $value, -1, \PREG_SPLIT_NO_EMPTY);
+        $words = false === $words || [] === $words ? [$value] : $words;
+        $body = implode('[\s,]+', array_map(static fn (string $w): string => preg_quote($w, '/'), $words));
+
+        return '/(?<![\p{L}\p{N}])'.$body.'(?![\p{L}\p{N}])/u';
+    }
+}

@@ -25,13 +25,22 @@
     "phpstan/phpstan-strict-rules": "^2.1",
     "phpunit/phpunit": "^12.0",
     "symfony/ai-agent": "1.0.0-BETA1",
+    "symfony/ai-anthropic-platform": "1.0.0-BETA1",
+    "symfony/ai-generic-platform": "1.0.0-BETA1",
+    "symfony/ai-mistral-platform": "1.0.0-BETA1",
+    "symfony/ai-ollama-platform": "1.0.0-BETA1",
+    "symfony/ai-open-ai-platform": "1.0.0-BETA1",
     "symfony/ai-platform": "1.0.0-BETA1",
     "symfony/cache": "^8.1",
     "symfony/clock": "^8.1"
   },
   "suggest": {
-    "symfony/ai-agent": "To use the input/output processors in Symfony AI agents",
-    "symfony/ai-platform": "To use the NER detector via Hugging Face"
+    "symfony/ai-agent": "To use PiiShieldProcessor in Symfony AI agents",
+    "symfony/ai-platform": "To use ModelDetector with any model",
+    "symfony/ai-ollama-platform": "Model-based detection with a local or on-premise Ollama",
+    "symfony/ai-generic-platform": "Model-based detection with any OpenAI-compatible server (vLLM, ...)",
+    "symfony/ai-mistral-platform": "Model-based detection with Mistral (external, needs acknowledgement)",
+    "psr/cache-implementation": "To persist encrypted vaults (e.g. symfony/cache with Redis, filesystem or PDO)"
   },
   "autoload": {
     "psr-4": {
@@ -55,7 +64,7 @@
     ],
     "demo": [
       "Composer\\Config::disableProcessTimeout",
-      "php -S 127.0.0.1:8088 -t demo/public demo/public/index.php"
+      "PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php"
     ]
   },
   "config": {

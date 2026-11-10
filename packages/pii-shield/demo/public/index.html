@@ -32,6 +32,26 @@
       </section>
 
       <section class="control-group">
+        <h2>Erkennung</h2>
+        <div class="segmented segmented-row" role="radiogroup" aria-label="Erkennung">
+          <label><input type="radio" name="detection" value="regex" checked><span>Muster</span></label>
+          <label><input type="radio" name="detection" value="model"><span>KI-Modell</span></label>
+          <label><input type="radio" name="detection" value="both"><span>Beides</span></label>
+        </div>
+        <div class="model-settings" id="modelSettings" hidden>
+          <label class="field"><span>Anbieter</span><select id="provider"></select></label>
+          <label class="field"><span>Modell</span><input id="modelName" autocomplete="off" spellcheck="false"></label>
+          <label class="field" id="endpointField"><span>Server-URL</span><input id="endpoint" autocomplete="off" spellcheck="false" placeholder="http://gpu-server:8000"></label>
+          <p class="location" id="location"></p>
+          <div class="warning" id="externalWarning" hidden>
+            <p>Zur Erkennung geht der <strong>ungeschwärzte</strong> Text an diesen Anbieter. Das braucht einen Auftragsverarbeitungsvertrag und ist außerhalb der EU eine Drittlandübermittlung.</p>
+            <label class="switch"><input type="checkbox" id="acknowledgeExternal"><span>Verstanden, nur mit erfundenen Testdaten</span></label>
+          </div>
+        </div>
+        <p class="hint" id="detectionHint">Muster und Prüfziffern für AT/DE, offline.</p>
+      </section>
+
+      <section class="control-group">
         <div class="group-head">
           <h2>Was erkannt wird</h2>
           <div class="link-buttons">
@@ -47,6 +67,7 @@
         <label class="switch"><input type="checkbox" id="keepAuthority" checked><span>Kontakt der Behörde behalten<small>E-Mail und Telefon, an die man sich wenden soll</small></span></label>
         <label class="switch"><input type="checkbox" id="highlight" checked><span>Funde markieren</span></label>
         <label class="switch"><input type="checkbox" id="live" checked><span>Beim Tippen prüfen</span></label>
+        <label class="field"><span>Vault-Speicher</span><select id="store"></select></label>
       </section>
 
       <section class="control-group">
@@ -68,6 +89,7 @@
             <button type="button" id="analyzeNow" class="primary" hidden>Prüfen</button>
           </div>
         </header>
+        <p class="busy" id="busy" hidden><span class="busy-dot" aria-hidden="true"></span><span id="busyText">Modell prüft …</span></p>
         <div class="legend" id="legend" aria-live="polite"></div>
         <div class="editor" id="editor">
           <div class="backdrop" id="backdrop" aria-hidden="true"></div>
