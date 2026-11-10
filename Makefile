@@ -21,9 +21,10 @@ cs-fix:
 phpstan:
 	@set -e; for p in $(PACKAGES); do if [ -f $$p/phpstan.dist.neon ]; then echo "== phpstan $$p"; (cd $$p && vendor/bin/phpstan analyse --no-progress); fi; done
 
+# 8 workers: a slow model call blocks a worker until the model answers, even if the page gave up.
 demo:
 	@echo "pii-shield demo: http://127.0.0.1:8088"
-	cd packages/pii-shield && APP_ENV=dev PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php
+	cd packages/pii-shield && APP_ENV=dev PHP_CLI_SERVER_WORKERS=8 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php
 
 up:
 	docker compose up -d --build
