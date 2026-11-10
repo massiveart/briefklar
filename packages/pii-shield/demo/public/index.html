@@ -40,7 +40,9 @@
         </div>
         <div class="model-settings" id="modelSettings" hidden>
           <label class="field"><span>Anbieter</span><select id="provider"></select></label>
-          <label class="field"><span>Modell</span><input id="modelName" autocomplete="off" spellcheck="false"></label>
+          <label class="field"><span>Modell</span><input id="modelName" list="modelOptions" autocomplete="off" spellcheck="false"></label>
+          <datalist id="modelOptions"></datalist>
+          <p class="hint" id="modelHint"></p>
           <label class="field" id="endpointField"><span>Server-URL</span><input id="endpoint" autocomplete="off" spellcheck="false" placeholder="http://gpu-server:8000"></label>
           <p class="location" id="location"></p>
           <div class="warning" id="externalWarning" hidden>

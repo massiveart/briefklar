@@ -60,7 +60,7 @@ if ('/api/samples' === $path) {
     return $json($samples);
 }
 
-if (!in_array($path, ['/api/analyze', '/api/restore'], true)) {
+if (!in_array($path, ['/api/analyze', '/api/restore', '/api/models'], true)) {
     return $json(['error' => 'Not found.'], 404);
 }
 if ('POST' !== ($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
@@ -84,7 +84,11 @@ try {
         throw new InvalidArgumentException('Expected a JSON object.');
     }
     /** @var array<string, mixed> $request */
-    $response = '/api/analyze' === $path ? $api->analyze($request) : $api->restore($request);
+    $response = match ($path) {
+        '/api/analyze' => $api->analyze($request),
+        '/api/restore' => $api->restore($request),
+        default => ['models' => $services->models(is_string($request['provider'] ?? null) ? $request['provider'] : '', is_string($request['endpoint'] ?? null) ? $request['endpoint'] : null)],
+    };
 
     return $json($response);
 } catch (InvalidArgumentException|JsonException $e) {

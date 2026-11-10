@@ -64,7 +64,7 @@ const els = {
   modelSettings: $('modelSettings'), provider: $('provider'), modelName: $('modelName'), endpoint: $('endpoint'),
   endpointField: $('endpointField'), location: $('location'), externalWarning: $('externalWarning'),
   acknowledgeExternal: $('acknowledgeExternal'), detectionHint: $('detectionHint'), store: $('store'),
-  busy: $('busy'), busyText: $('busyText'),
+  busy: $('busy'), busyText: $('busyText'), modelOptions: $('modelOptions'), modelHint: $('modelHint'),
 };
 
 const state = {
@@ -569,6 +569,38 @@ function renderModelSettings() {
     : 'Auf dem Demo-Server ist für diesen Anbieter noch nichts eingerichtet (API-Key bzw. URL).';
   els.externalWarning.hidden = location !== 'external';
   els.acknowledgeExternal.checked = state.acknowledgeExternal;
+  loadModels();
+}
+
+/** Fills the model suggestions: installed models (Ollama), the server's list, or the provider catalog. */
+let modelsRequest = 0;
+async function loadModels() {
+  if (!usesModel()) return;
+  const request = ++modelsRequest;
+  const provider = state.provider;
+  els.modelHint.textContent = 'Lade verfügbare Modelle …';
+  try {
+    const { models } = await post('/api/models', { provider, endpoint: state.endpoints[provider] || '' });
+    if (request !== modelsRequest) return;
+    els.modelOptions.innerHTML = models.map((m) => `<option value="${escapeHtml(m)}"></option>`).join('');
+    let current = els.modelName.value.trim();
+    if (provider === 'ollama' && !state.models[provider] && models.length && !models.includes(current)) {
+      // Nothing chosen yet and the default is not installed: take an installed model.
+      current = models[0];
+      els.modelName.value = current;
+    }
+    if (!models.length) {
+      els.modelHint.textContent = provider === 'ollama' || provider === 'generic'
+        ? 'Server nicht erreichbar oder keine Modelle installiert. Name von Hand eintragen.'
+        : 'Keine Liste verfügbar. Name von Hand eintragen.';
+    } else if (provider === 'ollama') {
+      els.modelHint.textContent = `${models.length} installiert${current && !models.includes(current) ? `. „${current}“ ist nicht installiert: ollama pull ${current}` : '.'}`;
+    } else {
+      els.modelHint.textContent = `${models.length} Modelle zur Auswahl, Feld leeren zeigt alle.`;
+    }
+  } catch (e) {
+    if (request === modelsRequest) els.modelHint.textContent = e.message;
+  }
 }
 
 // ---------- samples ----------
@@ -619,6 +651,7 @@ function init() {
   els.modelName.addEventListener('change', () => {
     state.models[state.provider] = els.modelName.value.trim();
     saveSettings();
+    loadModels();
     analyze();
   });
   els.endpoint.addEventListener('change', () => {
