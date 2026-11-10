@@ -73,6 +73,15 @@
       </section>
 
       <section class="control-group">
+        <div class="group-head">
+          <h2>Eigene Typen</h2>
+          <button type="button" class="link" id="newType">Neuer Typ</button>
+        </div>
+        <ul class="learned-list" id="learnedList"></ul>
+        <p class="hint" id="learnedEmpty">Im Original etwas markieren und „Markierung anlernen“ wählen, dann wird so etwas künftig auch geschwärzt.</p>
+      </section>
+
+      <section class="control-group">
         <h2>Nie schwärzen</h2>
         <ul class="allowlist" id="allowlist"></ul>
         <p class="hint" id="allowlistEmpty">Klicke im Original auf einen Fund und wähle „Nicht schwärzen“.</p>
@@ -86,6 +95,7 @@
         <header class="sheet-head">
           <h2 id="originalTitle">Original</h2>
           <div class="sheet-actions">
+            <button type="button" id="learnSelection" disabled title="Erst im Text etwas markieren">Markierung anlernen</button>
             <button type="button" id="loadSample">Beispielbrief einfügen</button>
             <button type="button" id="clearText">Leeren</button>
             <button type="button" id="analyzeNow" class="primary" hidden>Prüfen</button>
@@ -140,6 +150,25 @@
       <p class="notice notice-error" id="error" role="alert" hidden></p>
     </main>
   </div>
+
+  <dialog class="learn-dialog" id="learnDialog" aria-labelledby="learnTitle">
+    <form method="dialog" id="learnForm">
+      <h3 id="learnTitle">Neuen Typ anlernen</h3>
+      <p class="hint">Aus den Beispielen wird ein Muster abgeleitet. Ohne erkennbare Struktur (z. B. Namen) lernt nur das KI-Modell den Typ. Nur erfundene Beispiele verwenden: Sie werden gespeichert.</p>
+      <label class="field"><span>Name</span><input id="learnName" required pattern="[A-Z][A-Z0-9_]{1,39}" placeholder="z. B. VERSICHERTENNUMMER" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Beschreibung</span><input id="learnDescription" maxlength="300" placeholder="Was ist das? Hilft dem KI-Modell." autocomplete="off"></label>
+      <div class="learn-columns">
+        <label class="field"><span>Beispiele, eins pro Zeile</span><textarea id="learnExamples" rows="4" spellcheck="false"></textarea></label>
+        <label class="field"><span>Gegenbeispiele (optional)</span><textarea id="learnCounter" rows="4" spellcheck="false" placeholder="Ähnliches, das nicht gemeint ist"></textarea></label>
+      </div>
+      <label class="field"><span>Muster (leer lassen = aus Beispielen ableiten)</span><input id="learnPattern" autocomplete="off" spellcheck="false" placeholder="wird abgeleitet"></label>
+      <p class="learn-preview" id="learnPreview" aria-live="polite"></p>
+      <div class="learn-actions">
+        <button type="button" id="learnCancel">Abbrechen</button>
+        <button type="submit" class="primary" id="learnSave">Anlernen</button>
+      </div>
+    </form>
+  </dialog>
 
   <div class="popover" id="popover" role="dialog" aria-modal="false" aria-labelledby="popoverTitle" hidden>
     <div class="popover-head">

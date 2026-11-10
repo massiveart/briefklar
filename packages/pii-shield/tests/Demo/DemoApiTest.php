@@ -6,6 +6,8 @@ namespace Briefklar\PiiShield\Tests\Demo;
 
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Demo\DemoApi;
+use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
+use Briefklar\PiiShield\Learning\EntityLearner;
 use Briefklar\PiiShield\Vault\EncryptedVault;
 use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +27,8 @@ final class DemoApiTest extends TestCase
 
     private MockModelClient $client;
 
+    private EntityLearner $learner;
+
     /** @var list<string> */
     private array $storesUsed = [];
 
@@ -35,6 +39,7 @@ final class DemoApiTest extends TestCase
         $this->client = new MockModelClient(static fn (): string => '{"entities":[{"type":"passport","value":"CZ1234567"},{"type":"PERSON","value":"Johann Beispielmann"}]}');
         $platform = new Platform([new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
 
+        $this->learner = new EntityLearner(new CacheCustomEntityStore(new ArrayAdapter()));
         $this->api = new DemoApi(
             function (string $store) use ($vault, $storage): array {
                 $this->storesUsed[] = $store;
@@ -42,7 +47,33 @@ final class DemoApiTest extends TestCase
                 return [$vault, $storage];
             },
             static fn (array $model): ModelDetector => new ModelDetector($platform, (string) ($model['model'] ?? '')),
+            $this->learner,
         );
+    }
+
+    public function testLearnedTypesAreFoundInTheAnalysis(): void
+    {
+        $preview = $this->api->learn(['name' => 'INSURANCE_NUMBER', 'description' => 'Versichertennummer', 'examples' => ['VN-2026-000417'], 'dryRun' => true, 'text' => 'A VN-2026-000417 B VN-2025-123456']);
+        self::assertSame('[A-Z]{2}-\d{4}-\d{6}', $preview['type']['pattern'], 'one example: letters are generalised');
+        self::assertSame(2, $preview['matches']);
+        self::assertFalse($preview['saved']);
+        self::assertSame([], $this->api->entities()['types']);
+
+        $this->api->learn(['name' => 'INSURANCE_NUMBER', 'description' => 'Versichertennummer', 'examples' => ['VN-2026-000417']]);
+        $response = $this->api->analyze(['text' => 'Polizze VN-2025-123456', 'mode' => 'reversible']);
+
+        self::assertSame('Polizze ⟦INSURANCE_NUMBER_1⟧', $response['output']);
+        self::assertSame([['OTHER', 'INSURANCE_NUMBER']], array_map(static fn (array $f): array => [$f['type'], $f['label']], $response['findings']));
+
+        $this->api->forget(['name' => 'INSURANCE_NUMBER']);
+        self::assertSame('Polizze VN-2025-123456', $this->api->analyze(['text' => 'Polizze VN-2025-123456', 'mode' => 'reversible'])['output']);
+    }
+
+    public function testLearningErrorsBecomeMessages(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->api->learn(['name' => 'IBAN', 'examples' => ['X-1']]);
     }
 
     public function testModelDetectionFindsWhatRegexCannot(): void
