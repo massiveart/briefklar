@@ -47,10 +47,9 @@ composer:
 console:
 	@$(RUN) sh -c 'cd app && bin/console $(c)'
 
-# 8 workers: a slow model call blocks a worker until the model answers, even if the page gave up.
+# pii-shield demo on http://127.0.0.1:8088, in Docker (DOCKER=0: local PHP). See packages/pii-shield/Makefile.
 demo:
-	@echo "pii-shield demo: http://127.0.0.1:8088"
-	cd packages/pii-shield && APP_ENV=dev PHP_CLI_SERVER_WORKERS=8 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php
+	@$(MAKE) -C packages/pii-shield demo
 
 up:
 	docker compose up -d --build

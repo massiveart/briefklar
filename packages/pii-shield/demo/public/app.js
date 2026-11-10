@@ -66,7 +66,7 @@ const els = {
   modelSettings: $('modelSettings'), provider: $('provider'), modelName: $('modelName'), endpoint: $('endpoint'),
   endpointField: $('endpointField'), location: $('location'), externalWarning: $('externalWarning'),
   acknowledgeExternal: $('acknowledgeExternal'), detectionHint: $('detectionHint'), store: $('store'),
-  busy: $('busy'), busyText: $('busyText'), modelOptions: $('modelOptions'), modelHint: $('modelHint'),
+  busy: $('busy'), busyText: $('busyText'), modelSelect: $('modelSelect'), modelSelectField: $('modelSelectField'), modelNameField: $('modelNameField'), modelNameLabel: $('modelNameLabel'), modelHint: $('modelHint'),
   learnSelection: $('learnSelection'), newType: $('newType'), learnedList: $('learnedList'), learnedEmpty: $('learnedEmpty'),
   learnDialog: $('learnDialog'), learnForm: $('learnForm'), learnName: $('learnName'), learnDescription: $('learnDescription'),
   learnExamples: $('learnExamples'), learnCounter: $('learnCounter'), learnPattern: $('learnPattern'),
@@ -275,7 +275,7 @@ const currentProvider = () => state.config.providers.find((p) => p.id === state.
 function locationOfEndpoint(endpoint, fallback) {
   try {
     const host = new URL(endpoint).hostname;
-    return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(host) ? 'local' : 'on_premise';
+    return ['localhost', '127.0.0.1', '[::1]', '::1', 'host.docker.internal'].includes(host) ? 'local' : 'on_premise';
   } catch { return fallback; }
 }
 function currentLocation() {
@@ -657,6 +657,8 @@ function renderModelSettings() {
   if (!provider) return;
   els.provider.value = provider.id;
   els.modelName.value = state.models[provider.id] || provider.model;
+  state.modelChoices = [];
+  renderModelChoice();
   els.modelName.placeholder = provider.model || 'Modellname, z. B. qwen2.5:14b';
   const hasEndpoint = provider.id === 'ollama' || provider.id === 'generic';
   els.endpointField.hidden = !hasEndpoint;
@@ -671,6 +673,23 @@ function renderModelSettings() {
   loadModels();
 }
 
+/** A list when the provider knows its models, plus a free name ("Anderes Modell …"); the text field holds what is sent. */
+function renderModelChoice() {
+  const choices = state.modelChoices || [];
+  const current = els.modelName.value.trim();
+  els.modelSelectField.hidden = !choices.length;
+  if (!choices.length) {
+    els.modelNameField.hidden = false;
+    els.modelNameLabel.textContent = 'Modell';
+    return;
+  }
+  const custom = !choices.includes(current);
+  els.modelSelect.innerHTML = [...choices.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`), '<option value="__custom__">Anderes Modell …</option>'].join('');
+  els.modelSelect.value = custom ? '__custom__' : current;
+  els.modelNameField.hidden = !custom;
+  els.modelNameLabel.textContent = 'Modellname';
+}
+
 /** Fills the model suggestions: installed models (Ollama), the server's list, or the provider catalog. */
 let modelsRequest = 0;
 async function loadModels() {
@@ -682,12 +701,12 @@ async function loadModels() {
     const { models } = await post('/api/models', { provider, endpoint: state.endpoints[provider] || '' });
     if (request !== modelsRequest) return;
     logEvent(`Modelle ${provider}: ${models.length} gefunden`);
-    els.modelOptions.innerHTML = models.map((m) => `<option value="${escapeHtml(m)}"></option>`).join('');
     let current = els.modelName.value.trim();
     // Detection needs a chat model: no embedding or reranker models; prefer plain ones over rag/coder variants.
     const usable = models.filter((m) => !/embed|rerank/i.test(m))
       .sort((a, b) => Number(/rag|coder/i.test(a)) - Number(/rag|coder/i.test(b)));
-    if ((provider === 'ollama' || provider === 'generic') && usable.length && !usable.includes(current) && !(state.models[provider] && models.includes(state.models[provider]))) {
+    state.modelChoices = usable;
+    if ((provider === 'ollama' || provider === 'generic') && usable.length && !usable.includes(current) && !state.models[provider]) {
       // Nothing chosen yet and the default is not installed: take an installed model.
       current = usable[0];
       els.modelName.value = current;
@@ -695,14 +714,17 @@ async function loadModels() {
       saveSettings();
       analyze(); // the provider changed and now has a model
     }
+    renderModelChoice();
     if (!models.length) {
       els.modelHint.textContent = provider === 'ollama' || provider === 'generic'
         ? 'Server nicht erreichbar oder keine Modelle installiert. Name von Hand eintragen.'
         : 'Keine Liste verfügbar. Name von Hand eintragen.';
-    } else if (provider === 'ollama') {
-      els.modelHint.textContent = `${models.length} installiert${current && !models.includes(current) ? `. „${current}“ ist nicht installiert: ollama pull ${current}` : '.'}`;
+    } else if (provider === 'ollama' || provider === 'generic') {
+      els.modelHint.textContent = current && !models.includes(current)
+        ? `„${current}“ ist auf dem Server nicht installiert${provider === 'ollama' ? `: ollama pull ${current}` : '.'}`
+        : `${usable.length} installiert.`;
     } else {
-      els.modelHint.textContent = `${models.length} Modelle zur Auswahl, Feld leeren zeigt alle.`;
+      els.modelHint.textContent = `${usable.length} Modelle zur Auswahl.`;
     }
   } catch (e) {
     if (request === modelsRequest) els.modelHint.textContent = e.message;
@@ -848,6 +870,16 @@ function init() {
     saveSettings();
     renderModelSettings(); // loads the model list; analyses once a model is known
     if (state.models[state.provider]) analyze();
+  });
+  els.modelSelect.addEventListener('change', () => {
+    if (els.modelSelect.value === '__custom__') {
+      els.modelNameField.hidden = false;
+      els.modelName.value = '';
+      els.modelName.focus();
+      return;
+    }
+    els.modelName.value = els.modelSelect.value;
+    els.modelName.dispatchEvent(new Event('change'));
   });
   els.modelName.addEventListener('change', () => {
     state.models[state.provider] = els.modelName.value.trim();

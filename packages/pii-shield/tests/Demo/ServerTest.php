@@ -20,7 +20,7 @@ final class ServerTest extends WebTestCase
 
     protected function tearDown(): void
     {
-        unset($_SERVER['PII_SERVICE_ONLY'], $_SERVER['PII_SERVICE_TOKEN']);
+        unset($_SERVER['PII_SERVICE_ONLY'], $_SERVER['PII_SERVICE_TOKEN'], $_SERVER['PII_LOCAL_PEERS'], $_SERVER['PII_DEMO_OLLAMA_URL']);
         parent::tearDown();
     }
 
@@ -42,6 +42,37 @@ final class ServerTest extends WebTestCase
         $data = json_decode((string) $client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $data;
+    }
+
+    public function testDockerGatewayIsLocalOnlyWhenConfigured(): void
+    {
+        $gateway = ['REMOTE_ADDR' => '172.31.88.1'];
+        $client = self::createClient();
+
+        self::postJson($client, '/v1/redact', ['text' => 'SVNR 4568 150392'], $gateway);
+        self::assertResponseStatusCodeSame(401);
+        self::postJson($client, '/api/analyze', ['text' => 'x'], $gateway);
+        self::assertResponseStatusCodeSame(403);
+
+        $_SERVER['PII_LOCAL_PEERS'] = '172.31.88.1';
+        self::postJson($client, '/v1/redact', ['text' => 'SVNR 4568 150392'], $gateway);
+        self::assertResponseIsSuccessful();
+        $client->request('GET', '/api/config', server: ['HTTP_HOST' => '127.0.0.1:8088', ...$gateway]);
+        self::assertResponseIsSuccessful();
+
+        self::postJson($client, '/v1/redact', ['text' => 'x'], ['REMOTE_ADDR' => '172.31.88.7']); // another container
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testOllamaOnTheDockerHostIsLocal(): void
+    {
+        $_SERVER['PII_DEMO_OLLAMA_URL'] = 'http://host.docker.internal:11434';
+        $client = self::createClient();
+        $client->request('GET', '/api/config', server: ['HTTP_HOST' => '127.0.0.1:8088']);
+
+        /** @var list<array{id: string, location: string}> $providers */
+        $providers = self::json($client)['providers'];
+        self::assertSame('local', array_column($providers, 'location', 'id')['ollama']);
     }
 
     public function testDemoPageIsServedWithSecurityHeaders(): void

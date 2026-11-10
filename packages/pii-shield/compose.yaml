@@ -1,0 +1,44 @@
+# Development of pii-shield in Docker, no PHP on the host: see Makefile (make test, make demo, make sh).
+# The image's last stage (Dockerfile) is the standalone service; this file uses the dev stage.
+name: pii-shield
+
+x-php: &php
+  build: { context: ., target: dev }
+  user: "${PII_UID:-1000}:${PII_GID:-1000}"   # files in the mount belong to you (set by the Makefile)
+  volumes:   # same layout as the monorepo: the fixture letters are in ../../fixtures
+    - .:/srv/packages/pii-shield
+    - ../../fixtures:/srv/fixtures:ro
+  working_dir: /srv/packages/pii-shield
+  extra_hosts: ["host.docker.internal:host-gateway"]   # Ollama etc. on this machine
+  networks: [pii]
+  environment:
+    PII_DEMO_OLLAMA_URL: http://host.docker.internal:11434
+    PII_DEMO_REDIS_URL: redis://redis:6379
+    # The published port arrives from the network gateway: it counts as this machine (like 127.0.0.1).
+    # "gateway" = this container's default gateway. Safe because the port is bound to the host's 127.0.0.1
+    # only; other containers in this network have other addresses.
+    PII_LOCAL_PEERS: gateway
+
+services:
+  php:
+    <<: *php
+
+  demo:
+    <<: *php
+    command: ["php", "-S", "0.0.0.0:8088", "-t", "demo/public", "demo/public/index.php"]
+    ports: ["127.0.0.1:8088:8088"]
+    environment:
+      APP_ENV: dev
+      PHP_CLI_SERVER_WORKERS: 8   # a slow model call blocks a worker until the model answers
+      PII_DEMO_OLLAMA_URL: http://host.docker.internal:11434
+      PII_DEMO_REDIS_URL: redis://redis:6379
+      PII_LOCAL_PEERS: gateway
+    depends_on: [redis]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]   # vault data in memory only
+    networks: [pii]
+
+networks:
+  pii: {}
