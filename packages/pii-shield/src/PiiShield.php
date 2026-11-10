@@ -25,16 +25,18 @@ final class PiiShield implements VaultAwarePiiShieldInterface
      * @param iterable<DetectorInterface> $detectors
      * @param VaultInterface|null         $vault     optional; enables restoreFromVault() across requests
      * @param int                         $vaultTtl  seconds a stored mapping lives
+     * @param list<string>                $allowlist values that are never redacted (exact match)
      */
     public function __construct(
         iterable $detectors,
         private readonly ?VaultInterface $vault = null,
         private readonly int $vaultTtl = self::DEFAULT_VAULT_TTL,
+        array $allowlist = [],
     ) {
         if ($vaultTtl <= 0) {
             throw new \InvalidArgumentException('The vault TTL must be positive.');
         }
-        $this->extractor = new EntityExtractor($detectors);
+        $this->extractor = new EntityExtractor($detectors, $allowlist);
     }
 
     /**

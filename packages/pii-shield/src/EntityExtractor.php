@@ -35,12 +35,18 @@ final class EntityExtractor
      */
     private const float SURNAME_PROPAGATION_MIN_CONFIDENCE = 0.8;
 
+    /** @var array<string, true> */
+    private readonly array $allowlist;
+
     /**
      * @param iterable<DetectorInterface> $detectors
+     * @param list<string>                $allowlist values that are never treated as PII (exact match)
      */
     public function __construct(
         private readonly iterable $detectors,
+        array $allowlist = [],
     ) {
+        $this->allowlist = array_fill_keys($allowlist, true);
     }
 
     /**
@@ -82,9 +88,24 @@ final class EntityExtractor
             }
         }
 
-        $entities = self::resolveOverlaps($detected);
+        // Filter before propagation (an allowed value must not seed surnames) and after it.
+        $entities = self::resolveOverlaps($this->withoutAllowed($detected));
 
-        return self::resolveOverlaps([...$entities, ...self::propagate($text, $entities)]);
+        return self::resolveOverlaps($this->withoutAllowed([...$entities, ...self::propagate($text, $entities)]));
+    }
+
+    /**
+     * @param list<Entity> $entities
+     *
+     * @return list<Entity>
+     */
+    private function withoutAllowed(array $entities): array
+    {
+        if ([] === $this->allowlist) {
+            return $entities;
+        }
+
+        return array_values(array_filter($entities, fn (Entity $e): bool => !isset($this->allowlist[$e->value])));
     }
 
     /**
