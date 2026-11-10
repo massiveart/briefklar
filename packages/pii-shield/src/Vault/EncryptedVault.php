@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Vault;
 
+use Briefklar\PiiShield\Exception\VaultException;
 use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
 
 /**

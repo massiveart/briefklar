@@ -196,8 +196,8 @@ $learner->forget('INSURANCE_NUMBER');
 
 | Exception | When |
 |---|---|
-| `Vault\VaultException` | stored mapping unreadable (tampered, wrong key) or unknown/expired in `restoreFromVault()` |
-| `Bridge\SymfonyAi\DetectionFailedException` | the detection model failed; fails closed |
-| `Bridge\SymfonyAi\UnsupportedContentException` | an agent message contains images, audio, documents |
-| `Learning\LearningFailedException` | a type cannot be learned (the message says why) |
+| `Exception\VaultException` | stored mapping unreadable (tampered, wrong key) or unknown/expired in `restoreFromVault()` |
+| `Exception\DetectionFailedException` | the detection model failed; fails closed |
+| `Exception\UnsupportedContentException` | an agent message contains images, audio, documents |
+| `Exception\LearningFailedException` | a type cannot be learned (the message says why) |
 | `\InvalidArgumentException` | invalid configuration (TTL, key length, external model without acknowledgement) |

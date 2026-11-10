@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Vault;
 
+use Briefklar\PiiShield\Exception\VaultException;
+
 /**
  * Stores placeholder => original mappings between requests (see docs/adr/0005).
  *

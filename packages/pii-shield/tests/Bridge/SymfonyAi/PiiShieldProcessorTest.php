@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield\Tests\Bridge\SymfonyAi;
 
 use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
-use Briefklar\PiiShield\Bridge\SymfonyAi\UnsupportedContentException;
+use Briefklar\PiiShield\Exception\UnsupportedContentException;
 use Briefklar\PiiShield\PiiShield;
 use Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Explanation;
 use Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Payment;

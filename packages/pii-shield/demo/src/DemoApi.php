@@ -19,6 +19,7 @@ use Briefklar\PiiShield\Detector\TaxNumberDetector;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityExtractor;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Exception\VaultException;
 use Briefklar\PiiShield\Learning\CustomEntityDetector;
 use Briefklar\PiiShield\Learning\CustomEntityType;
 use Briefklar\PiiShield\Learning\EntityLearner;
@@ -29,7 +30,6 @@ use Briefklar\PiiShield\PiiMasker;
 use Briefklar\PiiShield\PiiShield;
 use Briefklar\PiiShield\Placeholder;
 use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
-use Briefklar\PiiShield\Vault\VaultException;
 use Briefklar\PiiShield\Vault\VaultInterface;
 
 /**

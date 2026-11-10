@@ -7,8 +7,8 @@ install:
 	@set -e; if [ -f app/composer.json ]; then (cd app && composer install); fi
 
 test:
-	@set -e; for p in $(PACKAGES); do if [ -f $$p/phpunit.xml.dist ]; then (cd $$p && vendor/bin/phpunit); fi; done
-	@set -e; if [ -f app/phpunit.xml.dist ]; then (cd app && bin/phpunit); fi
+	@set -e; for p in $(PACKAGES); do if [ -f $$p/phpunit.dist.xml ] || [ -f $$p/phpunit.xml.dist ]; then (cd $$p && vendor/bin/phpunit); fi; done
+	@set -e; if [ -f app/phpunit.dist.xml ] || [ -f app/phpunit.xml.dist ]; then (cd app && bin/phpunit); fi
 
 qa: cs-check phpstan
 

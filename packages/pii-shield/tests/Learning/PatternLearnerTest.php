@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Tests\Learning;
 
-use Briefklar\PiiShield\Learning\LearningFailedException;
+use Briefklar\PiiShield\Exception\LearningFailedException;
 use Briefklar\PiiShield\Learning\PatternLearner;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
