@@ -9,6 +9,8 @@ use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
+use Briefklar\PiiShield\Learning\CustomEntityType;
 use PHPUnit\Framework\TestCase;
 use Symfony\AI\Platform\ModelCatalog\FallbackModelCatalog;
 use Symfony\AI\Platform\ModelRouter\CatalogBasedModelRouter;
@@ -16,6 +18,7 @@ use Symfony\AI\Platform\Platform;
 use Symfony\AI\Platform\Provider;
 use Symfony\AI\Platform\Test\MockModelClient;
 use Symfony\AI\Platform\Test\MockResultConverter;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 final class ModelDetectorTest extends TestCase
 {
@@ -125,6 +128,25 @@ final class ModelDetectorTest extends TestCase
         $payload = json_encode($call['payload'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
         self::assertStringContainsString('Jan Novák', $payload);
         self::assertStringContainsString('ID_NUMBER', $payload, 'the prompt lists the entity types');
+    }
+
+    public function testLearnedTypesAreTaughtWithExamplesAndReportedByName(): void
+    {
+        $store = new CacheCustomEntityStore(new ArrayAdapter());
+        $store->save(new CustomEntityType('PET_NAME', 'Name eines Haustiers', ['Bello', 'Minka'], ['Hund']));
+        $this->client = new MockModelClient(static fn (): string => '{"entities":[{"type":"PET_NAME","value":"Rex"}]}');
+        $platform = new Platform([new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
+        $detector = new ModelDetector($platform, 'test-model', learnedTypes: $store);
+
+        $entities = $detector->detect('Unser Hund Rex bellt.');
+
+        self::assertCount(1, $entities);
+        self::assertSame(EntityType::Other, $entities[0]->type);
+        self::assertSame('PET_NAME', $entities[0]->label);
+        $payload = json_encode($this->client->getCalls()[0]['payload'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
+        self::assertStringContainsString('PET_NAME', $payload);
+        self::assertStringContainsString('Name eines Haustiers', $payload);
+        self::assertStringContainsString('Minka', $payload);
     }
 
     public function testEmptyTextIsNotSent(): void

@@ -21,6 +21,6 @@ final class TypeLabelMask implements MaskingStrategyInterface
 
     public function mask(Entity $entity): string
     {
-        return \sprintf($this->format, $entity->type->value);
+        return \sprintf($this->format, $entity->typeName());
     }
 }

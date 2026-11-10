@@ -153,22 +153,22 @@ final class EntityExtractor
     {
         $needles = [];
         foreach ($entities as $entity) {
-            $needles[$entity->type->value."\0".$entity->value] = [$entity->type, $entity->value];
+            $needles[$entity->typeName()."\0".$entity->value] = [$entity->type, $entity->value, $entity->label];
             if (EntityType::Person === $entity->type
                 && $entity->confidence >= self::SURNAME_PROPAGATION_MIN_CONFIDENCE
                 && null !== $surname = self::surname($entity->value)) {
-                $needles[$entity->type->value."\0".$surname] = [$entity->type, $surname];
+                $needles[$entity->typeName()."\0".$surname] = [$entity->type, $surname, $entity->label];
             }
         }
 
         $found = [];
-        foreach ($needles as [$type, $value]) {
+        foreach ($needles as [$type, $value, $label]) {
             if (mb_strlen($value) < self::MIN_PROPAGATION_LENGTH) {
                 continue;
             }
             $pattern = '/(?<![\p{L}\p{N}])'.preg_quote($value, '/').'(?![\p{L}\p{N}])/u';
             foreach (RegexMatcher::matchAll($pattern, $text) as $match) {
-                $found[] = new Entity($type, $match['value'], $match['offset'], 0.5, 'propagation');
+                $found[] = new Entity($type, $match['value'], $match['offset'], 0.5, 'propagation', $label);
             }
         }
 

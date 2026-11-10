@@ -60,7 +60,7 @@ final class PiiShield implements VaultAwarePiiShieldInterface
             $redacted = '';
             $cursor = 0;
             foreach ($entities as $entity) {
-                $redacted .= mb_substr($text, $cursor, $entity->offset - $cursor).$placeholders['byValue'][$entity->type->value][$entity->value];
+                $redacted .= mb_substr($text, $cursor, $entity->offset - $cursor).$placeholders['byValue'][$entity->typeName()][$entity->value];
                 $cursor = $entity->offset + $entity->length();
             }
             $redacted .= mb_substr($text, $cursor);
@@ -139,7 +139,7 @@ final class PiiShield implements VaultAwarePiiShieldInterface
         $fullNames = array_filter($entities, static fn (Entity $e): bool => EntityType::Person === $e->type && null !== EntityExtractor::surname($e->value));
 
         foreach ([...$fullNames, ...$entities] as $entity) {
-            $type = $entity->type->value;
+            $type = $entity->typeName();
             if (isset($byValue[$type][$entity->value])) {
                 continue;
             }
@@ -153,7 +153,7 @@ final class PiiShield implements VaultAwarePiiShieldInterface
             }
 
             $counters[$type] = ($counters[$type] ?? 0) + 1;
-            $placeholder = Placeholder::format($entity->type, $counters[$type]);
+            $placeholder = Placeholder::format($entity->type, $counters[$type], $entity->label);
             $byValue[$type][$entity->value] = $placeholder;
             $vault[$placeholder] = $entity->value;
         }

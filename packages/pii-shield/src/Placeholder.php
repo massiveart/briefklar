@@ -17,9 +17,9 @@ final class Placeholder
 
     private const string TOLERANT_PATTERN = '/(?:⟦|\[\[)\s*(?<type>[A-Za-z]+(?:(?:\\\\?_|\s+)[A-Za-z]+)*)(?:\\\\?_|\s+)(?<number>\d+)\s*(?:⟧|\]\])/u';
 
-    public static function format(EntityType $type, int $number): string
+    public static function format(EntityType $type, int $number, ?string $label = null): string
     {
-        return self::OPEN.$type->value.'_'.$number.self::CLOSE;
+        return self::OPEN.($label ?? $type->value).'_'.$number.self::CLOSE;
     }
 
     /**
