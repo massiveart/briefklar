@@ -33,3 +33,7 @@ Pins are added when the respective code is introduced (bridge in task A, app set
 
 ## Consequences
 Breakages in BETA1 are worked around locally and reported in `docs/upstream-issues.md`. If BETA1 blocks the demo, all Symfony AI packages move to 0.15.0 together, never mixed.
+
+## Addendum (09.11.2026, app setup)
+
+Platform bridges are separate packages in 1.0 and are pinned the same way in `app/composer.json`: `symfony/ai-hugging-face-platform`, `symfony/ai-anthropic-platform`, `symfony/ai-ollama-platform` at 1.0.0-BETA1. `symfony/ai-generic-platform` 1.0.0-BETA1 is a transitive dependency of the Hugging Face bridge and must be required explicitly, because the app keeps `minimum-stability: stable`. The app uses Symfony 8.1 (current stable; the bundle allows `^7.3|^8.0`).

@@ -1,0 +1,39 @@
+# Provider and model are chosen via env (see .env): AI_PLATFORM selects one of the platforms below,
+# AI_MODEL the model on it. Default: Hugging Face Inference Providers (hackathon credits).
+ai:
+    platform:
+        huggingface:
+            api_key: '%env(HUGGINGFACE_API_KEY)%'
+        anthropic:
+            api_key: '%env(ANTHROPIC_API_KEY)%'
+        ollama:
+            endpoint: '%env(OLLAMA_ENDPOINT)%'
+
+    agent:
+        letter_explainer:
+            platform: app.ai.platform
+            model: '%env(AI_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/config/prompts/explain_letter.md'
+
+        # Same task in "Leichte Sprache" (easy-to-read German), chosen by the user on the upload page.
+        letter_explainer_easy:
+            platform: app.ai.platform
+            model: '%env(AI_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/config/prompts/explain_letter_easy.md'
+
+services:
+    # Resolves AI_PLATFORM at runtime, so switching providers needs no rebuild of the container.
+    app.ai.platform:
+        class: Symfony\AI\Platform\PlatformInterface
+        factory: ['@app.ai.platforms', 'get']
+        arguments: ['%env(AI_PLATFORM)%']
+
+    app.ai.platforms:
+        class: Symfony\Component\DependencyInjection\ServiceLocator
+        arguments:
+            - huggingface: '@ai.platform.huggingface'
+              anthropic: '@ai.platform.anthropic'
+              ollama: '@ai.platform.ollama'
+        tags: ['container.service_locator']

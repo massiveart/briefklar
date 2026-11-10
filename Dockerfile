@@ -7,6 +7,9 @@ RUN apt-get update \
 
 RUN install-php-extensions intl zip opcache
 
+# Letters up to 10 MB (validated in App\Form\LetterUpload); PHP default is 2 MB.
+RUN printf "upload_max_filesize=12M\npost_max_size=14M\n" > "$PHP_INI_DIR/conf.d/briefklar.ini"
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /srv

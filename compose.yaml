@@ -6,8 +6,11 @@ services:
     env_file:
       - path: app/.env.local
         required: false
+    environment:
+      COMPOSER_CACHE_DIR: /composer-cache
     volumes:
       - ./:/srv
+      - composer-cache:/composer-cache
     tmpfs:
       - /tmp   # uploads live in memory only
 
@@ -21,3 +24,4 @@ services:
 
 volumes:
   ollama:
+  composer-cache:

@@ -1,0 +1,29 @@
+app:
+    name: briefklar
+    language_switch: Sprache
+letter:
+    privacy: Dein Brief wird nur für diese Anfrage verarbeitet und nicht gespeichert. Texterkennung läuft lokal auf diesem Server.
+    upload:
+        title: Brief verstehen
+        intro: Lade einen Brief von einer Behörde hoch. Wir erklären dir in einfachen Worten, worum es geht und was du tun musst.
+        label: Brief (PDF oder Foto)
+        help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
+        submit: Brief erklären
+        easy_language: Erklärung in Leichter Sprache
+        easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
+    result:
+        title: Erklärung deines Briefs
+        easy_language: In Leichter Sprache
+        deadline: Frist
+        no_deadline: Im Brief steht keine Frist.
+        deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.
+        amount: Betrag
+        summary: Worum geht es?
+        actions: Was musst du tun?
+        no_action: Du musst nichts tun.
+        questions: Was du nachfragen kannst
+        legal_references: Genannte Rechtsgrundlagen
+        original_wording: Frist, Betrag und Rechtsgrundlagen sind wörtlich aus dem Brief übernommen.
+        disclaimer: Das ist eine Erklärung, keine Rechtsberatung. Fristen und Beträge immer mit dem Original vergleichen.
+        ocr_note: Der Text wurde per Texterkennung gelesen und kann Lesefehler enthalten.
+        again: Anderen Brief hochladen

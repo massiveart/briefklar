@@ -26,6 +26,10 @@ open http://localhost:8080
 
 Fully offline variant with a local model: `docker compose --profile local up -d` (uses Ollama).
 
+## Development
+
+No local PHP needed: `make build && make install && make test` runs everything in the app container. See [app/README.md](app/README.md#development).
+
 ## How it works
 
 ```

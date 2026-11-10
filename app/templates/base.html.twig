@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}{% endblock %} · {{ 'app.name'|trans }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-mark.svg') }}">
+        {% block stylesheets %}
+        {% endblock %}
+
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+
+        {% set frankenphp_hot_reload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
+        {% if frankenphp_hot_reload %}
+        <meta name="frankenphp-hot-reload:url" content="{{ frankenphp_hot_reload }}">
+        <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
+        <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
+        {% endif %}
+    </head>
+    <body>
+        <header class="nav">
+            <a class="nav-brand" href="{{ path('letter_upload') }}"><img src="{{ asset('images/logo.svg') }}" alt="{{ 'app.name'|trans }}" width="164" height="34"></a>
+            <nav class="lang-switch" aria-label="{{ 'app.language_switch'|trans }}">
+                {% for language in enum('App\\Explanation\\ExplanationLanguage').cases() %}
+                    {% if language.value == app.request.locale %}
+                        <span class="lang-switch__current" aria-current="true" lang="{{ language.value }}">{{ language.nativeName }}</span>
+                    {% else %}
+                        <a href="{{ path('letter_upload', {_locale: language.value}) }}" hreflang="{{ language.value }}" lang="{{ language.value }}">{{ language.nativeName }}</a>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+        </header>
+        <main>
+            {% block body %}{% endblock %}
+        </main>
+    </body>
+</html>

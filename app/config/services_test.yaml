@@ -1,0 +1,10 @@
+# Test-only services. Loaded by the kernel for APP_ENV=test.
+services:
+    App\Tests\Support\ScriptedPlatform:
+        public: true
+
+    # Replaces the real provider; the agent pipeline itself stays real.
+    app.ai.platform:
+        class: Symfony\AI\Platform\Platform
+        factory: ['App\Tests\Support\ScriptedPlatform', 'create']
+        arguments: ['@event_dispatcher', '@App\Tests\Support\ScriptedPlatform']
