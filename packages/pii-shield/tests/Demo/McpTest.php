@@ -132,6 +132,28 @@ final class McpTest extends WebTestCase
         self::assertTrue($response['result']['isError'] ?? false);
     }
 
+    public function testForeignOriginsAndNonJsonAreRejected(): void
+    {
+        $client = self::createClient();
+
+        $client->request('POST', '/mcp', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_HOST' => '127.0.0.1:8088', 'HTTP_ORIGIN' => 'https://evil.example'], content: '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}');
+        self::assertResponseStatusCodeSame(403);
+
+        $client->request('POST', '/mcp', server: ['CONTENT_TYPE' => 'text/plain', 'HTTP_HOST' => '127.0.0.1:8088'], content: '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testLocalBrowserToolsLikeTheInspectorMayConnect(): void
+    {
+        $client = self::createClient();
+        $this->initialize($client);
+
+        $tools = $this->rpc($client, 'tools/list', server: ['HTTP_ORIGIN' => 'http://localhost:6274']);
+
+        self::assertArrayHasKey('result', $tools);
+        self::assertNotSame('*', $client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
     public function testTokenIsRequiredWhenConfigured(): void
     {
         $_SERVER['PII_SERVICE_TOKEN'] = 'secret-token';
