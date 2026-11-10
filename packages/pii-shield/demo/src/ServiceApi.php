@@ -84,8 +84,11 @@ final class ServiceApi
             }
         } catch (\InvalidArgumentException $e) {
             return self::error($e instanceof LearningFailedException ? 422 : 400, $e->getMessage());
-        } catch (DetectionFailedException $e) {
-            return self::error(502, $e->getMessage());
+        } catch (DetectionFailedException) {
+            // Details (model name, URLs, provider errors) stay on the server.
+            return self::error(502, 'Model-based detection failed.');
+        } catch (\RuntimeException) {
+            return self::error(500, 'Detection failed.');
         }
 
         return self::error(404, 'Not found.');

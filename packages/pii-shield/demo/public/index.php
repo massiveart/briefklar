@@ -47,6 +47,13 @@ $json = static function (mixed $data, int $status = 200): bool {
 
 $services = new DemoServices(dirname(__DIR__).'/var');
 
+// DNS rebinding: a foreign domain resolving to 127.0.0.1 must not reach the APIs. Only known hosts are served.
+$allowedHosts = array_filter(array_map('trim', explode(',', (string) ($_SERVER['PII_SERVICE_ALLOWED_HOSTS'] ?? $_ENV['PII_SERVICE_ALLOWED_HOSTS'] ?? ''))));
+$host = (string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? ''));
+if ((str_starts_with($path, '/api/') || str_starts_with($path, '/v1/')) && !in_array($host, ['127.0.0.1', 'localhost', '[::1]', ...$allowedHosts], true)) {
+    return $json(['error' => 'Unknown host.'], 421);
+}
+
 // Versioned HTTP API for apps (see docs/openapi.yaml). Token auth; JSON only, so browsers cannot send it cross-site.
 if (str_starts_with($path, '/v1/')) {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
