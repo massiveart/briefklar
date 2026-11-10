@@ -776,7 +776,7 @@ function init() {
   els.keepAuthority.checked = state.keepAuthority;
   els.highlight.checked = state.highlight;
   els.live.checked = state.live;
-  els.analyzeNow.hidden = state.live;
+
   els.vaultTtl.textContent = '15';
 
   document.querySelectorAll('input[name="mode"]').forEach((radio) => radio.addEventListener('change', () => {
@@ -831,7 +831,7 @@ function init() {
     analyze();
   });
   els.highlight.addEventListener('change', () => { state.highlight = els.highlight.checked; saveSettings(); closePopover(); render(); });
-  els.live.addEventListener('change', () => { state.live = els.live.checked; els.analyzeNow.hidden = state.live; saveSettings(); if (state.live) analyze(); });
+  els.live.addEventListener('change', () => { state.live = els.live.checked; saveSettings(); if (state.live) analyze(); });
 
   els.input.addEventListener('input', () => {
     renderBackdrop(); // keep layout in sync immediately; highlights return after the next analysis
@@ -840,7 +840,7 @@ function init() {
   els.input.addEventListener('scroll', syncScroll);
   els.input.addEventListener('click', openPopoverAtCaret);
   els.input.addEventListener('keyup', (e) => { if (e.key === 'Enter' && e.altKey) openPopoverAtCaret(); });
-  els.analyzeNow.addEventListener('click', analyze);
+  els.analyzeNow.addEventListener('click', () => analyze());
 
   els.loadSample.addEventListener('click', () => {
     if (!state.samples.length) return;
