@@ -39,7 +39,7 @@ curl -s localhost:8080/v1/redact -H 'Authorization: Bearer change-me' -H 'Conten
   -d '{"text":"SVNR 4568 150392"}'
 ```
 
-→ [docs/service.md](docs/service.md) (configuration, security) and [docs/openapi.yaml](docs/openapi.yaml) (API reference).
+→ [docs/service.md](docs/service.md) (curl walkthrough of every endpoint, configuration, security) and [docs/openapi.yaml](docs/openapi.yaml) (OpenAPI 3.1 reference, opens in Swagger UI, Postman, Insomnia).
 
 **As an MCP server** (Claude Desktop, Claude Code, any MCP client): tools `redact_text`, `restore_text`, `mask_text`,
 `learn_entity_type`, `list_entity_types` over STDIO or Streamable HTTP (`/mcp`):

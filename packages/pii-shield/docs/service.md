@@ -15,15 +15,89 @@ docker run -p 8080:8080 -e PII_SERVICE_TOKEN=$(openssl rand -hex 24) pii-shield
 make demo
 ```
 
+## Try it with curl
+
+Local (`make demo`): no token needed, requests from this machine only. Docker: use port 8080 and the token.
+
 ```bash
-curl -s http://localhost:8080/v1/redact \
-  -H "Authorization: Bearer $PII_SERVICE_TOKEN" -H 'Content-Type: application/json' \
+B=http://127.0.0.1:8088               # Docker: B=http://localhost:8080
+AUTH="Authorization: Bearer ${PII_SERVICE_TOKEN:-}"
+J='Content-Type: application/json'
+
+curl -s $B/v1/health -H "$AUTH"
+# {"status":"ok","modelDetection":false}
+```
+
+**Redact**: placeholders for the model, the mapping stays in the vault (15 min).
+
+```bash
+curl -s $B/v1/redact -H "$AUTH" -H "$J" \
   -d '{"text":"Herrn\nJohann Beispielmann\nSVNR 4568 150392"}'
-# {"text":"Herrn\n⟦PERSON_1⟧\nSVNR ⟦SVNR_1⟧","vaultId":"…","expiresIn":900,"placeholders":[…]}
+# {"text":"Herrn\n⟦PERSON_1⟧\nSVNR ⟦SVNR_1⟧","vaultId":"35643c9d…","expiresIn":900,
+#  "placeholders":[{"placeholder":"⟦PERSON_1⟧","type":"PERSON"},{"placeholder":"⟦SVNR_1⟧","type":"SVNR"}]}
+
+VAULT=$(curl -s $B/v1/redact -H "$AUTH" -H "$J" \
+  -d '{"text":"Herrn\nJohann Beispielmann\nSVNR 4568 150392"}' | jq -r .vaultId)
+```
+
+**Restore** the model's answer. Placeholders the model invented are reported, not guessed.
+
+```bash
+curl -s $B/v1/restore -H "$AUTH" -H "$J" \
+  -d "{\"text\":\"Sehr geehrter ⟦PERSON_1⟧, SVNR ⟦SVNR_1⟧. ⟦IBAN_9⟧\",\"vaultId\":\"$VAULT\"}"
+# {"text":"Sehr geehrter Johann Beispielmann, SVNR 4568 150392. ⟦IBAN_9⟧",
+#  "unknownPlaceholders":["⟦IBAN_9⟧"],"unusedPlaceholders":[]}
+
+curl -s -X DELETE $B/v1/vault/$VAULT -H "$AUTH" -w '%{http_code}\n'   # 204: mapping deleted
+```
+
+**Mask** irreversibly (logs, previews):
+
+```bash
+curl -s $B/v1/mask -H "$AUTH" -H "$J" -d '{"text":"IBAN AT61 1904 3002 3457 3201, Tel. +43 660 1234567"}'
+# {"text":"IBAN AT61 **** **** **** 3201, Tel. *** *** *****67"}
+```
+
+**Learn** a new type from synthetic examples (`dryRun` previews without saving):
+
+```bash
+curl -s $B/v1/learn -H "$AUTH" -H "$J" \
+  -d '{"name":"POLICY_NUMBER","description":"Insurance policy number","examples":["POL-2026-004711","POL-2025-000815"]}'
+# {"type":{"name":"POLICY_NUMBER",…,"pattern":"POL-\\d{4}-\\d{6}"},"note":null,"saved":true}
+
+curl -s $B/v1/redact -H "$AUTH" -H "$J" -d '{"text":"Polizze POL-2026-123456"}' | jq .text
+# "Polizze ⟦POLICY_NUMBER_1⟧"
+
+curl -s $B/v1/entities -H "$AUTH"                                       # list learned types
+curl -s -X DELETE $B/v1/entities/POLICY_NUMBER -H "$AUTH" -w '%{http_code}\n'   # 204
+```
+
+**Model-based detection** (`"detection": "model"` or `"both"`) needs `PII_SERVICE_MODEL_PROVIDER` and
+`PII_SERVICE_MODEL` (see [Configuration](#configuration)); otherwise the answer is
+`{"error":"Model-based detection is not configured on this server."}`. The model receives the unredacted text.
+
+```bash
+curl -s $B/v1/redact -H "$AUTH" -H "$J" \
+  -d '{"text":"Frau Maria Musterfrau wohnt im Lindenweg 12, 6900 Bregenz.","detection":"both"}'
 ```
 
 Typical flow: `redact` → send `text` to your model → `restore` the model's answer with the `vaultId`
 → optionally `DELETE /v1/vault/{vaultId}`.
+
+## API reference (OpenAPI / Swagger)
+
+[openapi.yaml](openapi.yaml) is an OpenAPI 3.1 document; the server serves it at `/v1/openapi.yaml`.
+A contract test keeps it in sync with the implementation. To browse it in Swagger UI:
+
+```bash
+docker run --rm -p 8081:8080 -e SWAGGER_JSON=/spec/openapi.yaml \
+  -v "$PWD/packages/pii-shield/docs:/spec:ro" swaggerapi/swagger-ui
+# http://localhost:8081
+```
+
+Swagger UI's "Try it out" sends browser requests from another origin; the service rejects those (CSRF
+protection). Use curl or a non-browser client for requests. Import into Postman, Insomnia or Bruno works
+with the same file.
 
 ## MCP
 

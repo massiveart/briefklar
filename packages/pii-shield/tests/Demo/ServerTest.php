@@ -100,6 +100,7 @@ final class ServerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame('SVNR ⟦SVNR_1⟧', self::json($client)['text']);
+        self::assertStringContainsString('"SVNR ⟦SVNR_1⟧"', (string) $client->getResponse()->getContent(), 'readable in a terminal: no \\u escapes');
 
         $client->request('GET', '/v1/openapi.yaml', server: ['HTTP_HOST' => '127.0.0.1:8088']);
         self::assertResponseIsSuccessful();

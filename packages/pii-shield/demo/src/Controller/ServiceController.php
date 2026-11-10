@@ -49,6 +49,11 @@ final class ServiceController
         /** @var array<string, mixed>|null $body */
         $response = $this->api->handle($request->getMethod(), '/v1/'.$path, $body, $request->headers->get('Authorization'), (string) $request->getClientIp());
 
-        return 204 === $response['status'] ? new Response(null, 204) : new JsonResponse($response['body'], $response['status']);
+        if (204 === $response['status']) {
+            return new Response(null, 204);
+        }
+        $json = new JsonResponse($response['body'], $response['status']);
+
+        return $json->setEncodingOptions($json->getEncodingOptions() | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES); // readable with curl
     }
 }
