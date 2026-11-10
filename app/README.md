@@ -12,17 +12,16 @@ Symfony application: upload, local OCR, explanation agent, UI, MCP server.
 | Platform bridges | `ai-hugging-face-platform`, `ai-anthropic-platform`, `ai-ollama-platform`, `ai-generic-platform` (transitive, pinned too) | provider switch via env |
 | UI | Twig, AssetMapper, Symfony UX Turbo | no Node build step |
 
-## Packages
+## Packages and redaction
 
-`briefklar/pii-shield` is required via a Composer path repository (`../packages/pii-shield`, symlinked).
+`briefklar/pii-shield` is required via a Composer path repository (`../packages/pii-shield`, symlinked) and registered as `PiiShieldBundle`. `config/packages/pii_shield.yaml` attaches its agent processor to both explanation agents:
 
-The app depends only on `Briefklar\PiiShield\PiiShieldInterface`. Which implementation is used is decided by one alias in `config/services.yaml`:
+- **Input:** after the system prompt is added, the processor replaces personal data in the whole request with typed placeholders (`⟦PERSON_1⟧`, `⟦IBAN_1⟧`, ...). The provider never sees the original values. Amounts, deadlines, authority names and legal references stay.
+- **Output:** the structured `LetterExplanation` comes back with the original values restored, so the app code never deals with placeholders. Placeholders the model invented cannot be restored; the result page flags them.
+- **Fails closed:** if redaction fails, nothing is sent and the user gets the generic error (`LetterExplainer` catches pii-shield exceptions).
+- Vault and model-based detection are not configured (one request, regex and checksum detectors only); learned types are disabled.
 
-```yaml
-Briefklar\PiiShield\PiiShieldInterface: '@Briefklar\PiiShield\NullPiiShield'
-```
-
-Until task A ships, this is `NullPiiShield` (pass-through). Switching to the real shield is a config change only.
+`tests/Functional/PiiProtectionTest.php` uploads the fixture letters as text PDF and as scan, in both explanation styles, and checks the recorded provider request against `../fixtures/letters/*.expected.json`: no PII value (multi-line addresses line by line) may appear, every `must_survive` value must.
 
 ## Text extraction (`src/Extraction/`)
 
@@ -42,7 +41,7 @@ Tests build PDFs and images from `../fixtures/letters/*.txt` at runtime (`tests/
 
 ## Explanation agent (`src/Explanation/`)
 
-`LetterExplainer` sends the extracted text (wrapped in `<letter>…</letter>`) to the agent `letter_explainer` from `config/packages/ai.yaml` and asks for structured output into `LetterExplanation` (shared contract with task A, change only together). The system prompt lives in `config/prompts/explain_letter.md`: explain, no legal advice, never invent deadlines, keep pii-shield placeholders.
+`LetterExplainer` sends the extracted text (wrapped in `<letter>…</letter>`) to the agent `letter_explainer` from `config/packages/ai.yaml` and asks for structured output into `LetterExplanation` (shared contract with task A, change only together). pii-shield redacts the request and restores the answer inside the agent (see above). The system prompt lives in `config/prompts/explain_letter.md`: explain, no legal advice, never invent deadlines, keep pii-shield placeholders.
 
 A second agent, `letter_explainer_easy` (`config/prompts/explain_letter_easy.md`), writes the same structured answer in "Leichte Sprache" (very short sentences, explained terms, middle dots in compounds). Users opt in with a checkbox on the upload page; `ExplanationStyle` picks the agent. Both prompts carry the same safety rules, and sender, deadline, amount and legal references stay verbatim so `DeadlineCheck` still works.
 

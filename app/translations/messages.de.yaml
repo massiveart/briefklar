@@ -17,6 +17,7 @@ letter:
         deadline: Frist
         no_deadline: Im Brief steht keine Frist.
         deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.
+        invented_placeholders: Die Erklärung nennt Platzhalter, die nicht für Angaben aus deinem Brief stehen (%placeholders%). Diese Stellen sind unzuverlässig, bitte prüfe sie im Original.
         amount: Betrag
         summary: Worum geht es?
         actions: Was musst du tun?

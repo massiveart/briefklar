@@ -1,0 +1,17 @@
+# Reversible redaction before every model call (packages/pii-shield, docs/library.md).
+# The agent processor redacts the letter (and the system prompt) after all other input processors
+# and restores the structured answer before anything else sees it. The provider only gets placeholders.
+#
+# Deliberately not configured (defaults are off):
+# - vault: redaction and restore happen within one request, no mapping is kept.
+# - model: model-based detection sees the unredacted text (ADR 0006); off until a local model is set up.
+pii_shield:
+    # Authority e-mail and phone stay: the user needs them to act on the letter.
+    keep_authority_contacts: true
+
+    agent_processor:
+        agents: [letter_explainer, letter_explainer_easy]
+
+    # Learned types need a writable store and an admin flow; the app has neither.
+    learning:
+        enabled: false

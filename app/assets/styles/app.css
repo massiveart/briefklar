@@ -357,6 +357,7 @@ form ul li::before {
 }
 .warning .icon { margin-top: 2px; }
 .deadline .warning { margin-top: var(--space-2); }
+.placeholder-note { margin: 0 0 var(--space-6); }
 
 .amount {
     display: flex;
