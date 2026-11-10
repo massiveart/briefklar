@@ -154,7 +154,8 @@ final class DemoServices
             case 'openai':
                 return [OpenAiFactory::createPlatform($key('OPENAI_API_KEY')), ModelLocation::External, []];
             case 'anthropic':
-                return [AnthropicFactory::createPlatform($key('ANTHROPIC_API_KEY')), ModelLocation::External, $deterministic];
+                // Current Claude models reject sampling parameters.
+                return [AnthropicFactory::createPlatform($key('ANTHROPIC_API_KEY')), ModelLocation::External, []];
             default:
                 throw new \InvalidArgumentException(\sprintf('Unknown provider "%s".', $provider));
         }
