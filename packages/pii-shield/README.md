@@ -162,7 +162,7 @@ make demo            # from the repository root, or: composer demo
 # open http://127.0.0.1:8088
 ```
 
-Runs on PHP's built-in server; the page talks only to its own local API, no web fonts, no CDN. Provider keys come from the server environment (`PII_DEMO_OLLAMA_URL`, `PII_DEMO_GENERIC_URL` / `PII_DEMO_GENERIC_KEY`, `MISTRAL_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `PII_DEMO_REDIS_URL`) and never reach the browser. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
+Runs on PHP's built-in server; the page talks only to its own local API, no web fonts, no CDN. Provider URLs and keys: copy `demo/.env.dist` to `demo/.env.local` (git-ignored) and fill in what you use, or set the same environment variables; they never reach the browser. The vault mapping is encrypted on disk under `demo/var/` (git-ignored, deleted after 15 minutes). Settings are remembered in the browser, the text never is.
 
 ## Development
 

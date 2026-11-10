@@ -13,6 +13,11 @@ use Briefklar\PiiShield\Demo\DemoServices;
 
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 
+// Provider keys and URLs: demo/.env.local (git-ignored), see demo/.env.dist. Real environment variables win.
+if (is_file(dirname(__DIR__).'/.env.local')) {
+    (new Symfony\Component\Dotenv\Dotenv())->load(dirname(__DIR__).'/.env.local');
+}
+
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', \PHP_URL_PATH);
 $path = is_string($path) ? $path : '/';
 
