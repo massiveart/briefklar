@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pii-shield Demo</title>
+  <meta name="description" content="Personenbezogene Daten in Briefen erkennen, schwärzen, maskieren und wiederherstellen – lokal, ohne Cloud.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='9' width='26' height='6' rx='1' fill='%231d2935'/%3E%3Crect x='3' y='18' width='17' height='6' rx='1' fill='%23ffe14d'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="9" width="26" height="6" rx="1"/><rect class="brand-mark-ink" x="3" y="18" width="17" height="6" rx="1"/></svg>
+      <h1>pii-shield</h1>
+    </div>
+    <p class="local-note" id="localNote" data-location="local" aria-live="polite"><span class="local-dot" aria-hidden="true"></span><span id="localNoteText">Läuft lokal. Kein Text verlässt diesen Rechner.</span></p>
+  </header>
+
+  <div class="layout">
+    <aside class="controls" aria-label="Einstellungen">
+      <details class="settings" id="settings" open>
+      <summary class="settings-toggle">Einstellungen</summary>
+      <div class="settings-body">
+      <section class="control-group">
+        <h2>Verfahren</h2>
+        <div class="segmented" role="radiogroup" aria-label="Verfahren">
+          <label><input type="radio" name="mode" value="reversible" checked><span>Schwärzen<small>umkehrbar, mit Platzhaltern</small></span></label>
+          <label><input type="radio" name="mode" value="irreversible"><span>Maskieren<small>endgültig, z. B. für Logs</small></span></label>
+        </div>
+      </section>
+
+      <section class="control-group">
+        <h2>Erkennung</h2>
+        <div class="segmented segmented-row" role="radiogroup" aria-label="Erkennung">
+          <label><input type="radio" name="detection" value="regex" checked><span>Muster</span></label>
+          <label><input type="radio" name="detection" value="model"><span>KI-Modell</span></label>
+          <label><input type="radio" name="detection" value="both"><span>Beides</span></label>
+        </div>
+        <div class="model-settings" id="modelSettings" hidden>
+          <label class="field"><span>Anbieter</span><select id="provider"></select></label>
+          <label class="field"><span>Modell</span><input id="modelName" list="modelOptions" autocomplete="off" spellcheck="false"></label>
+          <datalist id="modelOptions"></datalist>
+          <p class="hint" id="modelHint"></p>
+          <label class="field" id="endpointField"><span>Server-URL</span><input id="endpoint" autocomplete="off" spellcheck="false" placeholder="http://gpu-server:8000"></label>
+          <label class="switch"><input type="checkbox" id="fast" checked><span>Schnell (ohne Reasoning)<small>Reasoning-Modelle denken sonst lange nach</small></span></label>
+          <p class="location" id="location"></p>
+          <div class="warning" id="externalWarning" hidden>
+            <p>Zur Erkennung geht der <strong>ungeschwärzte</strong> Text an diesen Anbieter. Das braucht einen Auftragsverarbeitungsvertrag und ist außerhalb der EU eine Drittlandübermittlung.</p>
+            <label class="switch"><input type="checkbox" id="acknowledgeExternal"><span>Verstanden, nur mit erfundenen Testdaten</span></label>
+          </div>
+        </div>
+        <p class="hint" id="detectionHint">Muster und Prüfziffern für AT/DE, offline.</p>
+      </section>
+
+      <section class="control-group">
+        <div class="group-head">
+          <h2>Was erkannt wird</h2>
+          <div class="link-buttons">
+            <button type="button" class="link" data-types="all">Alle</button>
+            <button type="button" class="link" data-types="none">Keine</button>
+          </div>
+        </div>
+        <ul class="type-list" id="typeList"></ul>
+      </section>
+
+      <section class="control-group">
+        <h2>Optionen</h2>
+        <label class="switch"><input type="checkbox" id="keepAuthority" checked><span>Kontakt der Behörde behalten<small>E-Mail und Telefon, an die man sich wenden soll</small></span></label>
+        <label class="switch"><input type="checkbox" id="highlight" checked><span>Funde markieren</span></label>
+        <label class="switch"><input type="checkbox" id="live" checked><span>Beim Tippen prüfen</span></label>
+        <label class="field"><span>Vault-Speicher</span><select id="store"></select></label>
+      </section>
+
+      <section class="control-group">
+        <div class="group-head">
+          <h2>Eigene Typen</h2>
+          <button type="button" class="link" id="newType">Neuer Typ</button>
+        </div>
+        <ul class="learned-list" id="learnedList"></ul>
+        <p class="hint" id="learnedEmpty">Im Original etwas markieren und „Markierung anlernen“ wählen, dann wird so etwas künftig auch geschwärzt.</p>
+      </section>
+
+      <section class="control-group">
+        <h2>Nie schwärzen</h2>
+        <ul class="allowlist" id="allowlist"></ul>
+        <p class="hint" id="allowlistEmpty">Klicke im Original auf einen Fund und wähle „Nicht schwärzen“.</p>
+      </section>
+      </div>
+      </details>
+    </aside>
+
+    <main class="desk">
+      <article class="sheet" aria-labelledby="originalTitle">
+        <header class="sheet-head">
+          <h2 id="originalTitle">Original</h2>
+          <div class="sheet-actions">
+            <button type="button" id="learnSelection" disabled title="Erst im Text etwas markieren">Markierung anlernen</button>
+            <button type="button" id="loadSample">Beispielbrief einfügen</button>
+            <button type="button" id="clearText">Leeren</button>
+            <button type="button" id="analyzeNow" class="primary" title="Text jetzt prüfen (auch wenn „Beim Tippen prüfen“ an ist)">Prüfen</button>
+          </div>
+        </header>
+        <p class="busy" id="busy" hidden><span class="busy-dot" aria-hidden="true"></span><span id="busyText">Modell prüft …</span></p>
+        <div class="legend" id="legend" aria-live="polite"></div>
+        <p class="timing" id="timing" aria-live="polite"></p>
+        <div class="editor" id="editor">
+          <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+          <textarea id="input" spellcheck="false" aria-label="Originaltext" placeholder="Brief, E-Mail oder Notiz hier einfügen …"></textarea>
+        </div>
+      </article>
+
+      <article class="sheet" aria-labelledby="resultTitle">
+        <header class="sheet-head">
+          <h2 id="resultTitle">Geschwärzt</h2>
+          <div class="sheet-actions">
+            <button type="button" id="copyResult">Kopieren</button>
+          </div>
+        </header>
+        <p class="sheet-intro" id="resultIntro">So sieht das Sprachmodell den Text.</p>
+        <div class="result letter" id="result" aria-live="polite"></div>
+        <details class="vault" id="vault" hidden>
+          <summary>Was im Vault liegt</summary>
+          <p class="hint">Die Zuordnung wird verschlüsselt gespeichert und nach <span id="vaultTtl"></span> Minuten gelöscht. Nur zur Vorführung zeigt diese Seite den Klartext an.</p>
+          <dl class="vault-meta">
+            <dt>Vault-ID</dt><dd><code id="vaultId"></code></dd>
+            <dt>Im Speicher</dt><dd><code class="cipher" id="vaultCipher"></code></dd>
+          </dl>
+          <table class="mapping">
+            <thead><tr><th scope="col">Platzhalter</th><th scope="col">Originalwert</th></tr></thead>
+            <tbody id="mapping"></tbody>
+          </table>
+        </details>
+      </article>
+
+      <article class="sheet sheet-wide" id="restoreSheet" aria-labelledby="restoreTitle">
+        <header class="sheet-head">
+          <h2 id="restoreTitle">Antwort wiederherstellen</h2>
+          <div class="sheet-actions">
+            <button type="button" id="useResult" title="Geschwärzten Text als Antwort übernehmen">Übernehmen</button>
+            <button type="button" id="restore" class="primary">Wiederherstellen</button>
+          </div>
+        </header>
+        <p class="sheet-intro">Antwort mit Platzhaltern. Probier <code>⟦person 1⟧</code> oder ein erfundenes <code>⟦IBAN_9⟧</code>.</p>
+        <div class="restore-grid">
+          <textarea id="answer" class="letter" spellcheck="false" aria-label="Antwort mit Platzhaltern"></textarea>
+          <div class="result letter" id="restored" aria-live="polite"></div>
+        </div>
+        <p class="notice" id="restoreNotice" hidden></p>
+      </article>
+      <div class="notice notice-error" id="error" role="alert" hidden>
+        <span id="errorText"></span>
+        <button type="button" id="retry">Erneut prüfen</button>
+      </div>
+      <details class="log" id="logPanel">
+        <summary>Protokoll</summary>
+        <ol class="log-list" id="log"></ol>
+      </details>
+    </main>
+  </div>
+
+  <dialog class="learn-dialog" id="learnDialog" aria-labelledby="learnTitle">
+    <form method="dialog" id="learnForm">
+      <h3 id="learnTitle">Neuen Typ anlernen</h3>
+      <p class="hint">Aus den Beispielen wird ein Muster abgeleitet. Ohne erkennbare Struktur (z. B. Namen) lernt nur das KI-Modell den Typ. Nur erfundene Beispiele verwenden: Sie werden gespeichert.</p>
+      <label class="field"><span>Name</span><input id="learnName" required pattern="[A-Z][A-Z0-9_]{1,39}" placeholder="z. B. VERSICHERTENNUMMER" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Beschreibung</span><input id="learnDescription" maxlength="300" placeholder="Was ist das? Hilft dem KI-Modell." autocomplete="off"></label>
+      <div class="learn-columns">
+        <label class="field"><span>Beispiele, eins pro Zeile</span><textarea id="learnExamples" rows="4" spellcheck="false"></textarea></label>
+        <label class="field"><span>Gegenbeispiele (optional)</span><textarea id="learnCounter" rows="4" spellcheck="false" placeholder="Ähnliches, das nicht gemeint ist"></textarea></label>
+      </div>
+      <label class="field"><span>Muster (leer lassen = aus Beispielen ableiten)</span><input id="learnPattern" autocomplete="off" spellcheck="false" placeholder="wird abgeleitet"></label>
+      <p class="learn-preview" id="learnPreview" aria-live="polite"></p>
+      <div class="learn-actions">
+        <button type="button" id="learnCancel">Abbrechen</button>
+        <button type="submit" class="primary" id="learnSave">Anlernen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="popover" id="popover" role="dialog" aria-modal="false" aria-labelledby="popoverTitle" hidden>
+    <div class="popover-head">
+      <span class="swatch" id="popoverSwatch"></span>
+      <h3 id="popoverTitle"></h3>
+      <button type="button" class="close" id="popoverClose" aria-label="Schließen">×</button>
+    </div>
+    <dl class="popover-body">
+      <dt>Gefunden</dt><dd id="popoverValue"></dd>
+      <dt id="popoverReplacementLabel">Wird zu</dt><dd id="popoverReplacement"></dd>
+      <dt>Erkannt durch</dt><dd id="popoverDetector"></dd>
+    </dl>
+    <button type="button" class="primary" id="popoverAction"></button>
+  </div>
+</body>
+</html>

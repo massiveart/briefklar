@@ -12,7 +12,7 @@ Read `docs/PLAN.md` and `docs/ARCHITECTURE.md` before starting. Your concrete wo
 
 - **Symfony AI and `mcp/sdk` are pre-release.** Before using any API, check the installed source in `vendor/` rather than relying on memory. If something is broken or undocumented, write a minimal reproduction to `docs/upstream-issues.md` (we file them upstream; that counts for the hackathon).
 - **Never commit real personal data.** All fixtures are synthetic. Never add real letters, names or numbers, not even in tests or screenshots.
-- **No PII to any LLM provider before redaction.** OCR runs locally. Do not send images to a vision model; images contain PII.
+- **No PII to any LLM provider before redaction.** OCR runs locally. Do not send images to a vision model; images contain PII. The only exception is model-based *detection* (ADR 0006): it runs on a local or on-premise model by default; an external provider needs an explicit acknowledgement in configuration.
 - **Packages stay independent.** `packages/*` must not depend on `app/`. `pii-shield` core must not depend on Symfony AI; the Symfony AI integration lives in `src/Bridge/SymfonyAi`.
 - **Contract first.** `packages/pii-shield/src/PiiShieldInterface.php` is the shared contract between workstreams. Changing it needs agreement of both owners.
 

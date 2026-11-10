@@ -1,0 +1,6 @@
+vendor/
+demo/vendor/
+demo/var/
+demo/.env.local
+.phpunit.cache/
+.php-cs-fixer.cache

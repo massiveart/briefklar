@@ -1,0 +1,421 @@
+openapi: 3.1.0
+info:
+  title: pii-shield HTTP API
+  version: 1.0.0
+  summary: Reversible redaction, irreversible masking and learning of personal data (PII) as a service.
+  description: |
+    pii-shield finds personal data in text (patterns with checksums for DACH formats, learned types,
+    and optionally a model of your choice via Symfony AI), replaces it with placeholders such as
+    `⟦PERSON_1⟧` and restores the original values in a later request.
+
+    **Privacy by design**
+    - The placeholder → original mapping never leaves the service. `/v1/redact` returns placeholder
+      text and a `vaultId`; `/v1/restore` resolves placeholders server-side. The mapping is stored
+      encrypted (XChaCha20-Poly1305) with a TTL and can be deleted at any time.
+    - Which model is used for detection is server configuration, never request input.
+    - Model-based detection sees the unredacted text. Use a local or on-premise model; an external
+      provider must be explicitly acknowledged in the server configuration.
+
+    **Running it**: `make demo` (local) or the Docker image (see the package README).
+  license:
+    name: MIT
+servers:
+  - url: http://127.0.0.1:8088
+    description: Local service (`make demo`)
+security:
+  - bearerAuth: []
+tags:
+  - name: Redaction
+    description: Reversible, for text that goes to a model provider
+  - name: Masking
+    description: Irreversible, for logs and previews
+  - name: Learning
+    description: Teach new entity types from examples
+  - name: Service
+
+paths:
+  /v1/redact:
+    post:
+      tags: [Redaction]
+      summary: Replace personal data with placeholders
+      description: |
+        Detects personal data and replaces each value with a typed placeholder. The same value gets the
+        same placeholder within one text. The mapping is stored server-side under `vaultId`.
+      operationId: redact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DetectionRequest' }
+            example:
+              text: "Herrn\nJohann Beispielmann\n\nSVNR 4568 150392, Polizze VN-2026-000417. Betrag 110,00 Euro bis 15.11.2026."
+      responses:
+        '200':
+          description: Redacted text
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RedactResponse' }
+              example:
+                text: "Herrn\n⟦PERSON_1⟧\n\nSVNR ⟦SVNR_1⟧, Polizze ⟦INSURANCE_NUMBER_1⟧. Betrag 110,00 Euro bis 15.11.2026."
+                vaultId: 76058e0f76dc1fabc27b2585e8575d4f
+                expiresIn: 900
+                placeholders:
+                  - { placeholder: '⟦PERSON_1⟧', type: PERSON }
+                  - { placeholder: '⟦SVNR_1⟧', type: SVNR }
+                  - { placeholder: '⟦INSURANCE_NUMBER_1⟧', type: INSURANCE_NUMBER }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '502': { $ref: '#/components/responses/DetectionFailed' }
+
+  /v1/restore:
+    post:
+      tags: [Redaction]
+      summary: Put the original values back into a text with placeholders
+      description: |
+        Typically the model's answer. Tolerates what models do to placeholders: case changes,
+        whitespace, space instead of underscore, markdown-escaped underscores (`⟦PERSON\_1⟧`) and ASCII
+        brackets (`[[PERSON_1]]`). Placeholders the model invented are left as they are and reported.
+      operationId: restore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text, vaultId]
+              properties:
+                text: { type: string, maxLength: 100000 }
+                vaultId: { type: string, pattern: '^[0-9a-f]{32}$' }
+            example:
+              text: 'Sehr geehrter ⟦person 1⟧, Ihre SVNR ist **⟦SVNR\_1⟧**. Konto ⟦IBAN_9⟧?'
+              vaultId: 76058e0f76dc1fabc27b2585e8575d4f
+      responses:
+        '200':
+          description: Restored text
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RestoreResponse' }
+              example:
+                text: 'Sehr geehrter Johann Beispielmann, Ihre SVNR ist **4568 150392**. Konto ⟦IBAN_9⟧?'
+                unknownPlaceholders: ['⟦IBAN_9⟧']
+                unusedPlaceholders: ['⟦INSURANCE_NUMBER_1⟧']
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: Unknown or expired vault id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/vault/{vaultId}:
+    delete:
+      tags: [Redaction]
+      summary: Delete a mapping now
+      description: End of conversation or right to erasure (GDPR Art. 17). Otherwise mappings expire after their TTL.
+      operationId: forgetVault
+      parameters:
+        - name: vaultId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[0-9a-f]{32}$' }
+      responses:
+        '204': { description: Deleted (also if it did not exist) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/mask:
+    post:
+      tags: [Masking]
+      summary: Mask personal data irreversibly
+      description: |
+        For logs and previews. IBANs keep their first and last four characters, phone numbers their last
+        two, everything else becomes `[TYPE]`. Nothing is stored. Never send masked text to a model
+        provider instead of redacted text: partial masks leak length and some characters.
+      operationId: mask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DetectionRequest' }
+            example:
+              text: 'IBAN AT61 1904 3002 3457 3201, SVNR 4568 150392'
+      responses:
+        '200':
+          description: Masked text
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [text]
+                properties:
+                  text: { type: string }
+              example:
+                text: 'IBAN AT61 **** **** **** 3201, SVNR [SVNR]'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '502': { $ref: '#/components/responses/DetectionFailed' }
+
+  /v1/learn:
+    post:
+      tags: [Learning]
+      summary: Teach a new entity type from examples
+      description: |
+        A pattern is derived from the examples unless one is given (`AB-1234/56` + `XY-9876/01` →
+        `[A-Z]{2}-\d{4}/\d{2}`). Plain words without structure (e.g. pet names) cannot become a safe
+        pattern; they are learned as model-only types and reach the model as few-shot examples.
+        Learned types take effect immediately for `/v1/redact` and `/v1/mask`.
+
+        Examples are stored: use synthetic or anonymised values only. Hand-written patterns follow a
+        restricted grammar (no repeated groups, anchors, backreferences or lookarounds) to rule out
+        catastrophic backtracking.
+      operationId: learn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LearnRequest' }
+            example:
+              name: INSURANCE_NUMBER
+              description: Polizzennummer einer Versicherung
+              examples: ['VN-2026-000417', 'VN-2025-998812']
+              counterExamples: ['VN-12']
+      responses:
+        '200':
+          description: Dry run, nothing saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LearnResponse' }
+        '201':
+          description: Learned and saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LearnResponse' }
+              example:
+                type:
+                  name: INSURANCE_NUMBER
+                  description: Polizzennummer einer Versicherung
+                  examples: ['VN-2026-000417', 'VN-2025-998812']
+                  counterExamples: ['VN-12']
+                  pattern: 'VN-\d{4}-\d{6}'
+                note: null
+                saved: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /v1/entities:
+    get:
+      tags: [Learning]
+      summary: List learned entity types
+      operationId: listEntityTypes
+      responses:
+        '200':
+          description: Learned types, sorted by name
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [types]
+                properties:
+                  types:
+                    type: array
+                    items: { $ref: '#/components/schemas/LearnedType' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/entities/{name}:
+    delete:
+      tags: [Learning]
+      summary: Forget a learned entity type
+      operationId: forgetEntityType
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/TypeName' }
+      responses:
+        '204': { description: Forgotten }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such learned type
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/health:
+    get:
+      tags: [Service]
+      summary: Liveness and whether model-based detection is configured
+      operationId: health
+      security: []
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+                  modelDetection: { type: boolean }
+
+  /v1/openapi.yaml:
+    get:
+      tags: [Service]
+      summary: This specification
+      operationId: openapi
+      security: []
+      responses:
+        '200':
+          description: OpenAPI document
+          content:
+            application/yaml: {}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        `PII_SERVICE_TOKEN` of the server. Without a configured token the service accepts requests from
+        localhost only. Requests must be `application/json`; browsers on other origins are rejected,
+        and only known host names are served (DNS-rebinding protection, `PII_SERVICE_ALLOWED_HOSTS`).
+
+  schemas:
+    EntityType:
+      type: string
+      description: Built-in types. Learned types use their own name (see TypeName).
+      enum: [PERSON, ADDRESS, SVNR, IBAN, TAX_NUMBER, FILE_NUMBER, EMAIL, PHONE, BIRTH_DATE, LICENSE_PLATE, ID_NUMBER, CREDIT_CARD, IP_ADDRESS, HEALTH, OTHER]
+
+    TypeName:
+      type: string
+      pattern: '^[A-Z][A-Z0-9_]{1,39}$'
+      description: UPPER_SNAKE_CASE; must not be a built-in type. Becomes the placeholder name (⟦NAME_1⟧).
+
+    DetectionRequest:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, maxLength: 100000 }
+        detection:
+          type: string
+          enum: [regex, model, both]
+          default: regex
+          description: |
+            `regex`: patterns, checksums and learned patterns, offline and deterministic.
+            `model`: the model configured on the server (plus learned patterns). `both`: union; on overlap
+            the longer finding wins, on equal length the checksum-validated one.
+        types:
+          type: array
+          items: { $ref: '#/components/schemas/EntityType' }
+          description: Only these built-in types. Learned types always apply. Default all.
+        allowlist:
+          type: array
+          items: { type: string }
+          description: Values that are never redacted (exact match), e.g. the authority's own reference.
+        keepAuthorityContacts:
+          type: boolean
+          default: true
+          description: Keep e-mail addresses and phone numbers of the sending authority (needed to act on a letter).
+
+    RedactResponse:
+      type: object
+      required: [text, vaultId, expiresIn, placeholders]
+      properties:
+        text: { type: string, description: Text with placeholders. Safe to send to a model provider. }
+        vaultId: { type: string, pattern: '^[0-9a-f]{32}$' }
+        expiresIn: { type: integer, description: Seconds until the mapping is deleted. }
+        placeholders:
+          type: array
+          description: Placeholders in the text and their types. Never the original values.
+          items:
+            type: object
+            required: [placeholder, type]
+            properties:
+              placeholder: { type: string, examples: ['⟦PERSON_1⟧'] }
+              type: { type: string, examples: [PERSON, INSURANCE_NUMBER] }
+
+    RestoreResponse:
+      type: object
+      required: [text, unknownPlaceholders, unusedPlaceholders]
+      properties:
+        text: { type: string }
+        unknownPlaceholders:
+          type: array
+          items: { type: string }
+          description: Placeholders the model invented; left in the text.
+        unusedPlaceholders:
+          type: array
+          items: { type: string }
+          description: Placeholders of the mapping that did not appear (informational).
+
+    LearnRequest:
+      type: object
+      required: [name, examples]
+      properties:
+        name: { $ref: '#/components/schemas/TypeName' }
+        description: { type: string, maxLength: 300, description: 'One line, no < or >. Helps the model.' }
+        examples:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { type: string, maxLength: 100 }
+        counterExamples:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 100 }
+          description: Similar values that are not this type; the pattern must not match them.
+        pattern:
+          type: string
+          maxLength: 200
+          description: Optional regular expression without delimiters. Restricted grammar, see above.
+        dryRun:
+          type: boolean
+          default: false
+          description: Derive and validate only, do not save.
+
+    LearnedType:
+      type: object
+      required: [name, description, examples, counterExamples, pattern]
+      properties:
+        name: { $ref: '#/components/schemas/TypeName' }
+        description: { type: string }
+        examples: { type: array, items: { type: string } }
+        counterExamples: { type: array, items: { type: string } }
+        pattern: { type: [string, 'null'], description: null for model-only types }
+
+    LearnResponse:
+      type: object
+      required: [type, note, saved]
+      properties:
+        type: { $ref: '#/components/schemas/LearnedType' }
+        note: { type: [string, 'null'], description: 'Why the type has no pattern (model-only), if so.' }
+        saved: { type: boolean }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+
+  responses:
+    BadRequest:
+      description: Invalid input (missing text, wrong types, invalid JSON)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unprocessable:
+      description: The request is valid JSON but cannot be done (learning failed, model detection not configured)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    DetectionFailed:
+      description: The detection model failed. Fails closed; details are only in the server log.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

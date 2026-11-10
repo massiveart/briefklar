@@ -8,25 +8,53 @@
     "packages": [
         {
             "name": "briefklar/pii-shield",
-            "version": "dev-feat/app-classical-design",
+            "version": "dev-feat/app-m1",
             "dist": {
                 "type": "path",
                 "url": "../packages/pii-shield",
-                "reference": "7da07f63d5d797d9ba07756776a3ad3a6cc093ad"
+                "reference": "7f1b3e2e60e55d40c45d5b4112d5a34d295d90ea"
             },
             "require": {
-                "php": ">=8.4"
+                "ext-sodium": "*",
+                "php": ">=8.4",
+                "psr/cache": "^3.0",
+                "psr/clock": "^1.0"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.95",
+                "mcp/sdk": "0.9.0",
+                "nyholm/psr7": "^1.8",
                 "phpstan/phpstan": "^2.3",
                 "phpstan/phpstan-phpunit": "^2.1",
                 "phpstan/phpstan-strict-rules": "^2.1",
-                "phpunit/phpunit": "^12.0"
+                "phpstan/phpstan-symfony": "^2.1",
+                "phpunit/phpunit": "^12.0",
+                "predis/predis": "^3.7",
+                "symfony/ai-agent": "1.0.0-BETA1",
+                "symfony/ai-anthropic-platform": "1.0.0-BETA1",
+                "symfony/ai-bundle": "1.0.0-BETA1",
+                "symfony/ai-generic-platform": "1.0.0-BETA1",
+                "symfony/ai-mistral-platform": "1.0.0-BETA1",
+                "symfony/ai-ollama-platform": "1.0.0-BETA1",
+                "symfony/ai-open-ai-platform": "1.0.0-BETA1",
+                "symfony/ai-platform": "1.0.0-BETA1",
+                "symfony/browser-kit": "^8.1",
+                "symfony/cache": "^8.1",
+                "symfony/clock": "^8.1",
+                "symfony/css-selector": "^8.1",
+                "symfony/dotenv": "^8.1",
+                "symfony/framework-bundle": "^8.1",
+                "symfony/mcp-bundle": "1.0.0-BETA1",
+                "symfony/yaml": "^8.1"
             },
             "suggest": {
-                "symfony/ai-agent": "To use the input/output processors in Symfony AI agents",
-                "symfony/ai-platform": "To use the NER detector via Hugging Face"
+                "psr/cache-implementation": "To persist encrypted vaults (e.g. symfony/cache with Redis, filesystem or PDO)",
+                "symfony/ai-agent": "To use PiiShieldProcessor in Symfony AI agents",
+                "symfony/ai-generic-platform": "Model-based detection with any OpenAI-compatible server (vLLM, ...)",
+                "symfony/ai-mistral-platform": "Model-based detection with Mistral (external, needs acknowledgement)",
+                "symfony/ai-ollama-platform": "Model-based detection with a local or on-premise Ollama",
+                "symfony/ai-platform": "To use ModelDetector with any model",
+                "symfony/framework-bundle": "To use PiiShieldBundle (config/packages/pii_shield.yaml)"
             },
             "type": "library",
             "autoload": {
@@ -36,7 +64,8 @@
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Briefklar\\PiiShield\\Tests\\": "tests/"
+                    "Briefklar\\PiiShield\\Tests\\": "tests/",
+                    "Briefklar\\PiiShield\\Demo\\": "demo/src/"
                 }
             },
             "scripts": {
@@ -55,6 +84,10 @@
                 "qa": [
                     "@cs-check",
                     "@phpstan"
+                ],
+                "demo": [
+                    "Composer\\Config::disableProcessTimeout",
+                    "APP_ENV=dev PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php"
                 ]
             },
             "license": [

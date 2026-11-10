@@ -1,0 +1,44 @@
+{
+  "name": "briefklar/pii-shield-server",
+  "description": "Standalone HTTP service (/v1) and demo page for briefklar/pii-shield. Used for the Docker image; locally `make demo` runs it from the package.",
+  "type": "project",
+  "license": "MIT",
+  "repositories": {
+    "pii-shield": {
+      "type": "path",
+      "url": "..",
+      "options": {
+        "symlink": true
+      }
+    }
+  },
+  "require": {
+    "php": ">=8.4",
+    "briefklar/pii-shield": "*@dev",
+    "mcp/sdk": "0.9.0",
+    "nyholm/psr7": "^1.8",
+    "predis/predis": "^3.7",
+    "symfony/ai-anthropic-platform": "1.0.0-BETA1",
+    "symfony/ai-generic-platform": "1.0.0-BETA1",
+    "symfony/ai-mistral-platform": "1.0.0-BETA1",
+    "symfony/ai-ollama-platform": "1.0.0-BETA1",
+    "symfony/ai-open-ai-platform": "1.0.0-BETA1",
+    "symfony/ai-platform": "1.0.0-BETA1",
+    "symfony/cache": "^8.1",
+    "symfony/console": "^8.1",
+    "symfony/dotenv": "^8.1",
+    "symfony/framework-bundle": "^8.1",
+    "symfony/http-client": "^8.1",
+    "symfony/mcp-bundle": "1.0.0-BETA1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Briefklar\\PiiShield\\Demo\\": "src/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

@@ -12,6 +12,9 @@
 CLAUDE.local.md
 .claude/settings.local.json
 /.private/
+/packages/pii-shield/demo/var/
+.playwright-mcp/
+/packages/pii-shield/demo/.env.local
 
 # IDE settings
 /.idea/

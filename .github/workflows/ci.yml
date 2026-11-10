@@ -54,3 +54,16 @@ jobs:
       - if: steps.detect.outputs.present == 'true'
         working-directory: app
         run: bin/console lint:container
+
+  pii-shield-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the standalone service image
+        run: docker build -t pii-shield packages/pii-shield
+      - name: Smoke test
+        run: |
+          docker run -d --name pii -p 8080:8080 -e PII_SERVICE_TOKEN=ci-token pii-shield
+          sleep 3
+          curl -sf -H 'Content-Type: application/json' -H 'Authorization: Bearer ci-token' \
+            -X POST localhost:8080/v1/redact -d '{"text":"SVNR 4568 150392"}' | grep -q 'SVNR_1'

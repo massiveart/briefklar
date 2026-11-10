@@ -9,7 +9,7 @@ else
 RUN :=
 endif
 
-.PHONY: build install test qa cs-check cs-fix phpstan up down sh composer console
+.PHONY: build install test qa cs-check cs-fix phpstan demo up down sh composer console
 
 build:
 	docker compose build app
@@ -19,8 +19,8 @@ install:
 		if [ -f app/composer.json ]; then echo "== composer install app"; (cd app && composer install); fi'
 
 test:
-	@$(RUN) sh -c 'set -e; for p in $(PACKAGES); do if [ -f $$p/phpunit.xml.dist ]; then (cd $$p && vendor/bin/phpunit); fi; done; \
-		if [ -f app/composer.json ]; then (cd app && bin/phpunit); fi'
+	@$(RUN) sh -c 'set -e; for p in $(PACKAGES); do if [ -f $$p/phpunit.dist.xml ] || [ -f $$p/phpunit.xml.dist ]; then (cd $$p && vendor/bin/phpunit); fi; done; \
+		if [ -f app/phpunit.dist.xml ] || [ -f app/phpunit.xml.dist ]; then (cd app && bin/phpunit); fi'
 
 qa: cs-check phpstan
 
@@ -46,6 +46,11 @@ composer:
 
 console:
 	@$(RUN) sh -c 'cd app && bin/console $(c)'
+
+# 8 workers: a slow model call blocks a worker until the model answers, even if the page gave up.
+demo:
+	@echo "pii-shield demo: http://127.0.0.1:8088"
+	cd packages/pii-shield && APP_ENV=dev PHP_CLI_SERVER_WORKERS=8 php -S 127.0.0.1:8088 -t demo/public demo/public/index.php
 
 up:
 	docker compose up -d --build
