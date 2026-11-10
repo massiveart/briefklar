@@ -374,14 +374,17 @@ body { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
 .desk {
   flex: 999 1 0;
   min-width: min(100%, 60%);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  grid-auto-rows: minmax(26rem, 1fr);
+  /* Panes keep a readable line length (about 60 characters); when narrower they wrap,
+     and a pane alone on its line takes the full width. */
+  display: flex;
+  flex-wrap: wrap;
+  align-content: stretch;
+  gap: clamp(1rem, 2vw, 1.75rem);
   /* window height minus the masthead: the panes end at the bottom edge */
   min-height: calc(100dvh - var(--chrome-h));
-  gap: clamp(1rem, 2vw, 1.75rem);
 }
-.desk > .notice { grid-column: 1 / -1; align-self: start; }
+.desk > .sheet { flex: 1 1 28rem; min-width: min(100%, 28rem); min-height: 26rem; }
+.desk > .notice { flex: 1 1 100%; align-self: flex-start; }
 
 .settings-toggle { cursor: pointer; font-weight: 600; margin-bottom: 1rem; }
 .settings:not([open]) .settings-toggle { margin-bottom: 0; }
@@ -391,5 +394,5 @@ body { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
 .sheet { display: flex; flex-direction: column; min-height: 0; }
 .editor { position: relative; flex: 1 1 0; min-height: 10rem; border-top: 1px solid var(--rule); }
 #result { flex: 1 1 0; min-height: 6rem; }
-.restore-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 0.75rem; }
+.restore-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); grid-auto-rows: minmax(5rem, 1fr); gap: 0.75rem 1.25rem; }
 .restore-grid textarea, .restore-grid .result { height: auto; min-height: 5rem; }
