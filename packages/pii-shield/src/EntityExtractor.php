@@ -95,6 +95,16 @@ final class EntityExtractor
     }
 
     /**
+     * Last word of a multi-word name, or null for single-word values.
+     */
+    public static function surname(string $name): ?string
+    {
+        $parts = preg_split('/\s+/u', trim($name));
+
+        return false !== $parts && \count($parts) > 1 ? $parts[\count($parts) - 1] : null;
+    }
+
+    /**
      * @param list<Entity> $entities
      *
      * @return list<Entity>
@@ -106,16 +116,6 @@ final class EntityExtractor
         }
 
         return array_values(array_filter($entities, fn (Entity $e): bool => !isset($this->allowlist[$e->value])));
-    }
-
-    /**
-     * Last word of a multi-word name, or null for single-word values.
-     */
-    public static function surname(string $name): ?string
-    {
-        $parts = preg_split('/\s+/u', trim($name));
-
-        return false !== $parts && \count($parts) > 1 ? $parts[\count($parts) - 1] : null;
     }
 
     /**

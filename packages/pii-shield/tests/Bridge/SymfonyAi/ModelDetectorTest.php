@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Tests\Bridge\SymfonyAi;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\DetectionFailedException;
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Exception\DetectionFailedException;
 use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
 use Briefklar\PiiShield\Learning\CustomEntityType;
 use PHPUnit\Framework\TestCase;

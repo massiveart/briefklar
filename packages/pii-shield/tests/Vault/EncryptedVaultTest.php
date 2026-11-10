@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Tests\Vault;
 
+use Briefklar\PiiShield\Exception\VaultException;
 use Briefklar\PiiShield\Vault\EncryptedVault;
 use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
-use Briefklar\PiiShield\Vault\VaultException;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;

@@ -8,6 +8,7 @@ use Briefklar\PiiShield\Detector\DetectorInterface;
 use Briefklar\PiiShield\Detector\RegexMatcher;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Exception\DetectionFailedException;
 use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
 use Briefklar\PiiShield\Learning\CustomEntityType;
 use Symfony\AI\Platform\Message\Message;

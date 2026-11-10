@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield;
 
 use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Vault\VaultException;
+use Briefklar\PiiShield\Exception\VaultException;
 use Briefklar\PiiShield\Vault\VaultInterface;
 
 /**

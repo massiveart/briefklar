@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Bridge\SymfonyAi;
 
+use Briefklar\PiiShield\Exception\UnsupportedContentException;
 use Briefklar\PiiShield\PiiShieldInterface;
 use Briefklar\PiiShield\RedactionResult;
 use Symfony\AI\Agent\Input;
@@ -128,7 +129,7 @@ final class PiiShieldProcessor implements InputProcessorInterface, OutputProcess
         }
 
         if (!$message instanceof UserMessage && !$message instanceof AssistantMessage && !$message instanceof ToolCallMessage) {
-            throw new UnsupportedContentException(\sprintf('Unsupported message type "%s".', $message::class));
+            throw new UnsupportedContentException(\sprintf('Unsupported message type "%s".', get_debug_type($message)));
         }
 
         $texts = [];
@@ -136,7 +137,7 @@ final class PiiShieldProcessor implements InputProcessorInterface, OutputProcess
             if ($content instanceof Text) {
                 $texts[] = $content->getText();
             } elseif (!$message instanceof AssistantMessage) {
-                throw new UnsupportedContentException(\sprintf('Content of type "%s" cannot be redacted. Extract its text locally and send text only.', $content::class));
+                throw new UnsupportedContentException(\sprintf('Content of type "%s" cannot be redacted. Extract its text locally and send text only.', get_debug_type($content)));
             }
         }
 

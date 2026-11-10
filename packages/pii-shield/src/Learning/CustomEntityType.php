@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield\Learning;
 
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Exception\LearningFailedException;
 
 /**
  * A learned entity type: a name, a description, examples and optionally a pattern.
@@ -71,6 +72,54 @@ final readonly class CustomEntityType
         }
     }
 
+    /**
+     * The pattern as a whole-word search regex, or null for model-only types.
+     *
+     * @return non-empty-string|null
+     */
+    public function regex(): ?string
+    {
+        return null === $this->pattern ? null : '~(?<![\p{L}\p{N}])(?:'.$this->pattern.')(?![\p{L}\p{N}])~u';
+    }
+
+    /**
+     * @return array{name: string, description: string, examples: list<string>, counterExamples: list<string>, pattern: string|null}
+     */
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'description' => $this->description,
+            'examples' => $this->examples,
+            'counterExamples' => $this->counterExamples,
+            'pattern' => $this->pattern,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @throws LearningFailedException
+     */
+    public static function fromArray(array $data): self
+    {
+        $strings = static function (mixed $list): array {
+            if (!\is_array($list)) {
+                return [];
+            }
+
+            return array_values(array_filter($list, \is_string(...)));
+        };
+
+        return new self(
+            \is_string($data['name'] ?? null) ? $data['name'] : '',
+            \is_string($data['description'] ?? null) ? $data['description'] : '',
+            $strings($data['examples'] ?? []),
+            $strings($data['counterExamples'] ?? []),
+            \is_string($data['pattern'] ?? null) && '' !== $data['pattern'] ? $data['pattern'] : null,
+        );
+    }
+
     private static function assertSingleLine(string $value, int $maxLength, string $what): void
     {
         // No control characters (one line) and no angle brackets: they could end the model's data block.
@@ -127,53 +176,5 @@ final readonly class CustomEntityType
         } finally {
             ini_set('pcre.backtrack_limit', false !== $previous ? $previous : '1000000');
         }
-    }
-
-    /**
-     * The pattern as a whole-word search regex, or null for model-only types.
-     *
-     * @return non-empty-string|null
-     */
-    public function regex(): ?string
-    {
-        return null === $this->pattern ? null : '~(?<![\p{L}\p{N}])(?:'.$this->pattern.')(?![\p{L}\p{N}])~u';
-    }
-
-    /**
-     * @return array{name: string, description: string, examples: list<string>, counterExamples: list<string>, pattern: string|null}
-     */
-    public function toArray(): array
-    {
-        return [
-            'name' => $this->name,
-            'description' => $this->description,
-            'examples' => $this->examples,
-            'counterExamples' => $this->counterExamples,
-            'pattern' => $this->pattern,
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     *
-     * @throws LearningFailedException
-     */
-    public static function fromArray(array $data): self
-    {
-        $strings = static function (mixed $list): array {
-            if (!\is_array($list)) {
-                return [];
-            }
-
-            return array_values(array_filter($list, \is_string(...)));
-        };
-
-        return new self(
-            \is_string($data['name'] ?? null) ? $data['name'] : '',
-            \is_string($data['description'] ?? null) ? $data['description'] : '',
-            $strings($data['examples'] ?? []),
-            $strings($data['counterExamples'] ?? []),
-            \is_string($data['pattern'] ?? null) && '' !== $data['pattern'] ? $data['pattern'] : null,
-        );
     }
 }

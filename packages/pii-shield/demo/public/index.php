@@ -7,9 +7,9 @@ declare(strict_types=1);
  * Runs on PHP's built-in server only. Nothing is sent to any external service.
  */
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\DetectionFailedException;
 use Briefklar\PiiShield\Demo\DemoApi;
 use Briefklar\PiiShield\Demo\DemoServices;
+use Briefklar\PiiShield\Exception\DetectionFailedException;
 
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 
@@ -20,6 +20,15 @@ if (is_file(dirname(__DIR__).'/.env.local')) {
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', \PHP_URL_PATH);
 $path = is_string($path) ? $path : '/';
+
+// Service mode (Docker image): only /v1 exists; the demo page, its assets and /api are not served.
+if (DemoServices::serviceOnly() && !str_starts_with($path, '/v1/')) {
+    http_response_code(404);
+    header('Content-Type: application/json');
+    echo '{"error":"Not found."}';
+
+    return true;
+}
 
 if ('cli-server' === \PHP_SAPI && '/' !== $path && is_file(__DIR__.$path)) {
     return false; // static assets

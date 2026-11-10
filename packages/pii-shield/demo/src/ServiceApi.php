@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Demo;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\DetectionFailedException;
 use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Detector\DetectorInterface;
 use Briefklar\PiiShield\Detector\EmailDetector;
 use Briefklar\PiiShield\Detector\PhoneDetector;
 use Briefklar\PiiShield\EntityExtractor;
 use Briefklar\PiiShield\EntityType;
+use Briefklar\PiiShield\Exception\DetectionFailedException;
+use Briefklar\PiiShield\Exception\LearningFailedException;
+use Briefklar\PiiShield\Exception\VaultException;
 use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\Learning\LearningFailedException;
 use Briefklar\PiiShield\PiiMasker;
 use Briefklar\PiiShield\PiiShield;
-use Briefklar\PiiShield\Vault\VaultException;
 use Briefklar\PiiShield\Vault\VaultInterface;
 
 /**
@@ -33,6 +33,7 @@ final class ServiceApi
     /**
      * @param (\Closure(): ModelDetector)|null $modelDetector null if no model is configured
      * @param string|null                      $token         bearer token; null allows requests from localhost only
+     * @param bool                             $requireToken  service mode (Docker): no localhost fallback, refuse without token
      */
     public function __construct(
         private readonly VaultInterface $vault,
@@ -40,6 +41,7 @@ final class ServiceApi
         private readonly ?\Closure $modelDetector,
         private readonly ?string $token,
         private readonly int $vaultTtl = 900,
+        private readonly bool $requireToken = false,
     ) {
     }
 
@@ -52,6 +54,9 @@ final class ServiceApi
     {
         if ('/v1/health' === $path) {
             return 'GET' === $method ? self::ok(['status' => 'ok', 'modelDetection' => null !== $this->modelDetector]) : self::error(405, 'Use GET.');
+        }
+        if ($this->requireToken && (null === $this->token || '' === $this->token)) {
+            return self::error(503, 'Set PII_SERVICE_TOKEN to use this service.');
         }
         if (!$this->authorized($authorization, $remoteAddress)) {
             return self::error(401, 'Missing or invalid bearer token.');

@@ -31,7 +31,8 @@ Environment variables (or `demo/.env.local`, template `demo/.env.dist`):
 
 | Variable | Meaning |
 |---|---|
-| `PII_SERVICE_TOKEN` | Bearer token. Without it only requests from localhost are answered (in Docker: none). |
+| `PII_SERVICE_TOKEN` | Bearer token. Without it only requests from localhost are answered; in service mode every request gets 503. |
+| `PII_SERVICE_ONLY` | `1` = service mode (set in the Docker image): only `/v1`, no demo page, token required. |
 | `PII_SERVICE_ALLOWED_HOSTS` | Extra host names the service answers to, comma-separated (e.g. behind a reverse proxy). |
 | `PII_SERVICE_VAULT_STORE` | `filesystem` (default), `sqlite`, `redis` |
 | `PII_SERVICE_LEARNED_STORE` | `file` (default, `demo/var/learned-types.json`) or `redis` |

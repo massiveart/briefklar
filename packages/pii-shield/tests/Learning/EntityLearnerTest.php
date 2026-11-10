@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Tests\Learning;
 
+use Briefklar\PiiShield\Exception\LearningFailedException;
 use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
 use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
 use Briefklar\PiiShield\Learning\CustomEntityType;
 use Briefklar\PiiShield\Learning\EntityLearner;
 use Briefklar\PiiShield\Learning\JsonFileCustomEntityStore;
-use Briefklar\PiiShield\Learning\LearningFailedException;
 use Briefklar\PiiShield\PiiShield;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
