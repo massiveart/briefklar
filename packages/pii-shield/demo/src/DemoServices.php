@@ -12,15 +12,20 @@ use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
 use Briefklar\PiiShield\Vault\VaultInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\AI\Platform\Bridge\Anthropic\Factory as AnthropicFactory;
+use Symfony\AI\Platform\Bridge\Anthropic\ModelCatalog as AnthropicCatalog;
 use Symfony\AI\Platform\Bridge\Generic\Factory as GenericFactory;
 use Symfony\AI\Platform\Bridge\Mistral\Factory as MistralFactory;
+use Symfony\AI\Platform\Bridge\Mistral\ModelCatalog as MistralCatalog;
 use Symfony\AI\Platform\Bridge\Ollama\Factory as OllamaFactory;
 use Symfony\AI\Platform\Bridge\OpenAi\Factory as OpenAiFactory;
+use Symfony\AI\Platform\Bridge\OpenAi\ModelCatalog as OpenAiCatalog;
+use Symfony\AI\Platform\Capability;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\PdoAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 /**
  * Wires the demo: vault stores and detection models, configured from environment variables.
@@ -36,7 +41,7 @@ use Symfony\Component\HttpClient\HttpClient;
 final class DemoServices
 {
     private const array PROVIDERS = [
-        'ollama' => ['label' => 'Ollama', 'model' => 'qwen2.5:7b', 'key' => null],
+        'ollama' => ['label' => 'Ollama', 'model' => 'qwen3:4b', 'key' => null],
         'generic' => ['label' => 'OpenAI-kompatibler Server (vLLM, Ollama, …)', 'model' => '', 'key' => 'PII_DEMO_GENERIC_KEY'],
         'mistral' => ['label' => 'Mistral (EU)', 'model' => 'mistral-small-latest', 'key' => 'MISTRAL_API_KEY'],
         'openai' => ['label' => 'OpenAI', 'model' => 'gpt-5', 'key' => 'OPENAI_API_KEY'],
@@ -95,6 +100,70 @@ final class DemoServices
     }
 
     /**
+     * Models to offer for a provider: installed ones for Ollama, the server's list for
+     * OpenAI-compatible servers, the bridge's catalog for public providers.
+     *
+     * @return list<string>
+     */
+    public function models(string $provider, ?string $endpoint): array
+    {
+        $endpoint = null !== $endpoint && '' !== trim($endpoint) ? self::validEndpoint($endpoint) : null;
+        $http = HttpClient::create(['timeout' => 5, 'max_redirects' => 0]);
+
+        try {
+            switch ($provider) {
+                case 'ollama':
+                    $url = $endpoint ?? self::env('PII_DEMO_OLLAMA_URL') ?? 'http://127.0.0.1:11434';
+                    $data = $http->request('GET', $url.'/api/tags')->toArray();
+                    $names = array_map(static fn (mixed $m): string => \is_array($m) && \is_string($m['name'] ?? null) ? $m['name'] : '', \is_array($data['models'] ?? null) ? $data['models'] : []);
+                    break;
+                case 'generic':
+                    $configured = self::env('PII_DEMO_GENERIC_URL');
+                    $url = $endpoint ?? $configured;
+                    if (null === $url) {
+                        return [];
+                    }
+                    $key = null !== $configured && rtrim($configured, '/') === $url ? self::env('PII_DEMO_GENERIC_KEY') : null;
+                    $data = $http->request('GET', $url.'/v1/models', null !== $key ? ['auth_bearer' => $key] : [])->toArray();
+                    $names = array_map(static fn (mixed $m): string => \is_array($m) && \is_string($m['id'] ?? null) ? $m['id'] : '', \is_array($data['data'] ?? null) ? $data['data'] : []);
+                    break;
+                case 'anthropic':
+                case 'openai':
+                case 'mistral':
+                    $catalog = match ($provider) {
+                        'anthropic' => new AnthropicCatalog(),
+                        'openai' => new OpenAiCatalog(),
+                        'mistral' => new MistralCatalog(),
+                    };
+                    $chat = array_filter($catalog->getModels(), static fn (array $m): bool => \in_array(Capability::INPUT_MESSAGES, $m['capabilities'], true));
+                    // Text chat only (no speech, OCR, image or embedding models), newer versions first.
+                    $names = array_values(array_filter(
+                        array_map(strval(...), array_keys($chat)),
+                        static fn (string $n): bool => 1 !== preg_match('/tts|ocr|embed|moderation|voxtral|realtime|audio|image|transcribe|search/i', $n),
+                    ));
+                    usort($names, static fn (string $a, string $b): int => strnatcmp($b, $a));
+                    break;
+                default:
+                    throw new \InvalidArgumentException(\sprintf('Unknown provider "%s".', $provider));
+            }
+        } catch (ExceptionInterface) {
+            return []; // server not reachable: the page falls back to free text input
+        }
+
+        return array_values(array_filter($names, static fn (string $n): bool => '' !== $n));
+    }
+
+    public static function validEndpoint(string $endpoint): string
+    {
+        $endpoint = rtrim(trim($endpoint), '/');
+        if (!\in_array(parse_url($endpoint, \PHP_URL_SCHEME), ['http', 'https'], true)) {
+            throw new \InvalidArgumentException('The server URL must start with http:// or https://.');
+        }
+
+        return $endpoint;
+    }
+
+    /**
      * @return \Closure(string): array{VaultInterface, VaultStorageInterface}
      */
     public function vaults(): \Closure
@@ -114,10 +183,7 @@ final class DemoServices
         return function (array $settings): ModelDetector {
             $provider = \is_string($settings['provider'] ?? null) ? $settings['provider'] : '';
             $model = \is_string($settings['model'] ?? null) && '' !== trim($settings['model']) ? trim($settings['model']) : (self::PROVIDERS[$provider]['model'] ?? '');
-            $endpoint = \is_string($settings['endpoint'] ?? null) && '' !== trim($settings['endpoint']) ? rtrim(trim($settings['endpoint']), '/') : null;
-            if (null !== $endpoint && !\in_array(parse_url($endpoint, \PHP_URL_SCHEME), ['http', 'https'], true)) {
-                throw new \InvalidArgumentException('The server URL must start with http:// or https://.');
-            }
+            $endpoint = \is_string($settings['endpoint'] ?? null) && '' !== trim($settings['endpoint']) ? self::validEndpoint($settings['endpoint']) : null;
 
             [$platform, $location, $options] = $this->platform($provider, $endpoint);
 
