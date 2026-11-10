@@ -181,5 +181,8 @@ try {
 } catch (DetectionFailedException $e) {
     $logEvent(502, $e->getMessage(), $e->modelAnswer);
 
-    return $json(['error' => $e->getMessage().(DemoServices::debug() ? '' : ' Details: demo/var/log/demo.log (raw model answer with PII_DEMO_DEBUG=1).')], 502);
+    // Debug mode (local demo, synthetic data): the raw answer goes to the page so it can be inspected right there.
+    return $json(DemoServices::debug()
+        ? ['error' => $e->getMessage(), 'modelAnswer' => $e->modelAnswer ?? $e->getPrevious()?->getMessage()]
+        : ['error' => $e->getMessage().' Set PII_DEMO_DEBUG=1 in demo/.env.local to see the model answer.'], 502);
 }

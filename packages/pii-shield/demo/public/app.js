@@ -25,8 +25,8 @@ const LOCATION_LABEL = {
 };
 const DETECTION_HINT = {
   regex: 'Muster und Prüfziffern für AT/DE, offline.',
-  model: 'Das Modell erkennt Daten in jeder Sprache und jedem Format.',
-  both: 'Modell und Muster zusammen. Bei Überschneidung gewinnt der längere Fund.',
+  model: 'Das Modell erkennt Daten in jeder Sprache und jedem Format. Geprüft wird mit „Prüfen“, nicht beim Tippen.',
+  both: 'Modell und Muster zusammen; bei Überschneidung gewinnt der längere Fund. Geprüft wird mit „Prüfen“.',
 };
 const TYPE_LABEL = Object.fromEntries(TYPES);
 const DEFAULT_STRATEGY = { IBAN: { kind: 'partial', keepStart: 4, keepEnd: 4 }, PHONE: { kind: 'partial', keepStart: 0, keepEnd: 2 } };
@@ -70,7 +70,7 @@ const els = {
   learnDialog: $('learnDialog'), learnForm: $('learnForm'), learnName: $('learnName'), learnDescription: $('learnDescription'),
   learnExamples: $('learnExamples'), learnCounter: $('learnCounter'), learnPattern: $('learnPattern'),
   learnPreview: $('learnPreview'), learnCancel: $('learnCancel'), learnSave: $('learnSave'),
-  timing: $('timing'), errorText: $('errorText'), retry: $('retry'), log: $('log'), fast: $('fast'),
+  timing: $('timing'), errorText: $('errorText'), retry: $('retry'), log: $('log'), fast: $('fast'), logPanel: $('logPanel'),
 };
 
 /** Learned types are EntityType OTHER with a label; they get one shared colour and their own name. */
@@ -152,7 +152,11 @@ async function post(path, body, signal = undefined) {
     signal,
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || `Fehler ${response.status}`);
+  if (!response.ok) {
+    const error = new Error(data.error || `Fehler ${response.status}`);
+    error.modelAnswer = data.modelAnswer ?? null;
+    throw error;
+  }
   return data;
 }
 
@@ -162,10 +166,21 @@ function showError(message) {
 }
 
 /** Small event log in the page (no text, only what happened), newest first. */
-function logEvent(message, isError = false) {
+function logEvent(message, isError = false, detail = null) {
   const li = document.createElement('li');
   li.textContent = `${new Date().toLocaleTimeString('de-AT')}  ${message}`;
   if (isError) li.className = 'is-error';
+  if (detail) {
+    // Debug mode only: the model's raw answer, as text (never as HTML).
+    const box = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'Antwort des Modells';
+    const pre = document.createElement('pre');
+    pre.textContent = detail;
+    box.append(summary, pre);
+    li.append(box);
+    els.logPanel.open = true;
+  }
   els.log.prepend(li);
   while (els.log.children.length > 50) els.log.lastChild.remove();
 }
@@ -253,7 +268,6 @@ function unallow(value) {
 
 // ---------- analysis ----------
 const analyzeDebounced = debounce(() => analyze(), 300);
-const analyzeModelDebounced = debounce(() => analyze(), 1200); // models are slower; ask less often
 const usesModel = () => state.detection !== 'regex';
 const currentProvider = () => state.config.providers.find((p) => p.id === state.provider);
 
@@ -326,7 +340,7 @@ async function analyze() {
   } catch (e) {
     if (e.name !== 'AbortError') {
       showError(`Prüfung fehlgeschlagen: ${e.message}`);
-      logEvent(`Fehler ${usesModel() ? `${state.provider}/${modelSettings().model}` : 'Muster'}: ${e.message}`, true);
+      logEvent(`Fehler ${usesModel() ? `${state.provider}/${modelSettings().model}` : 'Muster'}: ${e.message}`, true, e.modelAnswer);
     }
   } finally {
     if (state.request === controller) setBusy(false);
@@ -835,7 +849,8 @@ function init() {
 
   els.input.addEventListener('input', () => {
     renderBackdrop(); // keep layout in sync immediately; highlights return after the next analysis
-    if (state.live) (usesModel() ? analyzeModelDebounced : analyzeDebounced)();
+    // Live only for patterns: every model call costs seconds, and aborted calls keep the model busy.
+    if (state.live && !usesModel()) analyzeDebounced();
   });
   els.input.addEventListener('scroll', syncScroll);
   els.input.addEventListener('click', openPopoverAtCaret);

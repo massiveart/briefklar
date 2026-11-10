@@ -405,6 +405,7 @@ body { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
 .log summary { cursor: pointer; }
 .log-list { margin: 0.5rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.15rem; font-family: var(--font-code); max-height: 14rem; overflow: auto; }
 .log-list .is-error { color: var(--danger); }
+.log-list pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 12rem; overflow: auto; margin: 0.3rem 0 0.5rem; padding: 0.5rem; border-radius: 6px; background: color-mix(in srgb, var(--desk) 60%, transparent); color: var(--ink); }
 
 /* ---------- Timings ---------- */
 .timing { margin: -0.25rem 0 0.5rem; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.1em; }
