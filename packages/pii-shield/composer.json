@@ -41,6 +41,7 @@
     "symfony/yaml": "^8.1"
   },
   "suggest": {
+    "symfony/framework-bundle": "To use PiiShieldBundle (config/packages/pii_shield.yaml)",
     "symfony/ai-agent": "To use PiiShieldProcessor in Symfony AI agents",
     "symfony/ai-platform": "To use ModelDetector with any model",
     "symfony/ai-ollama-platform": "Model-based detection with a local or on-premise Ollama",

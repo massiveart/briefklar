@@ -11,10 +11,53 @@ Reference for using pii-shield inside your PHP / Symfony application. For the HT
 | Symfony AI agent | `Bridge\SymfonyAi\PiiShieldProcessor` |
 | Detect beyond DACH formats, any language | `Bridge\SymfonyAi\ModelDetector` |
 | Your own entity types ("mask things like this too") | `Learning\EntityLearner` |
+| Symfony application | `Bridge\Symfony\PiiShieldBundle`, configured in `config/packages/pii_shield.yaml` |
 
 Contracts: `PiiShieldInterface` (redact/restore), `VaultAwarePiiShieldInterface` (+ restoreFromVault/forget),
 `PiiMaskerInterface` (mask), `Detector\DetectorInterface` (detect), `Vault\VaultInterface`,
 `Vault\Storage\VaultStorageInterface`, `Learning\CustomEntityStoreInterface`.
+
+## Symfony bundle
+
+```php
+// config/bundles.php
+return [
+    // ...
+    Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle::class => ['all' => true],
+];
+```
+
+```yaml
+# config/packages/pii_shield.yaml (all keys optional, defaults shown)
+pii_shield:
+    types: [PERSON, ADDRESS, SVNR, IBAN, TAX_NUMBER, FILE_NUMBER, EMAIL, PHONE, BIRTH_DATE, LICENSE_PLATE, ...]
+    keep_authority_contacts: true
+    allowlist: []
+    model:                      # detection by a model, in addition to the patterns
+        enabled: false
+        platform: ai.platform.ollama   # service id of a Symfony AI platform (symfony/ai-bundle)
+        model: qwen3:4b-instruct
+        location: local         # local | on_premise | external
+        acknowledge_external_transfer: false   # required for external
+        options: { think: false }
+    vault:                      # restore in a later request
+        enabled: false
+        key: '%env(base64:PII_SHIELD_VAULT_KEY)%'   # 32 bytes, EncryptedVault::generateKey()
+        cache_pool: cache.app   # any PSR-6 pool, e.g. a Redis pool
+        ttl: 3600
+    learning:
+        enabled: true
+        path: '%kernel.project_dir%/var/pii_shield/learned_types.json'
+        cache_pool: null        # use a PSR-6 pool instead of the file
+    agent_processor:            # redact input / restore output of Symfony AI agents
+        enabled: true
+        agents: []              # agent names; empty = all agents
+```
+
+Then inject the interfaces: `PiiShieldInterface`, `VaultAwarePiiShieldInterface`, `PiiMaskerInterface`,
+`Learning\EntityLearner`. Services are prefixed `pii_shield.`; add your own detectors by tagging a service
+`pii_shield.detector`. The agent processor redacts the input last (after memory and other processors) and
+restores the output first.
 
 ## Redact and restore
 
