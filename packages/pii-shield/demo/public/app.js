@@ -316,6 +316,7 @@ async function analyze() {
   const controller = new AbortController();
   state.request = controller;
   setBusy(usesModel());
+  renderLegend();
   const strategies = {};
   for (const type of state.types) strategies[type] = strategyFor(type);
 
@@ -343,7 +344,11 @@ async function analyze() {
       logEvent(`Fehler ${usesModel() ? `${state.provider}/${modelSettings().model}` : 'Muster'}: ${e.message}`, true, e.modelAnswer);
     }
   } finally {
-    if (state.request === controller) setBusy(false);
+    if (state.request === controller) {
+      state.request = null;
+      setBusy(false);
+      renderLegend();
+    }
   }
 }
 
@@ -414,11 +419,16 @@ function renderBackdrop() {
 }
 
 function renderLegend() {
-  const findings = state.analysis?.findings || [];
-  if (!els.input.value.trim()) {
+  const text = els.input.value;
+  if (!text.trim()) {
     els.legend.innerHTML = '<span class="empty">Noch kein Text.</span>';
     return;
   }
+  if (state.analysis?.text !== text) {
+    els.legend.innerHTML = `<span class="empty">${state.request && !state.request.signal.aborted ? 'Wird geprüft …' : 'Noch nicht geprüft. „Prüfen“ startet die Erkennung.'}</span>`;
+    return;
+  }
+  const findings = state.analysis.findings;
   if (!findings.length) {
     els.legend.innerHTML = '<span class="empty">Keine personenbezogenen Daten gefunden.</span>';
     return;
@@ -440,7 +450,9 @@ function renderResult(fresh) {
   els.resultIntro.textContent = reversible
     ? 'So sieht das Sprachmodell den Text.'
     : 'Endgültig maskiert, etwa für Logs.';
-  els.result.dataset.empty = 'Das Ergebnis erscheint hier, sobald im Original Text steht.';
+  els.result.dataset.empty = els.input.value.trim()
+    ? 'Das Ergebnis erscheint hier nach „Prüfen“.'
+    : 'Das Ergebnis erscheint hier, sobald im Original Text steht.';
   els.result.classList.toggle('no-highlight', !state.highlight);
   if (!a) {
     els.result.innerHTML = '';
@@ -851,6 +863,7 @@ function init() {
     renderBackdrop(); // keep layout in sync immediately; highlights return after the next analysis
     // Live only for patterns: every model call costs seconds, and aborted calls keep the model busy.
     if (state.live && !usesModel()) analyzeDebounced();
+    else { renderLegend(); renderResult(); }
   });
   els.input.addEventListener('scroll', syncScroll);
   els.input.addEventListener('click', openPopoverAtCaret);
