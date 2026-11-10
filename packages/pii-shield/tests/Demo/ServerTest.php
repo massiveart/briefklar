@@ -84,6 +84,15 @@ final class ServerTest extends WebTestCase
         self::assertResponseStatusCodeSame(421);
     }
 
+    public function testEncodedPathsCannotBypassTheGuard(): void
+    {
+        $client = self::createClient();
+        // "/%61pi/analyze" routes to the demo API; the guard must still apply (text/plain → 403).
+        $client->request('POST', '/%61pi/analyze', server: ['CONTENT_TYPE' => 'text/plain', 'HTTP_HOST' => '127.0.0.1:8088'], content: '{"text":"x"}');
+
+        self::assertNotSame(200, $client->getResponse()->getStatusCode());
+    }
+
     public function testServiceApiFromLocalhostWithoutToken(): void
     {
         $client = self::createClient();

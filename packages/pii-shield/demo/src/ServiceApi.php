@@ -62,31 +62,46 @@ final class ServiceApi
             return self::error(401, 'Missing or invalid bearer token.');
         }
 
-        $routes = [
-            '/v1/redact' => ['POST', fn (): array => $this->redact($body ?? [])],
-            '/v1/restore' => ['POST', fn (): array => $this->restore($body ?? [])],
-            '/v1/mask' => ['POST', fn (): array => $this->mask($body ?? [])],
-            '/v1/learn' => ['POST', fn (): array => $this->learn($body ?? [])],
-            '/v1/entities' => ['GET', fn (): array => self::ok(['types' => array_map(static fn ($t): array => $t->toArray(), $this->learner->types())])],
-        ];
+        $routes = ['/v1/redact' => 'redact', '/v1/restore' => 'restore', '/v1/mask' => 'mask', '/v1/learn' => 'learn', '/v1/entities' => 'entities'];
+        if (isset($routes[$path])) {
+            $allowed = 'entities' === $routes[$path] ? 'GET' : 'POST';
 
+            return $method === $allowed ? $this->operation($routes[$path], $body ?? []) : self::error(405, \sprintf('Use %s.', $allowed));
+        }
+        if (1 === preg_match('~^/v1/entities/([A-Z][A-Z0-9_]{1,39})$~', $path, $m)) {
+            return 'DELETE' === $method ? $this->forgetType($m[1]) : self::error(405, 'Use DELETE.');
+        }
+        if (1 === preg_match('~^/v1/vault/([0-9a-f]{32})$~', $path, $m)) {
+            if ('DELETE' !== $method) {
+                return self::error(405, 'Use DELETE.');
+            }
+            $this->vault->delete($m[1]);
+
+            return ['status' => 204, 'body' => null];
+        }
+
+        return self::error(404, 'Not found.');
+    }
+
+    /**
+     * One operation without routing or authentication (the caller has authenticated), shared by
+     * the HTTP API and the MCP tools.
+     *
+     * @param 'redact'|'restore'|'mask'|'learn'|'entities' $operation
+     * @param array<string, mixed>                         $body
+     *
+     * @return Response
+     */
+    public function operation(string $operation, array $body): array
+    {
         try {
-            if (isset($routes[$path])) {
-                [$allowed, $action] = $routes[$path];
-
-                return $method === $allowed ? $action() : self::error(405, \sprintf('Use %s.', $allowed));
-            }
-            if (1 === preg_match('~^/v1/entities/([A-Z][A-Z0-9_]{1,39})$~', $path, $m)) {
-                return 'DELETE' === $method ? $this->forgetType($m[1]) : self::error(405, 'Use DELETE.');
-            }
-            if (1 === preg_match('~^/v1/vault/([0-9a-f]{32})$~', $path, $m)) {
-                if ('DELETE' !== $method) {
-                    return self::error(405, 'Use DELETE.');
-                }
-                $this->vault->delete($m[1]);
-
-                return ['status' => 204, 'body' => null];
-            }
+            return match ($operation) {
+                'redact' => $this->redact($body),
+                'restore' => $this->restore($body),
+                'mask' => $this->mask($body),
+                'learn' => $this->learn($body),
+                'entities' => self::ok(['types' => array_map(static fn ($t): array => $t->toArray(), $this->learner->types())]),
+            };
         } catch (\InvalidArgumentException $e) {
             return self::error($e instanceof LearningFailedException ? 422 : 400, $e->getMessage());
         } catch (DetectionFailedException) {
@@ -95,8 +110,6 @@ final class ServiceApi
         } catch (\RuntimeException) {
             return self::error(500, 'Detection failed.');
         }
-
-        return self::error(404, 'Not found.');
     }
 
     /**

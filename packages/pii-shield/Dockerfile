@@ -18,7 +18,8 @@ COPY --from=build /srv/pii-shield /srv/pii-shield
 WORKDIR /srv/pii-shield/demo
 RUN mkdir -p var && chown -R www-data:www-data var
 USER www-data
-ENV PHP_CLI_SERVER_WORKERS=4 \
+ENV APP_ENV=prod \
+    PHP_CLI_SERVER_WORKERS=4 \
     PII_SERVICE_ONLY=1 \
     PII_SERVICE_VAULT_STORE=filesystem \
     PII_SERVICE_LEARNED_STORE=file

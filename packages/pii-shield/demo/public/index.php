@@ -26,8 +26,8 @@ if ('cli-server' === \PHP_SAPI && is_string($path) && '/' !== $path && is_file(_
     return false;
 }
 
-$env = $_SERVER['APP_ENV'] ?? 'prod';
-$kernel = new Kernel(is_string($env) ? $env : 'prod', 'dev' === $env);
+$env = $_SERVER['APP_ENV'] ?? 'dev'; // the Docker image sets prod
+$kernel = new Kernel(is_string($env) ? $env : 'dev', 'prod' !== $env);
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
 $response->send();

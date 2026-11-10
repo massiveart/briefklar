@@ -25,11 +25,46 @@ curl -s http://localhost:8080/v1/redact \
 Typical flow: `redact` → send `text` to your model → `restore` the model's answer with the `vaultId`
 → optionally `DELETE /v1/vault/{vaultId}`.
 
+## MCP
+
+The same operations as MCP tools: `redact_text`, `restore_text`, `mask_text`, `learn_entity_type`, `list_entity_types`.
+The mapping stays on the server; tools return placeholders and a `vaultId`, never the original values.
+
+**Claude Code** (STDIO):
+
+```bash
+claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield
+```
+
+**Claude Desktop** (`claude_desktop_config.json`, STDIO):
+
+```json
+{
+  "mcpServers": {
+    "pii-shield": {
+      "command": "php",
+      "args": ["/path/to/briefklar/packages/pii-shield/demo/bin/console", "mcp:server", "pii_shield"]
+    }
+  }
+}
+```
+
+With Docker instead of a local PHP: `"command": "docker", "args": ["run", "-i", "--rm", "pii-shield", "php", "bin/console", "mcp:server", "pii_shield"]`.
+
+**Streamable HTTP**: `http://localhost:8080/mcp` with `Authorization: Bearer $PII_SERVICE_TOKEN` (locally without a
+token: localhost only).
+
+**MCP Inspector**:
+
+```bash
+npx @modelcontextprotocol/inspector php packages/pii-shield/demo/bin/console mcp:server pii_shield
+```
+
 ## How it is built
 
-A small Symfony application in `demo/` (`MicroKernelTrait`, FrameworkBundle): `Controller\ServiceController` (`/v1`),
-`Controller\DemoController` (page and `/api`), `EventSubscriber\RequestGuard` (host allowlist, JSON-only, origin check,
-service mode, security headers). The logic is framework-free in `ServiceApi` and `DemoApi`, unit-tested on their own.
+A small Symfony application in `demo/` (`MicroKernelTrait`, FrameworkBundle, MCP bundle): `Controller\ServiceController` (`/v1`), `Mcp\PiiShieldTools` (MCP),
+`Controller\DemoController` (page and `/api`), `EventSubscriber\RequestGuard` (decides by the matched route: host allowlist, JSON-only, origin
+check, token for /mcp, service mode, security headers). The logic is framework-free in `ServiceApi` and `DemoApi`, unit-tested on their own.
 Providers, models and stores are resolved at runtime from the environment, so changes to `.env.local` apply without
 clearing the cache. The Docker image installs only the server's runtime dependencies (`demo/composer.json`, ~176 MB).
 

@@ -7,26 +7,37 @@ namespace Briefklar\PiiShield\Demo\EventSubscriber;
 use Briefklar\PiiShield\Demo\DemoServices;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
- * Request checks before routing, security headers on every response.
+ * Request checks after routing, decided by the matched route (not by path prefixes, which differ
+ * from what the router matches for encoded paths), and security headers on every response.
  *
- * - Service mode (PII_SERVICE_ONLY=1, Docker): only /v1 exists.
- * - DNS rebinding: /api and /v1 answer known host names only (PII_SERVICE_ALLOWED_HOSTS adds more).
- * - CSRF: JSON only and no foreign Origin, so other websites in the browser cannot drive the APIs.
- * - The demo API (/api) serves this machine only (real peer address, not just the Host header).
+ * - Service mode (PII_SERVICE_ONLY=1, Docker): only the service routes (/v1, /mcp) exist.
+ * - DNS rebinding: APIs answer known host names only (PII_SERVICE_ALLOWED_HOSTS adds more).
+ * - CSRF: /v1 and /api take JSON only and no foreign Origin.
+ * - /mcp needs the bearer token like /v1 (localhost only without a token); the MCP bundle checks origins.
+ * - The demo API serves this machine only (real peer address, not just the Host header).
  */
 final class RequestGuard implements EventSubscriberInterface
 {
     private const array LOCAL_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
+    private const array SERVICE_ROUTES = ['v1', 'v1_openapi'];
+    private const array DEMO_API_ROUTES = ['demo_api', 'demo_config', 'demo_samples'];
+    private const string MCP_ROUTE_PREFIX = '_mcp_endpoint_';
+
+    public function __construct(
+        private readonly DemoServices $services,
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onRequest', 64], // before routing
+            KernelEvents::REQUEST => ['onRequest', 16], // after the router (32): the route is known
             KernelEvents::RESPONSE => 'onResponse',
         ];
     }
@@ -37,9 +48,11 @@ final class RequestGuard implements EventSubscriberInterface
             return;
         }
         $request = $event->getRequest();
-        $path = $request->getPathInfo();
-        $isService = str_starts_with($path, '/v1/');
-        $isDemoApi = str_starts_with($path, '/api/');
+        $route = $request->attributes->get('_route');
+        $route = \is_string($route) ? $route : '';
+        $isMcp = str_starts_with($route, self::MCP_ROUTE_PREFIX);
+        $isService = $isMcp || \in_array($route, self::SERVICE_ROUTES, true);
+        $isDemoApi = \in_array($route, self::DEMO_API_ROUTES, true);
 
         $deny = static fn (int $status, string $error) => $event->setResponse(new JsonResponse(['error' => $error], $status));
 
@@ -49,11 +62,16 @@ final class RequestGuard implements EventSubscriberInterface
             return;
         }
         if (!$isService && !$isDemoApi) {
-            return;
+            return; // the demo page and its assets
         }
         $host = (string) preg_replace('/:\d+$/', '', $request->getHttpHost());
         if (!\in_array($host, [...self::LOCAL_HOSTS, ...DemoServices::allowedHosts()], true)) {
             $deny(421, 'Unknown host.');
+
+            return;
+        }
+        if ($isMcp) {
+            $this->guardMcp($request, $deny);
 
             return;
         }
@@ -65,7 +83,7 @@ final class RequestGuard implements EventSubscriberInterface
 
             return;
         }
-        if ($isDemoApi && !\in_array($request->server->get('REMOTE_ADDR'), ['127.0.0.1', '::1'], true)) {
+        if ($isDemoApi && !self::fromLoopback($request)) {
             $deny(403, 'The demo API is available on this machine only.');
         }
     }
@@ -79,5 +97,32 @@ final class RequestGuard implements EventSubscriberInterface
         if ($event->getResponse() instanceof JsonResponse) {
             $headers->set('Cache-Control', 'no-store');
         }
+    }
+
+    /**
+     * Same rule as /v1: bearer token if configured, otherwise localhost only; in service mode a token is required.
+     *
+     * @param \Closure(int, string): mixed $deny
+     */
+    private function guardMcp(Request $request, \Closure $deny): void
+    {
+        $token = $this->services->serviceToken();
+        if (null === $token) {
+            if (DemoServices::serviceOnly()) {
+                $deny(503, 'Set PII_SERVICE_TOKEN to use this service.');
+            } elseif (!self::fromLoopback($request)) {
+                $deny(401, 'Missing or invalid bearer token.');
+            }
+
+            return;
+        }
+        if (!hash_equals('Bearer '.$token, (string) $request->headers->get('Authorization'))) {
+            $deny(401, 'Missing or invalid bearer token.');
+        }
+    }
+
+    private static function fromLoopback(Request $request): bool
+    {
+        return \in_array($request->server->get('REMOTE_ADDR'), ['127.0.0.1', '::1'], true);
     }
 }

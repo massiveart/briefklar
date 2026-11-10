@@ -41,6 +41,13 @@ curl -s localhost:8080/v1/redact -H 'Authorization: Bearer change-me' -H 'Conten
 
 → [docs/service.md](docs/service.md) (configuration, security) and [docs/openapi.yaml](docs/openapi.yaml) (API reference).
 
+**As an MCP server** (Claude Desktop, Claude Code, any MCP client): tools `redact_text`, `restore_text`, `mask_text`,
+`learn_entity_type`, `list_entity_types` over STDIO or Streamable HTTP (`/mcp`):
+
+```bash
+claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield
+```
+
 ## Demo
 
 A local playground for everything above: paste a text, choose regex, model or both for detection (provider, model, server URL), the vault store (filesystem, SQLite, Redis) and how to mask, see the findings highlighted in the original, click a finding for details or to keep it, and restore a model answer.
