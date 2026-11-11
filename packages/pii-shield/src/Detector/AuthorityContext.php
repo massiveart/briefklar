@@ -18,7 +18,11 @@ final class AuthorityContext
 {
     private const string KEYWORDS = '/\b(?:uns|wir|unser\w*|einzubringen|Einspruch|Beschwerde|Bezirkshauptmannschaft|Finanzamt\w*|Magistrat\w*|Behörde\w*|Gericht\w*|Amt)\b/iu';
     /** Names of authorities: a letterhead needs one ("uns" or "wir" are not enough there). */
-    private const string AUTHORITY_NAMES = '/\b(?:Bezirkshauptmannschaft|Finanzamt\w*|Magistrat\w*|Behörde\w*|Gericht\w*|Amt|Amtsgericht|Gemeinde\w*|Stadtgemeinde|Marktgemeinde|Landesregierung|Ministerium|Polizei\w*|Landespolizeidirektion|Stadtverwaltung)\b/iu';
+    private const string AUTHORITY_NAMES = '/\b(?:Bezirkshauptmannschaft|Finanzamt|Magistrat|Magistratsabteilung|Behörde|Gericht|Bezirksgericht|Landesgericht|Amtsgericht|Amt|Gemeindeamt|Gemeinde|Stadtgemeinde|Marktgemeinde|Landesregierung|Ministerium|Polizei|Polizeiinspektion|Landespolizeidirektion|Stadtverwaltung)\b/iu';
+    /** Short forms authorities put before their name in a domain ("bh-musterstadt.gv.at"). */
+    private const array DOMAIN_PREFIXES = ['bh', 'fa', 'ma', 'mag', 'gem', 'stadt', 'markt', 'land', 'lpd', 'bg', 'lg'];
+    /** The authority's name must be on one of the first lines of the letterhead. */
+    private const int AUTHORITY_NAME_LINES = 2;
     private const int LETTERHEAD_LINES = 6;
     private const int LETTERHEAD_BYTES = 2_000;
 
@@ -41,27 +45,28 @@ final class AuthorityContext
     }
 
     /**
-     * Whether an e-mail address belongs to the authority in the letterhead: a part of its domain matches a
-     * word of the letterhead ("parken@musterhausen.example" for "Magistrat der Stadt Musterhausen").
+     * Whether an e-mail address belongs to the authority in the letterhead: the domain's name (the label
+     * before the top-level domain, e.g. "musterhausen" in "parken@musterhausen.example") equals a word of the
+     * line that names the authority, optionally after a known short form ("bh-musterstadt"). A similar
+     * domain ("musterhausen-fitness") does not count: when in doubt, the address is redacted.
      */
     public static function isAuthorityEmail(string $text, string $email): bool
     {
-        $letterhead = self::letterhead($text);
+        $authority = self::authorityLine($text);
         $at = strrpos($email, '@');
-        if (null === $letterhead || false === $at) {
+        if (null === $authority || false === $at) {
             return false;
         }
-        $words = preg_split('/[^\p{L}]+/u', mb_strtolower($letterhead), flags: \PREG_SPLIT_NO_EMPTY);
-        $labels = preg_split('/[.-]+/', strtolower(substr($email, $at + 1)), flags: \PREG_SPLIT_NO_EMPTY);
-        foreach (false === $labels ? [] : $labels as $label) {
-            foreach (false === $words ? [] : $words as $word) {
-                if (mb_strlen($word) >= 5 && str_contains($label, $word)) {
-                    return true;
-                }
-            }
+        $labels = explode('.', strtolower(substr($email, $at + 1)));
+        if (\count($labels) < 2) {
+            return false;
         }
+        $words = preg_split('/[^\p{L}]+/u', mb_strtolower($authority), flags: \PREG_SPLIT_NO_EMPTY);
+        $words = array_filter(false === $words ? [] : $words, static fn (string $w): bool => mb_strlen($w) >= 5);
+        $parts = explode('-', $labels[\count($labels) - 2]);
+        $name = array_pop($parts);
 
-        return false;
+        return \in_array($name, $words, true) && [] === array_diff($parts, self::DOMAIN_PREFIXES);
     }
 
     /**
@@ -80,6 +85,26 @@ final class AuthorityContext
         }
         $letterhead = substr($text, 0, $boundary[0][1]);
 
-        return 1 === preg_match(self::AUTHORITY_NAMES, $letterhead) ? $letterhead : null;
+        return null !== self::authorityLineOf($letterhead) ? $letterhead : null;
+    }
+
+    /** The line of the letterhead that names the authority, or null. */
+    private static function authorityLine(string $text): ?string
+    {
+        $letterhead = self::letterhead($text);
+
+        return null === $letterhead ? null : self::authorityLineOf($letterhead);
+    }
+
+    private static function authorityLineOf(string $letterhead): ?string
+    {
+        $lines = preg_split('/\R/', $letterhead);
+        foreach (\array_slice(false === $lines ? [] : $lines, 0, self::AUTHORITY_NAME_LINES) as $line) {
+            if (1 === preg_match(self::AUTHORITY_NAMES, $line)) {
+                return $line;
+            }
+        }
+
+        return null;
     }
 }
