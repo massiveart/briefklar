@@ -78,6 +78,19 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorExists('a[hreflang=en][href="/en"]');
     }
 
+    public function testUploadFormShowsProgressWhileTheLetterIsExplained(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/de');
+
+        // The upload-progress Stimulus controller disables the button and reveals the status on submit.
+        self::assertSelectorExists('form[data-controller="upload-progress"][data-action="submit->upload-progress#start"]');
+        self::assertSelectorExists('form[data-upload-progress-busy-label-value="Brief wird erklärt …"]');
+        self::assertSelectorExists('button[type=submit][data-upload-progress-target="submit"]');
+        self::assertSelectorExists('[role=status][data-upload-progress-target="status"][hidden]');
+        self::assertSelectorTextContains('.upload-status', 'bis zu einer Minute');
+    }
+
     public function testUploadingFixture01AsPdfShowsExplanationWithDeadline(): void
     {
         $client = self::createClient();

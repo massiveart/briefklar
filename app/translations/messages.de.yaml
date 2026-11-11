@@ -9,6 +9,8 @@ letter:
         label: Brief (PDF oder Foto)
         help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
         submit: Brief erklären
+        submitting: Brief wird erklärt …
+        progress: Wir lesen deinen Brief, entfernen persönliche Daten und lassen ihn erklären. Das kann bis zu einer Minute dauern. Bitte lade die Seite nicht neu.
         easy_language: Erklärung in Leichter Sprache
         easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
     result:
