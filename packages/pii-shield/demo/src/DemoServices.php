@@ -327,13 +327,17 @@ final class DemoServices
         // No redirects: the URL may be typed in the browser and must not bounce elsewhere.
         $selfHosted = HttpClient::create(['timeout' => 170, 'max_redirects' => 0]);
         $deterministic = ['temperature' => 0];
+        // Small models sometimes repeat findings until the context is full (measured: 1,933 instead of ~250
+        // tokens, 50 s instead of 10). A normal answer takes a few hundred tokens; a cut answer fails closed.
+        // Only without reasoning: thinking tokens count against the same limit.
+        $answerTokens = 1_024;
 
         switch ($provider) {
             case 'ollama':
                 $endpoint ??= self::env('PII_DEMO_OLLAMA_URL') ?? 'http://127.0.0.1:11434';
 
                 // No chain-of-thought (faster). No JSON mode: not every model supports it; the prompt asks for JSON.
-                return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), $fast ? [...$deterministic, 'think' => false] : $deterministic];
+                return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), $fast ? [...$deterministic, 'think' => false, 'num_predict' => $answerTokens] : $deterministic];
             case 'generic':
                 $configured = self::openAiBase(self::env('PII_DEMO_GENERIC_URL'));
                 $endpoint = self::openAiBase($endpoint) ?? $configured ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
@@ -341,7 +345,7 @@ final class DemoServices
                 $apiKey = $configured === $endpoint ? self::env('PII_DEMO_GENERIC_KEY') : null;
 
                 // Fast: no reasoning tokens (Ollama's /v1 understands "none"; turn off for servers that do not).
-                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $fast ? [...$deterministic, 'reasoning_effort' => 'none'] : $deterministic];
+                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $fast ? [...$deterministic, 'reasoning_effort' => 'none', 'max_tokens' => $answerTokens] : $deterministic];
             case 'mistral':
                 return [MistralFactory::createPlatform($key('MISTRAL_API_KEY')), ModelLocation::External, $deterministic];
             case 'openai':

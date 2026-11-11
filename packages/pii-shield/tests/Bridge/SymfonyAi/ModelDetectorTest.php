@@ -171,6 +171,31 @@ final class ModelDetectorTest extends TestCase
         self::assertSame([], $detector->detect(self::TEXT));
     }
 
+    public function testAnUnusableAnswerIsAskedForOnceMore(): void
+    {
+        $answers = ['{"entities":[{"type":"PERSON","value":"Jan', '{"entities":[{"type":"PERSON","value":"Jan Novák"}]}'];
+        $detector = $this->chunkingDetector(static function () use (&$answers): string {
+            return array_shift($answers) ?? '{"entities":[]}';
+        }, 1_000);
+
+        $entities = $detector->detect(self::TEXT);
+
+        self::assertCount(2, $this->client->getCalls(), 'the cut answer is requested again');
+        self::assertCount(2, $entities);
+    }
+
+    public function testAnswersUnusableTwiceFailClosed(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[{"type":"PERSON"', 1_000);
+
+        try {
+            $detector->detect(self::TEXT);
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException) {
+        }
+        self::assertCount(2, $this->client->getCalls());
+    }
+
     public function testShortTextsAreSentInOneCall(): void
     {
         $this->detector('{"entities":[]}')->detect(self::TEXT);

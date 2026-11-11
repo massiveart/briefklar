@@ -104,24 +104,23 @@ final class ModelDetector implements DetectorInterface
         $chunks = self::chunks($text, max(self::MIN_CHUNK_SIZE, $this->chunkSize));
         $instructions = self::instructions($learned);
         $answers = [];
-        try {
-            foreach (array_chunk($chunks, self::CONCURRENCY) as $batch) {
-                $pending = array_map(fn (string $chunk) => $this->platform->invoke($this->model, new MessageBag(
-                    Message::forSystem($instructions),
-                    Message::ofUser($chunk),
-                ), $this->options), $batch);
-                foreach ($pending as $result) {
-                    $answers[] = $result->asText();
-                }
+        foreach (array_chunk($chunks, self::CONCURRENCY) as $batch) {
+            foreach ($this->ask($instructions, $batch) as $answer) {
+                $answers[] = $answer;
             }
-        } catch (\Throwable $e) {
-            throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
         }
 
-        // Values found in any chunk are grounded in the whole text.
+        // Values found in any chunk are grounded in the whole text. An unusable answer (small models
+        // sometimes repeat themselves until the answer is cut off) is asked for once more; answers vary
+        // under concurrent load. Unusable twice: fail closed.
         $findings = [];
-        foreach ($answers as $answer) {
-            foreach ($this->parse($answer, $learned) as $finding) {
+        foreach ($answers as $i => $answer) {
+            try {
+                $parsed = $this->parse($answer, $learned);
+            } catch (DetectionFailedException) {
+                $parsed = $this->parse($this->ask($instructions, [$chunks[$i]])[0], $learned);
+            }
+            foreach ($parsed as $finding) {
                 $findings[] = $finding;
             }
         }
@@ -144,6 +143,27 @@ final class ModelDetector implements DetectorInterface
         usort($entities, static fn (Entity $a, Entity $b): int => $a->offset <=> $b->offset);
 
         return $entities;
+    }
+
+    /**
+     * Sends the chunks concurrently and returns the answers in the same order.
+     *
+     * @param list<string> $chunks
+     *
+     * @return list<string>
+     */
+    private function ask(string $instructions, array $chunks): array
+    {
+        try {
+            $pending = array_map(fn (string $chunk) => $this->platform->invoke($this->model, new MessageBag(
+                Message::forSystem($instructions),
+                Message::ofUser($chunk),
+            ), $this->options), $chunks);
+
+            return array_map(static fn ($result): string => $result->asText(), $pending);
+        } catch (\Throwable $e) {
+            throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
+        }
     }
 
     private static function tooLong(int $chunks, int $size): DetectionFailedException

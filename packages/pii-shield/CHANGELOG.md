@@ -6,6 +6,9 @@ All notable changes to `briefklar/pii-shield`. Format: [Keep a Changelog](https:
 
 ### Changed
 
+- `ModelDetector` asks once more for a chunk whose answer is unusable (small models sometimes repeat their findings until the answer is cut off; answers vary under concurrent load). Unusable twice still fails closed.
+- Demo: answers of self-hosted models are capped at 1,024 tokens in fast mode (`num_predict` / `max_tokens`).
+
 - `ModelDetector` default chunk size 6,000 → 4,000 characters: a 6,000-character chunk took 3,079 of the 4,096 tokens Ollama uses by default on GPUs under 24 GB, too little room for answers on texts with much personal data.
 
 ## [0.1.0] - 2026-11-11
