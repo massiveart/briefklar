@@ -11,12 +11,16 @@ use App\Extraction\ExtractionMethod;
  */
 final readonly class ExplainedLetter
 {
+    /**
+     * @param list<string> $inventedPlaceholders placeholders in the answer that were not in the letter (pii-shield could not restore them)
+     */
     public function __construct(
         public LetterExplanation $explanation,
         public bool $deadlineStatedInLetter,
         public ExtractionMethod $extractionMethod,
         public ExplanationStyle $style,
         public ExplanationLanguage $language,
+        public array $inventedPlaceholders = [],
     ) {
     }
 }

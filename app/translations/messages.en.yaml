@@ -19,6 +19,7 @@ letter:
         deadline: Deadline
         no_deadline: The letter does not state a deadline.
         deadline_unverified: We could not find this deadline in the letter. Please check it in the original.
+        invented_placeholders: The explanation contains placeholders that do not stand for anything in your letter (%placeholders%). These parts are unreliable, please check them in the original.
         amount: Amount
         summary: What is it about?
         actions: What do you have to do?

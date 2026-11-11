@@ -21,7 +21,7 @@ Window: Mon 09.11.2026 to Sun 22.11.2026, 18:00 CET. Internal submission target:
 | Mon 09.11. | M0 Setup | Repo public-ready, CI green on skeleton, `PiiShieldInterface` agreed, `NullPiiShield` usable by B |
 | Fri 13.11. | M1 Components | A: regex + checksum detectors for all `EntityType`s, vault, restore; tests green against fixtures. B: upload -> OCR -> agent -> structured answer working with `NullPiiShield` |
 | Sun 15.11. | M2 End-to-end | Real `PiiShield` wired into app via Symfony AI processors; fixture letter 01 runs end-to-end; no PII in provider request (verified by test with mocked platform) |
-| Wed 18.11. | M3 Feature complete | C done (MCP Inspector demo works). NER-based name/address detection via Hugging Face. **Go/no-go for D** |
+| Wed 18.11. | M3 Feature complete | C done (MCP Inspector demo works). Model-based name/address detection via Symfony AI Platform (ADR 0006, replaces the Hugging Face NER plan). **Go/no-go for D** |
 | Fri 20.11. | M4 Freeze | No new features. Only bugs, README, polish |
 | Sat 21.11. | M5 Ship prep | Stranger test: someone outside the team gets from `git clone` to running demo in 5 min. Video recorded |
 | Sun 22.11. 12:00 | Submit | Repo public, video uploaded, submission done |
@@ -39,7 +39,7 @@ Go only if M2 and C are done and the end-to-end demo has no known blocker. Other
 | Risk | Mitigation |
 |---|---|
 | Pre-release API changes in Symfony AI / mcp/sdk | Pin exact versions on day 0, upgrade only deliberately. Log breakages in `docs/upstream-issues.md` |
-| LLM mangles placeholders, restore fails | Placeholder format robust against reformatting; OutputProcessor validates every placeholder; tests with mangled outputs |
+| LLM mangles placeholders, restore fails | Placeholder format robust against reformatting; the output processor validates every placeholder; tests with mangled outputs |
 | Over-redaction kills the explanation (amounts, deadlines removed) | Amounts and non-birth dates are explicitly *not* PII; fixture expectations encode this |
 | OCR quality on photos | Demo with scanned PDFs first; photos are a bonus |
 | 5-minute setup fails on jury machines | Docker-only path, no host PHP required; stranger test on Sat 21.11. |

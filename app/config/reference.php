@@ -1895,6 +1895,34 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         store?: string|Param, // Service name of store // Default: "Symfony\\AI\\Store\\StoreInterface"
  *     }>,
  * }
+ * @psalm-type PiiShieldConfig = array{
+ *     types?: list<"PERSON"|"ADDRESS"|"SVNR"|"IBAN"|"TAX_NUMBER"|"FILE_NUMBER"|"EMAIL"|"PHONE"|"BIRTH_DATE"|"LICENSE_PLATE"|"ID_NUMBER"|"CREDIT_CARD"|"IP_ADDRESS"|"HEALTH"|"OTHER"|Param>,
+ *     keep_authority_contacts?: bool|Param, // Keep e-mail and phone of the sending authority (needed to act on a letter). // Default: true
+ *     allowlist?: list<scalar|Param|null>,
+ *     model?: bool|array{ // Detection by a model via Symfony AI Platform, in addition to the patterns.
+ *         enabled?: bool|Param, // Default: false
+ *         platform?: scalar|Param|null, // Service id of a Symfony AI platform, e.g. "ai.platform.ollama". Required when enabled. // Default: null
+ *         model?: scalar|Param|null, // Model name, e.g. "qwen3:8b". Required when enabled. // Default: null
+ *         location?: "local"|"on_premise"|"external"|Param, // Default: "local"
+ *         acknowledge_external_transfer?: bool|Param, // Detection sends unredacted text to the model. Required for "external". // Default: false
+ *         options?: list<mixed>,
+ *     },
+ *     vault?: bool|array{ // Store mappings encrypted to restore in a later request.
+ *         enabled?: bool|Param, // Default: false
+ *         key?: scalar|Param|null, // 32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled. // Default: null
+ *         cache_pool?: scalar|Param|null, // PSR-6 pool service id. // Default: "cache.app"
+ *         ttl?: int|Param, // Default: 3600
+ *     },
+ *     learning?: bool|array{ // Entity types learned from examples.
+ *         enabled?: bool|Param, // Default: true
+ *         path?: scalar|Param|null, // Default: "%kernel.project_dir%/var/pii_shield/learned_types.json"
+ *         cache_pool?: scalar|Param|null, // Store in this PSR-6 pool instead of the JSON file. // Default: null
+ *     },
+ *     agent_processor?: bool|array{ // Redact input and restore output of Symfony AI agents.
+ *         enabled?: bool|Param, // Default: true
+ *         agents?: list<scalar|Param|null>,
+ *     },
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -1906,6 +1934,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     stimulus?: StimulusConfig,
  *     turbo?: TurboConfig,
  *     ai?: AiConfig,
+ *     pii_shield?: PiiShieldConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
@@ -1917,6 +1946,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         stimulus?: StimulusConfig,
  *         turbo?: TurboConfig,
  *         ai?: AiConfig,
+ *         pii_shield?: PiiShieldConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -1929,6 +1959,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         stimulus?: StimulusConfig,
  *         turbo?: TurboConfig,
  *         ai?: AiConfig,
+ *         pii_shield?: PiiShieldConfig,
  *     },
  *     "when@test"?: array{
  *         imports?: ImportsConfig,
@@ -1941,6 +1972,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         stimulus?: StimulusConfig,
  *         turbo?: TurboConfig,
  *         ai?: AiConfig,
+ *         pii_shield?: PiiShieldConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

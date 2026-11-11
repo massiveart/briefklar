@@ -8,4 +8,5 @@ return [
     Symfony\UX\StimulusBundle\StimulusBundle::class => ['all' => true],
     Symfony\UX\Turbo\TurboBundle::class => ['all' => true],
     Symfony\AI\AiBundle\AiBundle::class => ['all' => true],
+    Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle::class => ['all' => true],
 ];

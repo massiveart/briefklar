@@ -90,6 +90,31 @@ final class PiiShieldTest extends TestCase
         self::assertSame("Frau\n⟦PERSON_1⟧\n\n⟦PERSON_1⟧ wurde verständigt.", $result->redactedText);
     }
 
+    /**
+     * Tesseract output of the synthetic fixture letters (handover from the app, M2).
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function ocrAddressBlocks(): iterable
+    {
+        yield 'fixture 01' => [
+            "Zahl: BHMS-VK-2026/48213\n\nFrau\n\nMaria Musterfrau\nLindenweg 12\n6900 Bregenz\n\nSehr geehrte Frau Musterfrau,",
+            "Zahl: ⟦FILE_NUMBER_1⟧\n\nFrau\n\n⟦PERSON_1⟧\n⟦ADDRESS_1⟧\n\nSehr geehrte Frau ⟦PERSON_1⟧,",
+        ];
+        yield 'fixture 02' => [
+            "Herrn\n\nJ ohann Beispielmann\n\nBahnhofstraße 7/3\n\n4020 Linz\n\nSehr geehrter Herr Beispielmann,",
+            "Herrn\n\n⟦PERSON_1⟧\n\n⟦ADDRESS_1⟧\n\nSehr geehrter Herr ⟦PERSON_1⟧,",
+        ];
+    }
+
+    #[DataProvider('ocrAddressBlocks')]
+    public function testOcrAddressBlocksAreFullyRedacted(string $ocrText, string $expected): void
+    {
+        $result = PiiShield::withDefaultDetectors()->redact($ocrText);
+
+        self::assertSame($expected, $result->redactedText);
+    }
+
     public function testSurnameOfAnUncertainInlineNameIsNotPropagated(): void
     {
         // The inline heuristic over-redacts "Muster Bescheid"; "Bescheid" must not become a surname everywhere.
