@@ -45,16 +45,24 @@ final class DetectorTest extends TestCase
         yield 'tax: DE Steuer-ID valid' => [new TaxNumberDetector(), 'Steuer-ID 86095742719', ['86095742719']];
         yield 'tax: DE Steuer-ID invalid' => [new TaxNumberDetector(), 'Steuer-ID 86095742718', []];
         yield 'tax: amount is no tax number' => [new TaxNumberDetector(), 'Betrag 1.245,00 Euro', []];
+        yield 'tax: several, in text order' => [new TaxNumberDetector(), "Steuer-ID 86095742719\nStNr. 181/815/08155\nSteuer-ID 24051867317", ['86095742719', '181/815/08155', '24051867317']];
 
         // Email
         yield 'email: private' => [new EmailDetector(), 'Kontakt: maria.musterfrau@example.com', ['maria.musterfrau@example.com']];
         yield 'email: authority contact kept' => [new EmailDetector(), 'Der Einspruch ist per E-Mail an post@bh.example einzubringen.', []];
+        yield 'email: several private' => [new EmailDetector(), 'maria@example.org und johann@example.org', ['maria@example.org', 'johann@example.org']];
+        yield 'email: private after an authority contact' => [new EmailDetector(), "Einspruch an post@bh.example einzubringen.\nPrivat: maria@example.org", ['maria@example.org']];
+        yield 'email: authority keyword on another line' => [new EmailDetector(), "Finanzamt Linz\nKontakt: maria@example.org\nBescheid vom Finanzamt", ['maria@example.org']];
         yield 'email: authority contact redacted when disabled' => [new EmailDetector(keepAuthorityContacts: false), 'Bitte kontaktieren Sie uns unter post@bh.example.', ['post@bh.example']];
 
         // Phone
         yield 'phone: international' => [new PhoneDetector(), 'Mobil: +43 664 1234567', ['+43 664 1234567']];
         yield 'phone: national' => [new PhoneDetector(), 'Tel. 0664/1234567', ['0664/1234567']];
         yield 'phone: authority hotline kept' => [new PhoneDetector(), 'Bei Fragen erreichen Sie uns unter +43 50 233 233.', []];
+        yield 'phone: several private' => [new PhoneDetector(), 'Mobil +43 664 1234567, Festnetz 05572 123456', ['+43 664 1234567', '05572 123456']];
+        yield 'phone: private after an authority hotline' => [new PhoneDetector(), "Erreichen Sie uns unter +43 50 233 233.\nPrivat: 0664/1234567", ['0664/1234567']];
+        yield 'phone: seven digits are enough' => [new PhoneDetector(), 'Tel. 0664 123', ['0664 123']];
+        yield 'phone: six digits are not' => [new PhoneDetector(), 'Tel. 0664 12', []];
         yield 'phone: time is no phone' => [new PhoneDetector(), 'um 07:42 Uhr', []];
         yield 'phone: date is no phone' => [new PhoneDetector(), 'am 02.11.2026', []];
 

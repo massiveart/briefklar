@@ -18,6 +18,8 @@ final class DeTaxIdValidatorTest extends TestCase
         yield 'one digit twice' => ['86095742719'];
         yield 'one digit three times' => ['65929970489'];
         yield 'grouped with spaces' => ['86 095 742 719'];
+        yield 'check digit 10 becomes 0' => ['82511470930'];
+        yield 'tenth digit is the repeated one' => ['24051867317'];
     }
 
     /**
@@ -30,6 +32,8 @@ final class DeTaxIdValidatorTest extends TestCase
         yield 'no repeated digit' => ['12345678903'];
         yield 'too short' => ['8609574271'];
         yield 'letters' => ['8609574271A'];
+        yield 'leading character' => ['x86095742719'];
+        yield 'one digit too many' => ['860957427190'];
         yield 'empty' => [''];
     }
 
