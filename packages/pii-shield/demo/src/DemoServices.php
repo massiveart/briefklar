@@ -54,6 +54,7 @@ final class DemoServices
         'anthropic' => ['label' => 'Anthropic', 'model' => 'claude-sonnet-5-5', 'key' => 'ANTHROPIC_API_KEY'],
     ];
 
+    private const int LOG_RETENTION_DAYS = 7;
     private const array STORES = [
         'filesystem' => 'Dateisystem',
         'sqlite' => 'SQLite-Datenbank',
@@ -160,8 +161,9 @@ final class DemoServices
     }
 
     /**
-     * Appends one line to demo/var/log/demo.log. Metadata only; the model's raw answer is added by the
-     * caller only with PII_DEMO_DEBUG=1, because it can contain personal data.
+     * Appends one line to demo/var/log/demo-YYYY-MM-DD.log. Metadata only; the model's raw answer is added
+     * by the caller only with PII_DEMO_DEBUG=1, because it can contain personal data. Therefore the files
+     * are readable by the owner only and deleted after LOG_RETENTION_DAYS.
      *
      * @param array<string, mixed> $event
      */
@@ -171,7 +173,18 @@ final class DemoServices
         if (!is_dir($dir)) {
             mkdir($dir, 0700, true);
         }
-        file_put_contents($dir.'/demo.log', json_encode(['time' => date('c'), ...$event], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)."\n", \FILE_APPEND | \LOCK_EX);
+        foreach (glob($dir.'/demo*.log') ?: [] as $file) {
+            if (filemtime($file) < time() - self::LOG_RETENTION_DAYS * 86_400) {
+                @unlink($file);
+            }
+        }
+
+        $file = $dir.'/demo-'.date('Y-m-d').'.log';
+        if (!is_file($file)) {
+            touch($file);
+            chmod($file, 0600);
+        }
+        file_put_contents($file, json_encode(['time' => date('c'), ...$event], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)."\n", \FILE_APPEND | \LOCK_EX);
     }
 
     public static function debug(): bool
