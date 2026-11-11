@@ -182,8 +182,8 @@ $result->getMetadata()->get(PiiShieldProcessor::METADATA_KEY)['unknown_placehold
 | `BIRTH_DATE` | `BirthDateDetector` | only after `geb.`, `geboren (am)`, `Geburtsdatum`; must be a real date |
 | `FILE_NUMBER` | `FileNumberDetector` | only after `Zahl`, `GZ`, `Aktenzahl`, `Kundennummer`, `Verwendungszweck`, ... |
 | `LICENSE_PLATE` | `LicensePlateDetector` | only after `Kennzeichen` |
-| `PERSON` | `SalutationPersonDetector` | name after `Herr`/`Herrn`/`Frau` (address block or inline), titles stripped |
-| `ADDRESS` | `PostalAddressDetector` | two-line `Street 12[/3]` + `postcode city` |
+| `PERSON` | `SalutationPersonDetector` | name after `Herr`/`Herrn`/`Frau` (address block or inline), titles stripped; OCR-tolerant: up to two blank lines, split initial (`J ohann`) |
+| `ADDRESS` | `PostalAddressDetector` | `Street 12[/3]` + `postcode city` on the next line, up to two blank lines in between (OCR) |
 
 Validators (`AtSvnrValidator`, `IbanValidator`, `DeTaxIdValidator`) can be used on their own.
 
@@ -198,7 +198,7 @@ Validators (`AtSvnrValidator`, `IbanValidator`, `DeTaxIdValidator`) can be used 
 ### Known limits of the offline mode
 
 - Inline salutations take up to two capitalised words, so `Herr Muster Bescheid` redacts `Muster Bescheid`. Over-redaction is preferred to leaking half a name. Surnames are only propagated from the (reliable) address block.
-- Names without salutation and single-line addresses need the NER detector (planned).
+- Names without salutation and single-line addresses need model-based detection (`ModelDetector`).
 
 ## Restore
 
