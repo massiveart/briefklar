@@ -32,8 +32,11 @@ final class ModelDetector implements DetectorInterface
 {
     public const string NAME = 'model';
     private const float CONFIDENCE = 0.85;
-    private const string DATE_OR_TIME = '/^(?:\d{1,2}\.[ ]?\d{1,2}\.(?:[ ]?\d{2,4})?)?(?:,?[ ]?\d{1,2}[:.]\d{2}(?:[ ]?Uhr)?)?$/u';
+    /** A complete date and/or a time (with a colon), nothing else. */
+    private const string DATE_OR_TIME = '/^(?:\d{1,2}\.[ ]?\d{1,2}\.[ ]?\d{2,4}(?:,?[ ]?\d{1,2}:\d{2}(?:[ ]?Uhr)?)?|\d{1,2}:\d{2}(?:[ ]?Uhr)?)$/u';
     private const string CITATION_BEFORE = '/§§?[ \t]*\d+[a-z]?(?:[ \t]+(?:Abs|lit|Z|Ziff|Satz|Nr|Art)\.?[ \t]*\w+\)?)*[ \t]+$/u';
+    /** A law's abbreviation: one word, at least two capitals, no digits ("StVO", "MusterParkG"). */
+    private const string LAW_ABBREVIATION = '/^(?=(?:\p{L}*\p{Lu}){2})\p{Lu}\p{L}{1,24}$/u';
     private const string POSTCODE_AND_TOWN = "/^(?:,[ \t]*|[ \t]*\n(?:[ \t]*\n){0,2})(?:(?:A|D|CH)-)?(?:[1-9]\d{3}|\d{5})[ \t]+\p{Lu}[\p{L}.'-]*(?:[ \t]+\p{Lu}[\p{L}.'-]*)*/u";
     /**
      * Characters per model call. Ollama's default context on GPUs under 24 GB is 4,096 tokens: 4,000 characters
@@ -138,14 +141,14 @@ final class ModelDetector implements DetectorInterface
                 continue;
             }
             $seen[($label ?? $type->value)."\0".$value] = true;
-            if (EntityType::BirthDate !== $type && 1 === preg_match(self::DATE_OR_TIME, $value)) {
-                continue; // dates and times must survive; only birth dates are personal (keyword check below)
+            if (EntityType::Other === $type && 1 === preg_match(self::DATE_OR_TIME, $value)) {
+                continue; // dates and times must survive; only birth dates are personal (BIRTH_DATE, keyword check)
             }
             if (EntityType::FileNumber === $type && 1 !== preg_match('/\d/', $value)) {
                 continue; // document titles such as "ANONYMVERFÜGUNG"
             }
             foreach (RegexMatcher::matchAll(self::groundingPattern($value), $text) as $match) {
-                if ($this->keepInText($type, $text, $match['offset'], $match['byteOffset'])) {
+                if ($this->keepInText($type, $match['value'], $text, $match['offset'], $match['byteOffset'])) {
                     continue;
                 }
                 $found = EntityType::Address === $type ? self::withPostcodeAndTown($text, $match['value'], $match['byteOffset']) : $match['value'];
@@ -182,19 +185,20 @@ final class ModelDetector implements DetectorInterface
     /**
      * The same rules as the pattern detectors, applied to each place a model's finding occurs.
      */
-    private function keepInText(EntityType $type, string $text, int $offset, int $byteOffset): bool
+    private function keepInText(EntityType $type, string $value, string $text, int $offset, int $byteOffset): bool
     {
         $before = self::lineBefore($text, $byteOffset);
 
         return match (true) {
             // deadlines and other dates must survive; models confuse them easily
             EntityType::BirthDate === $type => !self::hasBirthKeywordBefore($text, $offset),
-            // part of a legal citation ("§ 4 Abs. 1 MusterParkG"): the explanation needs it
-            1 === preg_match(self::CITATION_BEFORE, $before) => true,
+            // a law's abbreviation in a citation ("§ 4 Abs. 1 MusterParkG"): the explanation needs it
+            EntityType::Other === $type && 1 === preg_match(self::LAW_ABBREVIATION, $value) && 1 === preg_match(self::CITATION_BEFORE, $before) => true,
             // file numbers only after a keyword, like the pattern detector ("Zahl:", "Aktenzeichen", ...)
             EntityType::FileNumber === $type => 1 !== preg_match('/\b'.FileNumberDetector::KEYWORDS.'[ \t]*:?[ \t]*$/u', $before),
             !$this->keepAuthorityContacts => false,
             \in_array($type, [EntityType::Email, EntityType::Phone], true) && AuthorityContext::isAuthorityContact($text, $byteOffset) => true,
+            EntityType::Email === $type && AuthorityContext::isAuthorityEmail($text, $value) => true,
             \in_array($type, [EntityType::Address, EntityType::Email, EntityType::Phone], true) => AuthorityContext::isInLetterhead($text, $byteOffset),
             default => false,
         };
