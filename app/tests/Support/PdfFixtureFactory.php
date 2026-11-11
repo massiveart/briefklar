@@ -20,6 +20,9 @@ final class PdfFixtureFactory
     private const int LINES_PER_PAGE = 60;
     private const int CHARS_PER_LINE = 95;
 
+    /**
+     * The shared synthetic letters in /fixtures/letters.
+     */
     public static function letter(string $name): string
     {
         $path = \dirname(__DIR__, 3).'/fixtures/letters/'.$name.'.txt';

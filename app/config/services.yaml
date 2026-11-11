@@ -32,6 +32,16 @@ services:
 
     # pii-shield (PiiShieldInterface, agent processor) comes from PiiShieldBundle, see config/packages/pii_shield.yaml.
 
+    # Model-based detection, used by App\Redaction\SwitchableModelDetector when PII_MODEL_DETECTION is on.
+    # Always the local Ollama: this model sees the unredacted letter (ADR 0006).
+    app.pii.detection_model:
+        class: Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector
+        arguments:
+            $platform: '@ai.platform.ollama'
+            $model: '%env(PII_DETECTION_MODEL)%'
+            $location: !php/enum Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation::Local
+            $options: { think: false, temperature: 0, num_predict: 1024 }
+
 when@test:
     services:
         test.pii_shield:

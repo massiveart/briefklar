@@ -1906,6 +1906,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         location?: "local"|"on_premise"|"external"|Param, // Default: "local"
  *         acknowledge_external_transfer?: bool|Param, // Detection sends unredacted text to the model. Required for "external". // Default: false
  *         options?: list<mixed>,
+ *         chunk_size?: int|Param, // Characters per model call; longer texts are split along paragraphs and sent concurrently. // Default: 4000
  *     },
  *     vault?: bool|array{ // Store mappings encrypted to restore in a later request.
  *         enabled?: bool|Param, // Default: false

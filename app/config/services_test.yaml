@@ -12,3 +12,12 @@ services:
     # Joins the real pii-shield detectors; fails on a marker to test that redaction fails closed.
     App\Tests\Support\FailingDetector:
         tags: ['pii_shield.detector']
+
+    App\Tests\Support\ScriptedDetectionModel:
+        public: true
+
+    # Replaces the local Ollama that model-based PII detection asks (only used with PII_MODEL_DETECTION=1).
+    ai.platform.ollama:
+        class: Symfony\AI\Platform\Platform
+        factory: ['App\Tests\Support\ScriptedDetectionModel', 'create']
+        arguments: ['@event_dispatcher', '@App\Tests\Support\ScriptedDetectionModel']
