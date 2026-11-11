@@ -41,6 +41,22 @@ final class EntityExtractorTest extends TestCase
         self::assertSame(['Maria Musterfrau', 'Johann Beispielmann', 'Musterfrau', 'Beispielmann'], $values);
     }
 
+    public function testFullNamesAreFoundAgainWithoutSalutation(): void
+    {
+        $text = "Frau\nMaria Musterfrau\n\nHerrn\nJohann Beispielmann\n\nGeladen: Maria Musterfrau, Johann Beispielmann.";
+
+        $values = array_map(static fn (Entity $e): string => $e->value, EntityExtractor::withDefaultDetectors()->extract($text));
+
+        self::assertSame(['Maria Musterfrau', 'Johann Beispielmann', 'Maria Musterfrau', 'Johann Beispielmann'], $values);
+    }
+
+    public function testAValueRightAfterAnUmlautIsPartOfAnotherWord(): void
+    {
+        $values = array_map(static fn (Entity $e): string => $e->value, EntityExtractor::withDefaultDetectors()->extract("Frau\nMaria Musterfrau\nÄMusterfrau"));
+
+        self::assertSame(['Maria Musterfrau'], $values);
+    }
+
     private static function detector(Entity ...$entities): DetectorInterface
     {
         return new class(array_values($entities)) implements DetectorInterface {
