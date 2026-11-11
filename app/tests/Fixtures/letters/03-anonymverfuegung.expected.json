@@ -1,0 +1,16 @@
+{
+  "pii": [
+    { "type": "PERSON", "value": "Lukas Testmann" },
+    { "type": "ADDRESS", "value": "Gartengasse 5, 8990 Beispieldorf" }
+  ],
+  "must_survive": [
+    "Magistrat der Stadt Musterhausen",
+    "03.11.2026",
+    "27.10.2026",
+    "§ 4 Abs. 1 MusterParkG",
+    "48,00 Euro",
+    "binnen vier Wochen ab Ausstellung"
+  ],
+  "negative": [],
+  "notes": "Synthetic. App-only fixture: name without salutation and a one-line address, which only model-based detection finds. Not in /fixtures/letters, because the package's regex-only acceptance tests run over every letter there."
+}

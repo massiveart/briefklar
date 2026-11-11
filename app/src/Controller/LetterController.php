@@ -62,7 +62,8 @@ final class LetterController extends AbstractController
             $file = $upload->letter;
             // PHP's default of 30 s would cut off a local model mid-answer; the HTTP client
             // timeout (framework.yaml) ends a hanging model call first, with a proper error.
-            set_time_limit($this->explanationTimeout + self::EXTRACTION_HEADROOM_SECONDS);
+            // Up to two model calls: detection (PII_MODEL_DETECTION) and explanation.
+            set_time_limit(2 * $this->explanationTimeout + self::EXTRACTION_HEADROOM_SECONDS);
 
             try {
                 $extracted = $this->extraction->extract($file->getPathname(), (string) $file->getMimeType());

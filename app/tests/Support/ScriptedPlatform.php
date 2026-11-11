@@ -38,6 +38,7 @@ final class ScriptedPlatform
     private array $answers = [
         '01-strafverfuegung' => ['Strafverfügung', 'Bezirkshauptmannschaft', 'Verkehrsrecht'],
         '02-finanzamt-vorschreibung' => ['Buchungsmitteilung', 'Abgabenkonto', 'Finanzamt'], // deliberately wrong deadline
+        '03-anonymverfuegung' => ['Anonymverfügung', 'Parkraumüberwachung'], // app fixture, tests/Fixtures/letters
     ];
 
     public static function create(EventDispatcherInterface $dispatcher, self $recorder): Platform

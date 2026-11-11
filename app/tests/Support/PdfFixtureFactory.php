@@ -20,10 +20,16 @@ final class PdfFixtureFactory
     private const int LINES_PER_PAGE = 60;
     private const int CHARS_PER_LINE = 95;
 
+    /**
+     * Shared fixtures (/fixtures/letters) first, then app-only ones (tests/Fixtures/letters).
+     */
     public static function letter(string $name): string
     {
         $path = \dirname(__DIR__, 3).'/fixtures/letters/'.$name.'.txt';
-        $text = file_get_contents($path);
+        if (!is_file($path)) {
+            $path = \dirname(__DIR__).'/Fixtures/letters/'.$name.'.txt';
+        }
+        $text = is_file($path) ? file_get_contents($path) : false;
         if (false === $text) {
             throw new \RuntimeException(\sprintf('Fixture "%s" not found.', $path));
         }

@@ -1,0 +1,11 @@
+{
+    "sender": "Magistrat der Stadt Musterhausen",
+    "subject": "Du sollst eine Strafe zahlen, weil das Auto von ⟦PERSON_1⟧ ohne Parkschein in einer Kurzparkzone stand.",
+    "summary": "Das Fahrzeug von ⟦PERSON_1⟧ stand am 27.10.2026 ohne gültigen Parkschein in der Kurzparkzone am Rathausplatz. Der Magistrat setzt dafür eine Geldstrafe von 48,00 Euro fest.",
+    "actionRequired": true,
+    "actions": ["Zahle 48,00 Euro binnen vier Wochen ab Ausstellung."],
+    "deadline": "binnen vier Wochen ab Ausstellung – Bitte überweisen Sie den Betrag binnen vier Wochen ab Ausstellung.",
+    "amount": "48,00 Euro",
+    "legalReferences": ["§ 4 Abs. 1 MusterParkG"],
+    "questionsToAsk": ["Auf welches Konto soll ich den Betrag überweisen?"]
+}
