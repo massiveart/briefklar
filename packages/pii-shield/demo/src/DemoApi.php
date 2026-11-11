@@ -309,7 +309,7 @@ final class DemoApi
             if (!\is_array($model)) {
                 throw new \InvalidArgumentException('"model" settings are required for model-based detection.');
             }
-            $settings = [];
+            $settings = ['keepAuthorityContacts' => (bool) ($request['keepAuthorityContacts'] ?? true)];
             foreach ($model as $key => $setting) {
                 $settings[(string) $key] = $setting;
             }

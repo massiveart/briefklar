@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Briefklar\PiiShield\Bridge\SymfonyAi;
 
+use Briefklar\PiiShield\Detector\AuthorityContext;
 use Briefklar\PiiShield\Detector\DetectorInterface;
+use Briefklar\PiiShield\Detector\FileNumberDetector;
 use Briefklar\PiiShield\Detector\RegexMatcher;
 use Briefklar\PiiShield\Entity;
 use Briefklar\PiiShield\EntityType;
@@ -30,6 +32,9 @@ final class ModelDetector implements DetectorInterface
 {
     public const string NAME = 'model';
     private const float CONFIDENCE = 0.85;
+    private const string DATE_OR_TIME = '/^(?:\d{1,2}\.[ ]?\d{1,2}\.(?:[ ]?\d{2,4})?)?(?:,?[ ]?\d{1,2}[:.]\d{2}(?:[ ]?Uhr)?)?$/u';
+    private const string CITATION_BEFORE = '/§§?[ \t]*\d+[a-z]?(?:[ \t]+(?:Abs|lit|Z|Ziff|Satz|Nr|Art)\.?[ \t]*\w+\)?)*[ \t]+$/u';
+    private const string POSTCODE_AND_TOWN = "/^(?:,[ \t]*|[ \t]*\n(?:[ \t]*\n){0,2})(?:(?:A|D|CH)-)?(?:[1-9]\d{3}|\d{5})[ \t]+\p{Lu}[\p{L}.'-]*(?:[ \t]+\p{Lu}[\p{L}.'-]*)*/u";
     /**
      * Characters per model call. Ollama's default context on GPUs under 24 GB is 4,096 tokens: 4,000 characters
      * of German text plus the instructions take about 2,100 (measured with qwen3:8b), leaving room for the answer.
@@ -73,6 +78,7 @@ final class ModelDetector implements DetectorInterface
         private readonly array $options = [],
         private readonly ?CustomEntityStoreInterface $learnedTypes = null,
         private readonly int $chunkSize = self::DEFAULT_CHUNK_SIZE,
+        private readonly bool $keepAuthorityContacts = true,
     ) {
         if ($chunkSize < self::MIN_CHUNK_SIZE) {
             throw new \InvalidArgumentException(\sprintf('The chunk size must be at least %d characters.', self::MIN_CHUNK_SIZE));
@@ -132,11 +138,18 @@ final class ModelDetector implements DetectorInterface
                 continue;
             }
             $seen[($label ?? $type->value)."\0".$value] = true;
+            if (EntityType::BirthDate !== $type && 1 === preg_match(self::DATE_OR_TIME, $value)) {
+                continue; // dates and times must survive; only birth dates are personal (keyword check below)
+            }
+            if (EntityType::FileNumber === $type && 1 !== preg_match('/\d/', $value)) {
+                continue; // document titles such as "ANONYMVERFÜGUNG"
+            }
             foreach (RegexMatcher::matchAll(self::groundingPattern($value), $text) as $match) {
-                if (EntityType::BirthDate === $type && !self::hasBirthKeywordBefore($text, $match['offset'])) {
-                    continue; // deadlines and other dates must survive; models confuse them easily
+                if ($this->keepInText($type, $text, $match['offset'], $match['byteOffset'])) {
+                    continue;
                 }
-                $entities[] = new Entity($type, $match['value'], $match['offset'], self::CONFIDENCE, self::NAME, $label);
+                $found = EntityType::Address === $type ? self::withPostcodeAndTown($text, $match['value'], $match['byteOffset']) : $match['value'];
+                $entities[] = new Entity($type, $found, $match['offset'], self::CONFIDENCE, self::NAME, $label);
             }
         }
 
@@ -164,6 +177,47 @@ final class ModelDetector implements DetectorInterface
         } catch (\Throwable $e) {
             throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
         }
+    }
+
+    /**
+     * The same rules as the pattern detectors, applied to each place a model's finding occurs.
+     */
+    private function keepInText(EntityType $type, string $text, int $offset, int $byteOffset): bool
+    {
+        $before = self::lineBefore($text, $byteOffset);
+
+        return match (true) {
+            // deadlines and other dates must survive; models confuse them easily
+            EntityType::BirthDate === $type => !self::hasBirthKeywordBefore($text, $offset),
+            // part of a legal citation ("§ 4 Abs. 1 MusterParkG"): the explanation needs it
+            1 === preg_match(self::CITATION_BEFORE, $before) => true,
+            // file numbers only after a keyword, like the pattern detector ("Zahl:", "Aktenzeichen", ...)
+            EntityType::FileNumber === $type => 1 !== preg_match('/\b'.FileNumberDetector::KEYWORDS.'[ \t]*:?[ \t]*$/u', $before),
+            !$this->keepAuthorityContacts => false,
+            \in_array($type, [EntityType::Email, EntityType::Phone], true) && AuthorityContext::isAuthorityContact($text, $byteOffset) => true,
+            \in_array($type, [EntityType::Address, EntityType::Email, EntityType::Phone], true) => AuthorityContext::isInLetterhead($text, $byteOffset),
+            default => false,
+        };
+    }
+
+    /** The text from the start of the line up to a byte offset. */
+    private static function lineBefore(string $text, int $byteOffset): string
+    {
+        $start = 0 === $byteOffset ? false : strrpos($text, "\n", $byteOffset - \strlen($text) - 1);
+        $start = false === $start ? 0 : $start + 1;
+
+        return substr($text, $start, $byteOffset - $start);
+    }
+
+    /**
+     * Models often return only the street of an address ("Gartengasse 5"): add the postcode and town that
+     * follow on the same line after a comma, or on the next line (up to two blank lines for OCR text).
+     */
+    private static function withPostcodeAndTown(string $text, string $address, int $byteOffset): string
+    {
+        $rest = substr($text, $byteOffset + \strlen($address), 120);
+
+        return 1 === preg_match(self::POSTCODE_AND_TOWN, $rest, $m) ? $address.$m[0] : $address;
     }
 
     private static function tooLong(int $chunks, int $size): DetectionFailedException

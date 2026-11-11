@@ -45,7 +45,7 @@ final class FixtureLetterTest extends TestCase
     #[DataProvider('letterProvider')]
     public function testEveryExpectedPiiSpanIsRedacted(string $text, array $expected): void
     {
-        $this->skipWithoutFixtures($text);
+        $this->skipWithoutFixtures($text, $expected);
         $result = PiiShield::withDefaultDetectors()->redact($text);
 
         foreach ($expected['pii'] as $pii) {
@@ -63,7 +63,7 @@ final class FixtureLetterTest extends TestCase
     #[DataProvider('letterProvider')]
     public function testMustSurviveStringsAreKept(string $text, array $expected): void
     {
-        $this->skipWithoutFixtures($text);
+        $this->skipWithoutFixtures($text, $expected);
         $result = PiiShield::withDefaultDetectors()->redact($text);
 
         foreach ($expected['must_survive'] as $keep) {
@@ -77,7 +77,7 @@ final class FixtureLetterTest extends TestCase
     #[DataProvider('letterProvider')]
     public function testNegativeSamplesAreNotRedacted(string $text, array $expected): void
     {
-        $this->skipWithoutFixtures($text);
+        $this->skipWithoutFixtures($text, $expected);
         if ([] === $expected['negative']) {
             $this->expectNotToPerformAssertions();
         }
@@ -97,7 +97,7 @@ final class FixtureLetterTest extends TestCase
     #[DataProvider('letterProvider')]
     public function testRestoreRoundTrip(string $text, array $expected): void
     {
-        $this->skipWithoutFixtures($text);
+        $this->skipWithoutFixtures($text, $expected);
         $shield = PiiShield::withDefaultDetectors();
         $redaction = $shield->redact($text);
 
@@ -114,7 +114,7 @@ final class FixtureLetterTest extends TestCase
     #[DataProvider('letterProvider')]
     public function testMaskingRemovesPiiAndKeepsMustSurvive(string $text, array $expected): void
     {
-        $this->skipWithoutFixtures($text);
+        $this->skipWithoutFixtures($text, $expected);
 
         $masked = PiiMasker::withDefaultDetectors()->mask($text);
 
@@ -126,10 +126,16 @@ final class FixtureLetterTest extends TestCase
         }
     }
 
-    private function skipWithoutFixtures(string $text): void
+    /**
+     * @param array<string, mixed>|null $expected
+     */
+    private function skipWithoutFixtures(string $text, ?array $expected = null): void
     {
         if ('' === $text) {
             self::markTestSkipped('Fixture letters are only available inside the briefklar monorepo.');
+        }
+        if ('model' === ($expected['detection'] ?? null)) {
+            self::markTestSkipped('Needs model-based detection; covered by ModelDetectorTest.');
         }
     }
 

@@ -129,6 +129,7 @@ final class PiiShieldBundleTest extends TestCase
 
         $definition = $builder->getDefinition('pii_shield.detector.model');
         self::assertSame(ModelDetector::DEFAULT_CHUNK_SIZE, $definition->getArgument(6));
+        self::assertTrue($definition->getArgument(7), 'keep_authority_contacts applies to model findings too');
         $platform = $definition->getArgument(0);
         self::assertInstanceOf(\Symfony\Component\DependencyInjection\Reference::class, $platform);
         self::assertSame('ai.platform.ollama', (string) $platform);
