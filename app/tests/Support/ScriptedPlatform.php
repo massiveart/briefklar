@@ -8,6 +8,7 @@ use Symfony\AI\Platform\Exception\RuntimeException as PlatformException;
 use Symfony\AI\Platform\Platform;
 use Symfony\AI\Platform\Test\MockPlatformFactory;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpClient\Exception\TimeoutException;
 
 /**
  * Test replacement for the provider (see config/services_test.yaml): answers with canned
@@ -18,6 +19,9 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  */
 final class ScriptedPlatform
 {
+    /** A letter containing this marker behaves like a model that exceeds EXPLANATION_TIMEOUT. */
+    public const string TIMEOUT_MARKER = 'MODELL-ZEITUEBERSCHREITUNG';
+
     /**
      * @var list<string> JSON-encoded payloads as they would be sent to the provider
      */
@@ -61,6 +65,9 @@ final class ScriptedPlatform
         $this->requests[] = $request;
 
         $letter = self::letterIn($request);
+        if (str_contains($letter, self::TIMEOUT_MARKER)) {
+            throw new TimeoutException('Idle timeout reached.');
+        }
         foreach ($this->answers as $fixture => $markers) {
             if (array_any($markers, static fn (string $marker): bool => false !== mb_stripos($letter, $marker))) {
                 $answer = file_get_contents(\dirname(__DIR__).'/Fixtures/explanations/'.$fixture.'.json');

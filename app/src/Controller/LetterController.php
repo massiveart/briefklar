@@ -15,6 +15,7 @@ use App\Form\LetterUpload;
 use App\Form\LetterUploadType;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,11 +26,16 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class LetterController extends AbstractController
 {
+    /** Headroom on top of the model timeout for OCR of a multi-page scan and rendering. */
+    private const int EXTRACTION_HEADROOM_SECONDS = 60;
+
     public function __construct(
         private readonly ExtractionChain $extraction,
         private readonly LetterExplainer $explainer,
         private readonly TranslatorInterface $translator,
         private readonly LoggerInterface $logger,
+        #[Autowire('%env(int:EXPLANATION_TIMEOUT)%')]
+        private readonly int $explanationTimeout,
     ) {
     }
 
@@ -54,6 +60,9 @@ final class LetterController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid() && null !== $upload->letter) {
             $file = $upload->letter;
+            // PHP's default of 30 s would cut off a local model mid-answer; the HTTP client
+            // timeout (framework.yaml) ends a hanging model call first, with a proper error.
+            set_time_limit($this->explanationTimeout + self::EXTRACTION_HEADROOM_SECONDS);
 
             try {
                 $extracted = $this->extraction->extract($file->getPathname(), (string) $file->getMimeType());
