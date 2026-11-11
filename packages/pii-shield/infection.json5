@@ -16,7 +16,8 @@
     mutators: {
         "@default": true,
     },
-    minMsi: 0,
-    minCoveredMsi: 0,
+    // Gate against regressions, a little below the current score (79 % on 11.11.2026). Most survivors are in Learning/.
+    minMsi: 77,
+    minCoveredMsi: 77,
     testFrameworkOptions: "--exclude-group=performance", // timing-based, not meaningful per mutant
 }
