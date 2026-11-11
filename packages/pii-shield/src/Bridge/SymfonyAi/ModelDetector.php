@@ -99,9 +99,6 @@ final class ModelDetector implements DetectorInterface
         // Long texts go out in chunks, CONCURRENCY at a time: a batch is started before its first answer
         // is read, so HTTP-based platforms process it concurrently. One failing chunk fails the detection.
         $chunks = self::chunks($text, max(self::MIN_CHUNK_SIZE, $this->chunkSize));
-        if (\count($chunks) > self::MAX_CHUNKS) {
-            throw new DetectionFailedException(\sprintf('The text is too long for model-based detection: %d chunks of %d characters, at most %d.', \count($chunks), $this->chunkSize, self::MAX_CHUNKS));
-        }
         $instructions = self::instructions($learned);
         $answers = [];
         try {
@@ -146,6 +143,11 @@ final class ModelDetector implements DetectorInterface
         return $entities;
     }
 
+    private static function tooLong(int $chunks, int $size): DetectionFailedException
+    {
+        return new DetectionFailedException(\sprintf('The text is too long for model-based detection: at least %d chunks of %d characters, at most %d.', $chunks, $size, self::MAX_CHUNKS));
+    }
+
     /**
      * Splits a text into chunks of at most $size characters: a window over the original text, cut at the
      * last paragraph break in its second half, else the last line break, else the last space. Each chunk
@@ -158,6 +160,10 @@ final class ModelDetector implements DetectorInterface
      */
     private static function chunks(string $text, int $size): array
     {
+        // Each chunk advances by at least a tenth of the size: decide before splitting a huge text.
+        if (mb_strlen($text) > self::MAX_CHUNKS * $size) {
+            throw self::tooLong(intdiv(mb_strlen($text), $size) + 1, $size);
+        }
         $chars = mb_str_split($text);
         $length = \count($chars);
         if ($length <= $size) {
@@ -184,11 +190,20 @@ final class ModelDetector implements DetectorInterface
                 return $chunks;
             }
 
+            // Back to a word start, but only within one more overlap: text without spaces must still
+            // advance by at least a tenth of the size per chunk (cut in the second half, minus 2 overlaps).
             $next = $end - $overlap;
-            while ($next > $start + 1 && $next < $end && !\in_array($chars[$next - 1], [' ', "\n", "\t"], true)) {
-                --$next; // back to the start of the word, so the overlap begins with a whole word
+            $limit = max($start + 1, $end - 2 * $overlap);
+            while ($next > $limit && !\in_array($chars[$next - 1], [' ', "\n", "\t"], true)) {
+                --$next;
+            }
+            if ($next <= $limit) {
+                $next = $end - $overlap;
             }
             $start = max($start + 1, $next);
+            if (\count($chunks) >= self::MAX_CHUNKS) {
+                throw self::tooLong(\count($chunks) + 1, $size);
+            }
         }
     }
 
