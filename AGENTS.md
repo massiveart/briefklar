@@ -16,6 +16,15 @@ Read `docs/PLAN.md` and `docs/ARCHITECTURE.md` before starting. Your concrete wo
 - **Packages stay independent.** `packages/*` must not depend on `app/`. `pii-shield` core must not depend on Symfony AI; the Symfony AI integration lives in `src/Bridge/SymfonyAi`.
 - **Contract first.** `packages/pii-shield/src/PiiShieldInterface.php` is the shared contract between workstreams. Changing it needs agreement of both owners.
 
+## Coordination between workstreams
+
+Handovers between pii-shield (owner `andre-schade`) and the app (owner `c00n84`) are GitHub issues, not files:
+
+- **At session start**, check what is assigned to you: `gh issue list --assignee @me --label handover --state open`.
+- **To hand something over**, open an issue from the "Handover" template (`gh issue create --template handover.md`), add the label `for:pii-shield` or `for:app` and assign the owner. Context, findings, wanted, acceptance, not affected.
+- **Questions and answers** go into issue comments; the owner closes the issue with the PR that fixes it (`Fixes #n`) and says in a comment which version or commit to pull.
+- The repository is public: synthetic data only, also in issues, logs and screenshots.
+
 ## Code style
 
 - PHP 8.4, `declare(strict_types=1)`, `final` by default, readonly value objects.
