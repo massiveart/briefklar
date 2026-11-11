@@ -57,13 +57,7 @@ final class PiiShield implements VaultAwarePiiShieldInterface
             $placeholders = $this->assignPlaceholders($entities);
             $mapping = $placeholders['vault'];
 
-            $redacted = '';
-            $cursor = 0;
-            foreach ($entities as $entity) {
-                $redacted .= mb_substr($text, $cursor, $entity->offset - $cursor).$placeholders['byValue'][$entity->typeName()][$entity->value];
-                $cursor = $entity->offset + $entity->length();
-            }
-            $redacted .= mb_substr($text, $cursor);
+            $redacted = TextSpans::replace($text, $entities, static fn (Entity $entity): string => $placeholders['byValue'][$entity->typeName()][$entity->value]);
         }
 
         $vaultId = null;

@@ -13,7 +13,6 @@ use Briefklar\PiiShield\Detector\IbanDetector;
 use Briefklar\PiiShield\Detector\LicensePlateDetector;
 use Briefklar\PiiShield\Detector\PhoneDetector;
 use Briefklar\PiiShield\Detector\PostalAddressDetector;
-use Briefklar\PiiShield\Detector\RegexMatcher;
 use Briefklar\PiiShield\Detector\SalutationPersonDetector;
 use Briefklar\PiiShield\Detector\TaxNumberDetector;
 
@@ -120,6 +119,7 @@ final class EntityExtractor
 
     /**
      * Greedy: take spans by length (desc), then confidence (desc), skip anything overlapping.
+     * Covered offsets are kept in a map, so each candidate costs its own length, not the number of kept spans.
      *
      * @param list<Entity> $entities
      *
@@ -130,11 +130,16 @@ final class EntityExtractor
         usort($entities, static fn (Entity $a, Entity $b): int => [$b->length(), $b->confidence, $a->offset] <=> [$a->length(), $a->confidence, $b->offset]);
 
         $kept = [];
+        $covered = [];
         foreach ($entities as $candidate) {
-            foreach ($kept as $existing) {
-                if ($candidate->offset < $existing->offset + $existing->length() && $existing->offset < $candidate->offset + $candidate->length()) {
+            $end = $candidate->offset + $candidate->length();
+            for ($i = $candidate->offset; $i < $end; ++$i) {
+                if (isset($covered[$i])) {
                     continue 2;
                 }
+            }
+            for ($i = $candidate->offset; $i < $end; ++$i) {
+                $covered[$i] = true;
             }
             $kept[] = $candidate;
         }
@@ -161,15 +166,48 @@ final class EntityExtractor
             }
         }
 
-        $found = [];
+        // One pass over the text instead of one regex per value. Values are indexed by their first word,
+        // then by the byte position of that word in the value and by byte length; at each word of the text,
+        // the substring of that length is looked up by hash. Cost per word: number of distinct lengths.
+        $index = [];
         foreach ($needles as [$type, $value, $label]) {
-            if (mb_strlen($value) < self::MIN_PROPAGATION_LENGTH) {
+            if (mb_strlen($value) < self::MIN_PROPAGATION_LENGTH || 1 !== preg_match('/[\p{L}\p{N}]+/u', $value, $first, \PREG_OFFSET_CAPTURE)) {
                 continue;
             }
-            $pattern = '/(?<![\p{L}\p{N}])'.preg_quote($value, '/').'(?![\p{L}\p{N}])/u';
-            foreach (RegexMatcher::matchAll($pattern, $text) as $match) {
-                $found[] = new Entity($type, $match['value'], $match['offset'], 0.5, 'propagation', $label);
+            $index[$first[0][0]][$first[0][1]][\strlen($value)][$value][] = ['type' => $type, 'value' => $value, 'label' => $label];
+        }
+        if ([] === $index || false === preg_match_all('/[\p{L}\p{N}]+/u', $text, $words, \PREG_OFFSET_CAPTURE)) {
+            return [];
+        }
+
+        $hits = [];
+        foreach ($words[0] as [$word, $wordByte]) {
+            foreach ($index[$word] ?? [] as $prefix => $byLength) {
+                $start = $wordByte - $prefix;
+                if ($start < 0) {
+                    continue;
+                }
+                foreach ($byLength as $length => $byValue) {
+                    $candidates = $byValue[substr($text, $start, $length)] ?? null;
+                    if (null !== $candidates
+                        && 1 === preg_match('/\G(?<![\p{L}\p{N}])/u', $text, $m, 0, $start)
+                        && 1 === preg_match('/\G(?![\p{L}\p{N}])/u', $text, $m, 0, $start + $length)) {
+                        foreach ($candidates as $needle) {
+                            $hits[] = [$start, $needle];
+                        }
+                    }
+                }
             }
+        }
+        usort($hits, static fn (array $a, array $b): int => $a[0] <=> $b[0]);
+
+        $found = [];
+        $byte = 0;
+        $codePoint = 0;
+        foreach ($hits as [$start, $needle]) {
+            $codePoint += mb_strlen(substr($text, $byte, $start - $byte));
+            $byte = $start;
+            $found[] = new Entity($needle['type'], $needle['value'], $codePoint, 0.5, 'propagation', $needle['label']);
         }
 
         return $found;
