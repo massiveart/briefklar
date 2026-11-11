@@ -10,9 +10,9 @@
                          |  plain text
                          v
               [ExplainLetterAgent]  Symfony AI Agent
-                 |  InputProcessor:  PiiShieldInputProcessor   (pii-shield bridge)
-                 |  -> provider (Hugging Face / Anthropic / Ollama), sees placeholders only
-                 |  OutputProcessor: PiiShieldOutputProcessor  (restore)
+                 |  PiiShieldProcessor (pii-shield bridge), input processor: redact
+                 |  -> provider (Anthropic / Ollama / ...), sees placeholders only
+                 |  PiiShieldProcessor, output processor: restore
                          v
               [LetterExplanation]  structured output (DTO)
                          v
@@ -44,8 +44,8 @@ Placeholder format: `⟦PERSON_1⟧`, `⟦SVNR_1⟧`, `⟦IBAN_1⟧`. Rationale:
 
 | EntityType | Detection | Validation |
 |---|---|---|
-| PERSON | Hugging Face token classification (NER), fallback: salutation heuristics ("Herr/Frau ...") | none |
-| ADDRESS | NER + postcode/street heuristics | AT/DE postcode format |
+| PERSON | salutation heuristics ("Herr/Frau ...", OCR-tolerant); optional model via Symfony AI Platform (ADR 0006) | none |
+| ADDRESS | street + postcode/city heuristics (OCR-tolerant); optional model (ADR 0006) | AT/DE postcode format |
 | SVNR (AT) | regex `\d{4} ?\d{6}` | check digit (weights 3,7,9,0,5,8,4,2,1,6 mod 11) |
 | IBAN | regex | ISO 13616 mod 97 |
 | TAX_NUMBER (AT Steuernummer, DE Steuer-ID) | regex | DE Steuer-ID check digit |

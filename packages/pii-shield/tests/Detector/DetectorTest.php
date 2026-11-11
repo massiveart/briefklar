@@ -87,12 +87,21 @@ final class DetectorTest extends TestCase
         yield 'person: inline over-redacts following noun' => [new SalutationPersonDetector(), 'Herr Beispielmann Bescheid gegeben', ['Beispielmann Bescheid']];
         yield 'person: inline takes at most two words' => [new SalutationPersonDetector(), 'Frau Maria Anna Musterfrau', ['Maria Anna']];
         yield 'person: no salutation' => [new SalutationPersonDetector(), 'Mag. Thomas Beispiel', []];
+        // OCR output (Tesseract): blank lines in the address block, split words
+        yield 'person: OCR blank line after salutation' => [new SalutationPersonDetector(), "Frau\n\nMaria Musterfrau\nLindenweg 12", ['Maria Musterfrau']];
+        yield 'person: OCR split first name' => [new SalutationPersonDetector(), "Herrn\n\nJ ohann Beispielmann\n\nBahnhofstraße 7/3", ['J ohann Beispielmann']];
+        yield 'person: OCR blank lines, at most two' => [new SalutationPersonDetector(), "Frau\n\n\n\nMaria Musterfrau", []];
+        yield 'person: salutation ending a line in running text' => [new SalutationPersonDetector(), "Das haben wir mit unserem Herrn\n\nBitte zahlen Sie bis Ende", []];
+        yield 'person: lone salutation before lower-case text' => [new SalutationPersonDetector(), "Frau\n\nbitte beachten Sie", []];
 
         // Postal addresses
         yield 'address: street and city' => [new PostalAddressDetector(), "Lindenweg 12\n6900 Bregenz\n", ["Lindenweg 12\n6900 Bregenz"]];
         yield 'address: door number' => [new PostalAddressDetector(), "Bahnhofstraße 7/3\n4020 Linz", ["Bahnhofstraße 7/3\n4020 Linz"]];
         yield 'address: DE postcode' => [new PostalAddressDetector(), "Musterallee 5a\n10115 Berlin", ["Musterallee 5a\n10115 Berlin"]];
         yield 'address: single line letterhead kept' => [new PostalAddressDetector(), 'Hauptplatz 1, 6999 Musterstadt', []];
+        yield 'address: OCR blank line before city' => [new PostalAddressDetector(), "Bahnhofstraße 7/3\n\n4020 Linz\n", ["Bahnhofstraße 7/3\n\n4020 Linz"]];
+        yield 'address: OCR two blank lines before city' => [new PostalAddressDetector(), "Lindenweg 12\n\n\n6900 Bregenz", ["Lindenweg 12\n\n\n6900 Bregenz"]];
+        yield 'address: separate paragraphs are no address' => [new PostalAddressDetector(), "Rechtsmittelfrist 14\n\n\n\n6900 Bregenz", []];
     }
 
     /**
