@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield\Tests\Demo;
 
 use Briefklar\PiiShield\Demo\Kernel;
+use Briefklar\PiiShield\Tests\Dig;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -90,7 +91,7 @@ final class McpTest extends WebTestCase
         $tools = $this->rpc($client, 'tools/list');
 
         /** @var list<array{name: string}> $list */
-        $list = $tools['result']['tools'] ?? [];
+        $list = Dig::get($tools, 'result', 'tools');
         self::assertEqualsCanonicalizing(
             ['redact_text', 'restore_text', 'mask_text', 'learn_entity_type', 'list_entity_types'],
             array_column($list, 'name'),
@@ -119,7 +120,7 @@ final class McpTest extends WebTestCase
         self::assertSame('SVNR [SVNR]', $this->callTool($client, 'mask_text', ['text' => 'SVNR 4568 150392'])['text']);
 
         $learned = $this->callTool($client, 'learn_entity_type', ['name' => 'MCP_TEST_NUMBER', 'examples' => ['MT-2026-0001', 'MT-2025-0002'], 'dryRun' => true]);
-        self::assertSame('MT-\d{4}-\d{4}', $learned['type']['pattern'] ?? null);
+        self::assertSame('MT-\d{4}-\d{4}', Dig::get($learned, 'type', 'pattern'));
     }
 
     public function testToolErrorsAreToolResultsNotCrashes(): void
@@ -129,7 +130,7 @@ final class McpTest extends WebTestCase
 
         $response = $this->rpc($client, 'tools/call', ['name' => 'restore_text', 'arguments' => ['text' => 'x', 'vaultId' => str_repeat('0', 32)]]);
 
-        self::assertTrue($response['result']['isError'] ?? false);
+        self::assertTrue(Dig::get($response, 'result', 'isError'));
     }
 
     public function testForeignOriginsAndNonJsonAreRejected(): void

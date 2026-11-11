@@ -1,0 +1,23 @@
+{
+  "pii": [
+    {
+      "type": "PERSON",
+      "value": "Lukas Testmann"
+    },
+    {
+      "type": "ADDRESS",
+      "value": "Gartengasse 5, 8990 Beispieldorf"
+    }
+  ],
+  "must_survive": [
+    "Magistrat der Stadt Musterhausen",
+    "03.11.2026",
+    "27.10.2026",
+    "§ 4 Abs. 1 MusterParkG",
+    "48,00 Euro",
+    "binnen vier Wochen ab Ausstellung"
+  ],
+  "negative": [],
+  "notes": "Synthetic. Name without salutation and a one-line address: only model-based detection finds them (detection: model). The regex acceptance tests skip this letter; ModelDetectorTest covers it with a recorded model answer.",
+  "detection": "model"
+}

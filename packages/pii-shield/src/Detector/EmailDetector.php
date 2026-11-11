@@ -20,7 +20,7 @@ final class EmailDetector implements DetectorInterface
     {
         $entities = [];
         foreach (RegexMatcher::matchAll(self::PATTERN, $text) as $match) {
-            if ($this->keepAuthorityContacts && AuthorityContext::isAuthorityContact($text, $match['offset'])) {
+            if ($this->keepAuthorityContacts && (AuthorityContext::isAuthorityContact($text, $match['byteOffset']) || AuthorityContext::isAuthorityEmail($text, $match['value']))) {
                 continue;
             }
             $entities[] = new Entity(EntityType::Email, $match['value'], $match['offset'], 1.0, 'email');

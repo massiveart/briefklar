@@ -54,6 +54,7 @@ final class DemoServices
         'anthropic' => ['label' => 'Anthropic', 'model' => 'claude-sonnet-5-5', 'key' => 'ANTHROPIC_API_KEY'],
     ];
 
+    private const int LOG_RETENTION_DAYS = 7;
     private const array STORES = [
         'filesystem' => 'Dateisystem',
         'sqlite' => 'SQLite-Datenbank',
@@ -160,8 +161,9 @@ final class DemoServices
     }
 
     /**
-     * Appends one line to demo/var/log/demo.log. Metadata only; the model's raw answer is added by the
-     * caller only with PII_DEMO_DEBUG=1, because it can contain personal data.
+     * Appends one line to demo/var/log/demo-YYYY-MM-DD.log. Metadata only; the model's raw answer is added
+     * by the caller only with PII_DEMO_DEBUG=1, because it can contain personal data. Therefore the files
+     * are readable by the owner only and deleted after LOG_RETENTION_DAYS.
      *
      * @param array<string, mixed> $event
      */
@@ -171,7 +173,19 @@ final class DemoServices
         if (!is_dir($dir)) {
             mkdir($dir, 0700, true);
         }
-        file_put_contents($dir.'/demo.log', json_encode(['time' => date('c'), ...$event], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)."\n", \FILE_APPEND | \LOCK_EX);
+        $files = glob($dir.'/demo*.log');
+        foreach (false === $files ? [] : $files as $file) {
+            if (filemtime($file) < time() - self::LOG_RETENTION_DAYS * 86_400) {
+                @unlink($file);
+            }
+        }
+
+        $file = $dir.'/demo-'.date('Y-m-d').'.log';
+        if (!is_file($file)) {
+            touch($file);
+            chmod($file, 0600);
+        }
+        file_put_contents($file, json_encode(['time' => date('c'), ...$event], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)."\n", \FILE_APPEND | \LOCK_EX);
     }
 
     public static function debug(): bool
@@ -247,7 +261,7 @@ final class DemoServices
             if (\is_array($columns) && isset($columns[2]) && '00000000' === $columns[1] && 8 === \strlen($columns[2]) && ctype_xdigit($columns[2])) {
                 $address = unpack('V', (string) hex2bin($columns[2]));
 
-                return false === $address ? null : long2ip((int) $address[1]);
+                return \is_array($address) && \is_int($address[1] ?? null) ? long2ip($address[1]) : null;
             }
         }
 
@@ -299,7 +313,7 @@ final class DemoServices
 
             [$platform, $location, $options] = $this->platform($provider, $endpoint, false !== ($settings['fast'] ?? true));
 
-            return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options, $this->learnedStore());
+            return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options, $this->learnedStore(), keepAuthorityContacts: false !== ($settings['keepAuthorityContacts'] ?? true));
         };
     }
 
@@ -313,13 +327,17 @@ final class DemoServices
         // No redirects: the URL may be typed in the browser and must not bounce elsewhere.
         $selfHosted = HttpClient::create(['timeout' => 170, 'max_redirects' => 0]);
         $deterministic = ['temperature' => 0];
+        // Small models sometimes repeat findings until the context is full (measured: 1,933 instead of ~250
+        // tokens, 50 s instead of 10). A normal answer takes a few hundred tokens; a cut answer fails closed.
+        // Only without reasoning: thinking tokens count against the same limit.
+        $answerTokens = 1_024;
 
         switch ($provider) {
             case 'ollama':
                 $endpoint ??= self::env('PII_DEMO_OLLAMA_URL') ?? 'http://127.0.0.1:11434';
 
                 // No chain-of-thought (faster). No JSON mode: not every model supports it; the prompt asks for JSON.
-                return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), $fast ? [...$deterministic, 'think' => false] : $deterministic];
+                return [OllamaFactory::createPlatform($endpoint, httpClient: $selfHosted), self::locationOf($endpoint), $fast ? [...$deterministic, 'think' => false, 'num_predict' => $answerTokens] : $deterministic];
             case 'generic':
                 $configured = self::openAiBase(self::env('PII_DEMO_GENERIC_URL'));
                 $endpoint = self::openAiBase($endpoint) ?? $configured ?? throw new \InvalidArgumentException('Enter the URL of the OpenAI-compatible server.');
@@ -327,7 +345,7 @@ final class DemoServices
                 $apiKey = $configured === $endpoint ? self::env('PII_DEMO_GENERIC_KEY') : null;
 
                 // Fast: no reasoning tokens (Ollama's /v1 understands "none"; turn off for servers that do not).
-                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $fast ? [...$deterministic, 'reasoning_effort' => 'none'] : $deterministic];
+                return [GenericFactory::createPlatform($endpoint, $apiKey, $selfHosted, supportsEmbeddings: false), self::locationOf($endpoint), $fast ? [...$deterministic, 'reasoning_effort' => 'none', 'max_tokens' => $answerTokens] : $deterministic];
             case 'mistral':
                 return [MistralFactory::createPlatform($key('MISTRAL_API_KEY')), ModelLocation::External, $deterministic];
             case 'openai':

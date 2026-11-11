@@ -14,7 +14,7 @@ final class RegexMatcher
     /**
      * @param non-empty-string $pattern must use the "u" modifier
      *
-     * @return list<array{value: string, offset: int}>
+     * @return list<array{value: string, offset: int, byteOffset: int}> offset in code points, byteOffset in bytes
      */
     public static function matchAll(string $pattern, string $text, int|string $group = 0): array
     {
@@ -22,29 +22,37 @@ final class RegexMatcher
             throw new \RuntimeException(\sprintf('Regex failed: %s', preg_last_error_msg()));
         }
 
+        // Matches come in text order: count code points incrementally (linear, not per match from the start).
         $result = [];
+        $byte = 0;
+        $codePoint = 0;
         foreach ($matches as $match) {
             [$value, $byteOffset] = $match[$group] ?? [null, -1];
             if (null === $value || '' === $value) {
                 continue;
             }
-            $result[] = ['value' => $value, 'offset' => mb_strlen(substr($text, 0, $byteOffset))];
+            if ($byteOffset < $byte) { // a group can start before the previous match's group
+                $byte = 0;
+                $codePoint = 0;
+            }
+            $codePoint += mb_strlen(substr($text, $byte, $byteOffset - $byte));
+            $byte = $byteOffset;
+            $result[] = ['value' => $value, 'offset' => $codePoint, 'byteOffset' => $byteOffset];
         }
 
         return $result;
     }
 
     /**
-     * The line (between newlines) around a character offset.
+     * The line (between newlines) around a byte offset. Costs the line's length, not the offset.
      */
-    public static function lineAround(string $text, int $offset): string
+    public static function lineAround(string $text, int $byteOffset): string
     {
-        $before = mb_substr($text, 0, $offset);
-        $start = mb_strrpos($before, "\n");
+        $start = 0 === $byteOffset ? false : strrpos($text, "\n", $byteOffset - \strlen($text) - 1);
         $start = false === $start ? 0 : $start + 1;
-        $end = mb_strpos($text, "\n", $offset);
-        $end = false === $end ? mb_strlen($text) : $end;
+        $end = strpos($text, "\n", $byteOffset);
+        $end = false === $end ? \strlen($text) : $end;
 
-        return mb_substr($text, $start, $end - $start);
+        return substr($text, $start, $end - $start);
     }
 }

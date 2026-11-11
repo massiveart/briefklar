@@ -69,12 +69,14 @@ PHP and Composer run in Docker (`compose.yaml`, dev stage of the `Dockerfile`); 
 cd packages/pii-shield
 make install        # composer install
 make test           # PHPUnit
-make qa             # php-cs-fixer (@Symfony) check + PHPStan level 8
+make qa             # php-cs-fixer (@Symfony) check + PHPStan level max (strict rules)
 make cs-fix         # apply coding standard
 make sh             # shell with PHP and Composer
 ```
 
 Each target also runs with a local PHP 8.4: `make test DOCKER=0` (or `composer test`, `composer qa`).
+
+**Mutation testing** ([Infection](https://infection.github.io), `infection.json5`): CI changes the code in about 1,100 small ways and checks that a test fails each time. Mutation score 79 % (minimum 77 % in CI); the validators, detectors and placeholder logic are close to complete, most surviving mutants are in the learning module's pattern grammar. Locally with a coverage driver (pcov or Xdebug): `make mutation DOCKER=0`.
 From the repository root, `make test` and `make qa` run the same checks for all packages.
 
-Built for the Symfony AI & MCP Hackathon 2026. Decisions: `../../docs/adr/`.
+Built for the Symfony AI & MCP Hackathon 2026. Decisions: `../../docs/adr/`. Changes: [CHANGELOG.md](CHANGELOG.md).

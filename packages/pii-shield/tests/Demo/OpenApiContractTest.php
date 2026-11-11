@@ -7,6 +7,7 @@ namespace Briefklar\PiiShield\Tests\Demo;
 use Briefklar\PiiShield\Demo\ServiceApi;
 use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
 use Briefklar\PiiShield\Learning\EntityLearner;
+use Briefklar\PiiShield\Tests\Dig;
 use Briefklar\PiiShield\Vault\EncryptedVault;
 use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -45,8 +46,7 @@ final class OpenApiContractTest extends TestCase
                 continue; // served as a static file by the front controller
             }
             foreach ($operations as $method => $operation) {
-                /** @var array<string, mixed>|null $example */
-                $example = $operation['requestBody']['content']['application/json']['example'] ?? null;
+                $example = \is_array($operation['requestBody'] ?? null) ? Dig::object($operation, 'requestBody', 'content', 'application/json', 'example') : null;
                 $statuses = array_map(intval(...), array_keys((array) $operation['responses']));
                 $concrete = strtr($path, ['{vaultId}' => str_repeat('a', 32), '{name}' => 'INSURANCE_NUMBER']);
 
@@ -91,16 +91,13 @@ final class OpenApiContractTest extends TestCase
 
     public function testRedactExampleMatchesTheDocumentedResponse(): void
     {
-        /** @var array<string, mixed> $operation */
-        $operation = self::spec()['paths']['/v1/redact']['post'];
+        $operation = Dig::array(self::spec(), 'paths', '/v1/redact', 'post');
         $learner = new EntityLearner(new CacheCustomEntityStore(new ArrayAdapter()));
         $learner->learn('INSURANCE_NUMBER', 'Polizzennummer', ['VN-2026-000417', 'VN-2025-998812']);
         $api = new ServiceApi(new EncryptedVault(new Psr6CacheStorage(new ArrayAdapter()), EncryptedVault::generateKey()), $learner, null, 'token');
 
-        /** @var array<string, mixed> $request */
-        $request = $operation['requestBody']['content']['application/json']['example'];
-        /** @var array<string, mixed> $documented */
-        $documented = $operation['responses']['200']['content']['application/json']['example'];
+        $request = Dig::object($operation, 'requestBody', 'content', 'application/json', 'example');
+        $documented = Dig::array($operation, 'responses', '200', 'content', 'application/json', 'example');
         $body = (array) $api->handle('POST', '/v1/redact', $request, 'Bearer token', '10.0.0.1')['body'];
 
         self::assertSame($documented['text'], $body['text']);

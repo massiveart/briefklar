@@ -32,6 +32,8 @@ final class IbanValidatorTest extends TestCase
         yield 'too short' => ['AT61 1904'];
         yield 'no country code' => ['6119 0430 0234 5732 01'];
         yield 'special characters' => ['AT61-1904-3002-3457-3201'];
+        yield 'leading character' => ['XAT61 1904 3002 3457 3201'];
+        yield 'trailing character' => ['AT61 1904 3002 3457 3201 X'];
         yield 'empty' => [''];
     }
 

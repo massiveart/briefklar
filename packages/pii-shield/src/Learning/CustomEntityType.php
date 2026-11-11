@@ -97,7 +97,9 @@ final readonly class CustomEntityType
     }
 
     /**
-     * @param array<string, mixed> $data
+     * Builds a type from stored data (JSON file, cache); every field is checked, unknown keys are ignored.
+     *
+     * @param array<mixed> $data
      *
      * @throws LearningFailedException
      */

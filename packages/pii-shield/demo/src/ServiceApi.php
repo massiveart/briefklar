@@ -271,11 +271,15 @@ final class ServiceApi
     private static function strings(array $body, string $key): array
     {
         $value = $body[$key] ?? [];
-        if (!\is_array($value) || [] !== array_filter($value, static fn (mixed $v): bool => !\is_string($v))) {
-            throw new \InvalidArgumentException(\sprintf('"%s" must be a list of strings.', $key));
+        $strings = [];
+        foreach (\is_array($value) ? $value : [null] as $item) {
+            if (!\is_string($item)) {
+                throw new \InvalidArgumentException(\sprintf('"%s" must be a list of strings.', $key));
+            }
+            $strings[] = $item;
         }
 
-        return array_values($value);
+        return $strings;
     }
 
     /**

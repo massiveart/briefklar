@@ -12,6 +12,7 @@ use Briefklar\PiiShield\Exception\DetectionFailedException;
 use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
 use Briefklar\PiiShield\Learning\CustomEntityType;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\ModelCatalog\FallbackModelCatalog;
 use Symfony\AI\Platform\ModelRouter\CatalogBasedModelRouter;
 use Symfony\AI\Platform\Platform;
@@ -168,6 +169,248 @@ final class ModelDetectorTest extends TestCase
         $detector = $this->detector('{"entities":[]}', location: ModelLocation::External, acknowledgeExternal: true);
 
         self::assertSame([], $detector->detect(self::TEXT));
+    }
+
+    private const string LETTER_03 = "Magistrat der Stadt Musterhausen\nParkraumüberwachung\nRathausplatz 2, 8999 Musterhausen\n\nMusterhausen, 03.11.2026\n\nANONYMVERFÜGUNG\n\nDas Fahrzeug von Lukas Testmann, wohnhaft Gartengasse 5, 8990 Beispieldorf, war am 27.10.2026 um 14:10 Uhr in der Kurzparkzone Rathausplatz ohne gültigen Parkschein abgestellt.\n\nGemäß § 4 Abs. 1 MusterParkG wird eine Geldstrafe von 48,00 Euro festgesetzt. Bitte überweisen Sie den Betrag binnen vier Wochen ab Ausstellung.\n\nBei Fragen wenden Sie sich an parken@musterhausen.example.";
+
+    public function testOnlyPersonalDataOfTheRecipientRemainsFromAModelAnswer(): void
+    {
+        // The answer qwen3:8b gave for fixture 03 (handover #59).
+        $detector = $this->detector('{"entities":['
+            .'{"type":"PERSON","value":"Lukas Testmann"},{"type":"ADDRESS","value":"Gartengasse 5"},'
+            .'{"type":"ADDRESS","value":"Rathausplatz 2, 8999 Musterhausen"},{"type":"FILE_NUMBER","value":"ANONYMVERFÜGUNG"},'
+            .'{"type":"OTHER","value":"27.10.2026"},{"type":"OTHER","value":"14:10"},{"type":"OTHER","value":"MusterParkG"},'
+            .'{"type":"EMAIL","value":"parken@musterhausen.example"}]}');
+
+        $entities = $detector->detect(self::LETTER_03);
+
+        self::assertSame(
+            [['PERSON', 'Lukas Testmann'], ['ADDRESS', 'Gartengasse 5, 8990 Beispieldorf']],
+            array_map(static fn (Entity $e): array => [$e->type->value, $e->value], $entities),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string, string, list<string>}>
+     */
+    public static function findingsInContext(): iterable
+    {
+        yield 'address extended by postcode and town on the line' => ['{"type":"ADDRESS","value":"Gartengasse 5"}', 'wohnhaft Gartengasse 5, 8990 Beispieldorf, war', ['Gartengasse 5, 8990 Beispieldorf']];
+        yield 'address extended by postcode and town on the next line' => ['{"type":"ADDRESS","value":"Lindenweg 12"}', "Frau\nMaria Musterfrau\nLindenweg 12\n6900 Bregenz\n", ["Lindenweg 12\n6900 Bregenz"]];
+        yield 'address not extended by a following number' => ['{"type":"ADDRESS","value":"Lindenweg 12"}', 'wohnhaft Lindenweg 12, 2026 umgezogen', ['Lindenweg 12']];
+        yield 'date as OTHER dropped' => ['{"type":"OTHER","value":"02.11.2026"}', 'Linz, 02.11.2026', []];
+        yield 'time dropped' => ['{"type":"OTHER","value":"14:10 Uhr"}', 'um 14:10 Uhr', []];
+        yield 'law after a citation dropped' => ['{"type":"OTHER","value":"MusterParkG"}', 'Gemäß § 4 Abs. 1 MusterParkG wird', []];
+        yield 'law after a citation with lit. dropped' => ['{"type":"OTHER","value":"StVO"}', 'gemäß § 99 Abs. 3 lit. a StVO eine', []];
+        yield 'same word outside a citation kept' => ['{"type":"PERSON","value":"Muster"}', 'gemäß § 3 StVO. Herr Muster zahlt', ['Muster']];
+        yield 'without a letterhead "wenden Sie sich an" alone is not enough' => ['{"type":"EMAIL","value":"parken@musterhausen.example"}', 'Bei Fragen wenden Sie sich an parken@musterhausen.example.', ['parken@musterhausen.example']];
+        yield 'private e-mail redacted' => ['{"type":"EMAIL","value":"lukas@example.org"}', 'Ihre Adresse lukas@example.org ist hinterlegt.', ['lukas@example.org']];
+        yield 'authority phone kept' => ['{"type":"PHONE","value":"+43 50 233 233"}', 'Bei Fragen erreichen Sie uns unter +43 50 233 233.', []];
+        yield 'letterhead address kept' => ['{"type":"ADDRESS","value":"Rathausplatz 2, 8999 Musterhausen"}', "Magistrat der Stadt Musterhausen\nRathausplatz 2, 8999 Musterhausen\n\nFrau\nMaria Musterfrau", []];
+        yield 'recipient right under the letterhead stays PII' => ['{"type":"ADDRESS","value":"Gartengasse 5, 8990 Beispieldorf"}', "Magistrat der Stadt Musterhausen\nRathausplatz 2, 8999 Musterhausen\nHerrn\nLukas Testmann\nGartengasse 5, 8990 Beispieldorf\n\nText", ['Gartengasse 5, 8990 Beispieldorf']];
+        yield 'recipient address in the first block kept as PII' => ['{"type":"ADDRESS","value":"Lindenweg 12"}', "Frau Maria Musterfrau\nLindenweg 12\n6900 Bregenz", ["Lindenweg 12\n6900 Bregenz"]];
+        yield 'e-mail of a lawyer after "wenden Sie sich an" redacted' => ['{"type":"EMAIL","value":"max@kanzlei.example"}', "Magistrat der Stadt Musterhausen\n\nBitte wenden Sie sich an Ihren Anwalt max@kanzlei.example.", ['max@kanzlei.example']];
+        yield 'authority e-mail recognised by the letterhead domain' => ['{"type":"EMAIL","value":"parken@musterhausen.example"}', "Magistrat der Stadt Musterhausen\n\nKontakt: parken@musterhausen.example", []];
+        yield 'private e-mail with the town in its domain redacted' => ['{"type":"EMAIL","value":"max@musterhausen-fitness.example"}', "Magistrat der Stadt Musterhausen\n\nKontakt: max@musterhausen-fitness.example", ['max@musterhausen-fitness.example']];
+        yield 'authority e-mail with a known prefix kept' => ['{"type":"EMAIL","value":"post@bh-musterstadt.example"}', "Bezirkshauptmannschaft Musterstadt\n\nKontakt: post@bh-musterstadt.example", []];
+        yield 'street named after an authority is no letterhead' => ['{"type":"ADDRESS","value":"Lindenweg 12, 6900 Bregenz"}', "Gemeindeweg 3\nLindenweg 12, 6900 Bregenz\n\nText", ['Lindenweg 12, 6900 Bregenz']];
+        yield 'authority name below the first two lines is no letterhead' => ['{"type":"ADDRESS","value":"Lindenweg 12, 6900 Bregenz"}', "Lukas Testmann\nLindenweg 12, 6900 Bregenz\nan das Finanzamt\n\nText", ['Lindenweg 12, 6900 Bregenz']];
+        yield 'letterhead needs an authority name, not "wir"' => ['{"type":"ADDRESS","value":"Lindenweg 12, 6900 Bregenz"}', "Wir gratulieren\nLindenweg 12, 6900 Bregenz\n\nText", ['Lindenweg 12, 6900 Bregenz']];
+        yield 'letterhead is only the first lines' => ['{"type":"ADDRESS","value":"Lindenweg 12, 6900 Bregenz"}', "Magistrat Musterhausen\nZeile 2\nZeile 3\nZeile 4\nZeile 5\nZeile 6\nLindenweg 12, 6900 Bregenz", ['Lindenweg 12, 6900 Bregenz']];
+        yield 'letterhead with Windows line breaks' => ['{"type":"ADDRESS","value":"Rathausplatz 2, 8999 Musterhausen"}', "Magistrat der Stadt Musterhausen\r\nRathausplatz 2, 8999 Musterhausen\r\n\r\nHerrn\r\nLukas Testmann", []];
+        yield 'date kept when the model calls it an ID' => ['{"type":"ID_NUMBER","value":"27.10.2026"}', 'Ausweis 27.10.2026', ['27.10.2026']];
+        yield 'person right after a citation stays PII' => ['{"type":"PERSON","value":"Testmann"}', 'nach § 5 Testmann', ['Testmann']];
+        yield 'file number without digit dropped' => ['{"type":"FILE_NUMBER","value":"ANONYMVERFÜGUNG"}', "\n\nANONYMVERFÜGUNG\n\n", []];
+        yield 'file number without keyword dropped' => ['{"type":"FILE_NUMBER","value":"3/2026"}', 'Buchungsmitteilung Nr. 3/2026', []];
+        yield 'file number after a keyword kept' => ['{"type":"FILE_NUMBER","value":"BHMS-VK-2026/48213"}', 'Zahl: BHMS-VK-2026/48213', ['BHMS-VK-2026/48213']];
+    }
+
+    /**
+     * @param list<string> $expected
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('findingsInContext')]
+    public function testFindingsAreCheckedInTheirContext(string $finding, string $text, array $expected): void
+    {
+        $entities = $this->detector('{"entities":['.$finding.']}')->detect($text);
+
+        self::assertSame($expected, array_map(static fn (Entity $e): string => $e->value, $entities));
+    }
+
+    public function testAuthorityContactsAreRedactedWhenConfigured(): void
+    {
+        $this->client = new MockModelClient(static fn (): string => '{"entities":[{"type":"EMAIL","value":"parken@musterhausen.example"}]}');
+        $platform = new Platform([new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
+
+        $entities = (new ModelDetector($platform, 'test-model', keepAuthorityContacts: false))->detect('Bei Fragen wenden Sie sich an parken@musterhausen.example.');
+
+        self::assertCount(1, $entities);
+    }
+
+    public function testAnUnusableAnswerIsAskedForOnceMore(): void
+    {
+        $answers = ['{"entities":[{"type":"PERSON","value":"Jan', '{"entities":[{"type":"PERSON","value":"Jan Novák"}]}'];
+        $detector = $this->chunkingDetector(static function () use (&$answers): string {
+            return array_shift($answers) ?? '{"entities":[]}';
+        }, 1_000);
+
+        $entities = $detector->detect(self::TEXT);
+
+        self::assertCount(2, $this->client->getCalls(), 'the cut answer is requested again');
+        self::assertCount(2, $entities);
+    }
+
+    public function testAnswersUnusableTwiceFailClosed(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[{"type":"PERSON"', 1_000);
+
+        try {
+            $detector->detect(self::TEXT);
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException) {
+        }
+        self::assertCount(2, $this->client->getCalls());
+    }
+
+    public function testShortTextsAreSentInOneCall(): void
+    {
+        $this->detector('{"entities":[]}')->detect(self::TEXT);
+
+        self::assertCount(1, $this->client->getCalls());
+    }
+
+    public function testLongTextsAreSentInChunksAlongParagraphs(): void
+    {
+        $paragraphs = array_map(static fn (int $i): string => "Absatz {$i}: ".str_repeat('Text ', 30), range(1, 12));
+        $text = implode("\n\n", $paragraphs);
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 500);
+
+        $detector->detect($text);
+
+        $sent = $this->sentTexts();
+        self::assertGreaterThan(1, \count($sent));
+        foreach ($sent as $chunk) {
+            self::assertLessThanOrEqual(500, mb_strlen($chunk));
+        }
+        foreach ($paragraphs as $paragraph) {
+            self::assertNotEmpty(array_filter($sent, static fn (string $chunk): bool => str_contains($chunk, $paragraph)), 'every paragraph is sent whole');
+        }
+    }
+
+    public function testAParagraphLongerThanAChunkIsSplitAtLinesAndSpaces(): void
+    {
+        $text = implode("\n", array_map(static fn (int $i): string => "Zeile {$i} ".str_repeat('Wort ', 20), range(1, 30)));
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 300);
+
+        $detector->detect($text);
+
+        $sent = $this->sentTexts();
+        foreach ($sent as $chunk) {
+            self::assertLessThanOrEqual(300, mb_strlen($chunk));
+        }
+        self::assertStringContainsString('Zeile 30', implode('', $sent));
+    }
+
+    public function testFindingsOfAnyChunkAreRedactedInTheWholeText(): void
+    {
+        $text = "Frau Maria Musterfrau ist Antragstellerin.\n\n".str_repeat("Weiterer Absatz ohne Daten.\n\n", 40).'Gezeichnet: Maria Musterfrau';
+        $detector = $this->chunkingDetector(static fn (Model $model, array $payload): string => str_contains((string) json_encode($payload, \JSON_UNESCAPED_UNICODE), 'Antragstellerin')
+            ? '{"entities":[{"type":"PERSON","value":"Maria Musterfrau"}]}'
+            : '{"entities":[]}', 400);
+
+        $entities = $detector->detect($text);
+
+        self::assertGreaterThan(1, \count($this->client->getCalls()));
+        self::assertCount(2, $entities, 'found in the first chunk, redacted in the last too');
+    }
+
+    public function testAValueAtAnyCutInsideAParagraphIsSentWhole(): void
+    {
+        $words = array_fill(0, 200, 'Wort');
+        for ($position = 0; $position < 200; $position += 7) {
+            $text = implode(' ', [...\array_slice($words, 0, $position), 'Maria Musterfrau', ...\array_slice($words, $position)]);
+            $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 300);
+
+            $detector->detect($text);
+
+            $sent = $this->sentTexts();
+            self::assertGreaterThan(1, \count($sent));
+            self::assertNotEmpty(array_filter($sent, static fn (string $chunk): bool => str_contains($chunk, 'Maria Musterfrau')), "name at word {$position} is cut in every chunk");
+        }
+    }
+
+    public function testTooManyChunksFailBeforeAnythingIsSent(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 100);
+
+        try {
+            $detector->detect(str_repeat('Wort ', 20 * ModelDetector::MAX_CHUNKS));
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException $e) {
+            self::assertStringContainsString('too long', $e->getMessage());
+        }
+        self::assertCount(0, $this->client->getCalls());
+    }
+
+    public function testTextWithoutSpacesStillAdvancesAWholeStepPerChunk(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 1_000);
+        $text = str_repeat('x', 20_000);
+
+        $start = hrtime(true);
+        $detector->detect($text);
+        $ms = (hrtime(true) - $start) / 1e6;
+
+        self::assertLessThanOrEqual(30, \count($this->client->getCalls()), 'about 20,000 / 800 chunks, not one per character');
+        self::assertLessThan(1_000, $ms);
+    }
+
+    public function testTextsFarBeyondTheLimitFailWithoutBeingSplit(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 100);
+
+        $start = hrtime(true);
+        try {
+            $detector->detect(str_repeat('x', 5_000_000));
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException) {
+        }
+
+        self::assertLessThan(200, (hrtime(true) - $start) / 1e6);
+        self::assertCount(0, $this->client->getCalls());
+    }
+
+    public function testChunkSizeMustLeaveRoomForAParagraph(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->chunkingDetector(static fn (): string => '{"entities":[]}', 99);
+    }
+
+    /**
+     * @return list<string> the user message of every call
+     */
+    private function sentTexts(): array
+    {
+        return array_map(static function (array $call): string {
+            /** @var array{messages: list<array{role: string, content: string}>} $payload */
+            $payload = $call['payload'];
+
+            return $payload['messages'][1]['content'];
+        }, $this->client->getCalls());
+    }
+
+    /**
+     * @param \Closure(Model, array<mixed>): string $response
+     */
+    private function chunkingDetector(\Closure $response, int $chunkSize): ModelDetector
+    {
+        $this->client = new MockModelClient($response);
+        $platform = new Platform(
+            [new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())],
+            new CatalogBasedModelRouter(),
+        );
+
+        return new ModelDetector($platform, 'test-model', chunkSize: $chunkSize);
     }
 
     private function detector(string $response, string $model = 'test-model', ModelLocation $location = ModelLocation::Local, bool $acknowledgeExternal = false): ModelDetector

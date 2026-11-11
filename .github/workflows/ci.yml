@@ -21,9 +21,36 @@ jobs:
           php-version: '8.4'
       - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist
+      - run: composer audit   # known vulnerabilities in dependencies
       - run: vendor/bin/phpunit
       - run: vendor/bin/php-cs-fixer check --diff
       - run: vendor/bin/phpstan analyse --no-progress
+
+  pii-shield-mutation:
+    # Mutation testing: do the tests notice when the code that protects data changes? (infection.json5)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/pii-shield
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: pcov
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/infection --threads=max --no-progress --show-mutations=0
+      - name: Escaped mutants per file
+        if: always()
+        run: |
+          echo '### Escaped mutants per file' >> "$GITHUB_STEP_SUMMARY"
+          grep -oE '^[0-9]+\) [^:]+' var/infection/infection.log | sed -E 's/^[0-9]+\) //' | sort | uniq -c | sort -rn | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+          grep -oE '^[0-9]+\) [^:]+' var/infection/infection.log | sed -E 's/^[0-9]+\) //' | sort | uniq -c | sort -rn || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: infection-report
+          path: packages/pii-shield/var/infection/
 
   app:
     runs-on: ubuntu-latest

@@ -309,8 +309,11 @@ final class DemoApi
             if (!\is_array($model)) {
                 throw new \InvalidArgumentException('"model" settings are required for model-based detection.');
             }
-            /* @var array<string, mixed> $model */
-            $detectors[] = $this->modelDetector = new RequestScopedDetector(($this->modelDetectors)($model), [...$types, EntityType::Other]);
+            $settings = ['keepAuthorityContacts' => (bool) ($request['keepAuthorityContacts'] ?? true)];
+            foreach ($model as $key => $setting) {
+                $settings[(string) $key] = $setting;
+            }
+            $detectors[] = $this->modelDetector = new RequestScopedDetector(($this->modelDetectors)($settings), [...$types, EntityType::Other]);
         }
 
         return $detectors;
@@ -389,12 +392,15 @@ final class DemoApi
      */
     private static function stringList(mixed $value): array
     {
-        if (!\is_array($value) || [] !== array_filter($value, static fn (mixed $v): bool => !\is_string($v))) {
-            throw new \InvalidArgumentException('Expected a list of strings.');
+        $strings = [];
+        foreach (\is_array($value) ? $value : [null] as $item) {
+            if (!\is_string($item)) {
+                throw new \InvalidArgumentException('Expected a list of strings.');
+            }
+            $strings[] = $item;
         }
 
-        /* @var list<string> */
-        return array_values($value);
+        return $strings;
     }
 
     private static function int(mixed $value): int

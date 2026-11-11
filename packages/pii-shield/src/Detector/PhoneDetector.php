@@ -28,7 +28,7 @@ final class PhoneDetector implements DetectorInterface
             if (\strlen((string) preg_replace('/\D/', '', $match['value'])) < self::MIN_DIGITS) {
                 continue;
             }
-            if ($this->keepAuthorityContacts && AuthorityContext::isAuthorityContact($text, $match['offset'])) {
+            if ($this->keepAuthorityContacts && AuthorityContext::isAuthorityContact($text, $match['byteOffset'])) {
                 continue;
             }
             $entities[] = new Entity(EntityType::Phone, $match['value'], $match['offset'], 0.8, 'phone');

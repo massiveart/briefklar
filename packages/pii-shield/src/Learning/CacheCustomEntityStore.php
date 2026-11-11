@@ -25,7 +25,6 @@ final class CacheCustomEntityStore implements CustomEntityStoreInterface
         $types = [];
         foreach (\is_array($data) ? $data : [] as $entry) {
             if (\is_array($entry)) {
-                /* @var array<string, mixed> $entry */
                 $types[] = CustomEntityType::fromArray($entry);
             }
         }

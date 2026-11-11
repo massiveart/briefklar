@@ -107,7 +107,7 @@ final class DemoController
     }
 
     /**
-     * Request log (var/log/demo.log): what was asked, how long it took, what failed. Never the text.
+     * Request log (var/log/demo-YYYY-MM-DD.log, 7 days): what was asked, how long it took, what failed. Never the text.
      */
     private function log(string $action, int $status, int|float $started, ?string $model, ?string $error = null, ?string $modelAnswer = null): void
     {
