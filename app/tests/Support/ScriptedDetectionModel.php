@@ -19,7 +19,7 @@ final class ScriptedDetectionModel
     /** A text containing this marker behaves like an unreachable detection model. */
     public const string UNREACHABLE_MARKER = 'ERKENNUNGSMODELL-NICHT-ERREICHBAR';
 
-    /** Values a real model finds and the regex detectors miss (app fixture 03). */
+    /** Values a real model finds and the regex detectors miss (letter 03). */
     private const array KNOWN = [
         'Lukas Testmann' => 'PERSON',
         'Gartengasse 5, 8990 Beispieldorf' => 'ADDRESS',

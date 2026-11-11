@@ -40,7 +40,7 @@ services:
             $platform: '@ai.platform.ollama'
             $model: '%env(PII_DETECTION_MODEL)%'
             $location: !php/enum Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation::Local
-            $options: { think: false, temperature: 0 }
+            $options: { think: false, temperature: 0, num_predict: 1024 }
 
 when@test:
     services:
