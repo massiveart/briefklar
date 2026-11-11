@@ -251,6 +251,34 @@ final class ModelDetectorTest extends TestCase
         self::assertCount(0, $this->client->getCalls());
     }
 
+    public function testTextWithoutSpacesStillAdvancesAWholeStepPerChunk(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 1_000);
+        $text = str_repeat('x', 20_000);
+
+        $start = hrtime(true);
+        $detector->detect($text);
+        $ms = (hrtime(true) - $start) / 1e6;
+
+        self::assertLessThanOrEqual(30, \count($this->client->getCalls()), 'about 20,000 / 800 chunks, not one per character');
+        self::assertLessThan(1_000, $ms);
+    }
+
+    public function testTextsFarBeyondTheLimitFailWithoutBeingSplit(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 100);
+
+        $start = hrtime(true);
+        try {
+            $detector->detect(str_repeat('x', 5_000_000));
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException) {
+        }
+
+        self::assertLessThan(200, (hrtime(true) - $start) / 1e6);
+        self::assertCount(0, $this->client->getCalls());
+    }
+
     public function testChunkSizeMustLeaveRoomForAParagraph(): void
     {
         $this->expectException(\InvalidArgumentException::class);
