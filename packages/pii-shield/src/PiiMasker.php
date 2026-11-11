@@ -43,15 +43,7 @@ final class PiiMasker implements PiiMaskerInterface
 
     public function mask(string $text): string
     {
-        $masked = '';
-        $cursor = 0;
-        foreach ($this->extractor->extract($text) as $entity) {
-            $strategy = $this->strategies[$entity->typeName()] ?? $this->strategies[$entity->type->value] ?? $this->fallback;
-            $masked .= mb_substr($text, $cursor, $entity->offset - $cursor).$strategy->mask($entity);
-            $cursor = $entity->offset + $entity->length();
-        }
-
-        return $masked.mb_substr($text, $cursor);
+        return TextSpans::replace($text, $this->extractor->extract($text), fn (Entity $entity): string => ($this->strategies[$entity->typeName()] ?? $this->strategies[$entity->type->value] ?? $this->fallback)->mask($entity));
     }
 
     /**

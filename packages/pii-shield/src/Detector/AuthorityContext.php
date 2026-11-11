@@ -18,8 +18,11 @@ final class AuthorityContext
 {
     private const string KEYWORDS = '/\b(?:uns|wir|unser\w*|einzubringen|Einspruch|Beschwerde|Bezirkshauptmannschaft|Finanzamt\w*|Magistrat\w*|Behörde\w*|Gericht\w*|Amt)\b/iu';
 
-    public static function isAuthorityContact(string $text, int $offset): bool
+    /**
+     * @param int $byteOffset byte offset of the value (RegexMatcher::matchAll() 'byteOffset')
+     */
+    public static function isAuthorityContact(string $text, int $byteOffset): bool
     {
-        return 1 === preg_match(self::KEYWORDS, RegexMatcher::lineAround($text, $offset));
+        return 1 === preg_match(self::KEYWORDS, RegexMatcher::lineAround($text, $byteOffset));
     }
 }
