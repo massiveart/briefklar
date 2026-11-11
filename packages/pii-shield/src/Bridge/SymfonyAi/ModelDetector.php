@@ -30,6 +30,9 @@ final class ModelDetector implements DetectorInterface
 {
     public const string NAME = 'model';
     private const float CONFIDENCE = 0.85;
+    /** Characters per model call: with instructions and answer it fits small local models (8k-token context). */
+    public const int DEFAULT_CHUNK_SIZE = 6_000;
+    private const int MIN_CHUNK_SIZE = 100;
 
     /** Labels models commonly use instead of ours. */
     private const array ALIASES = [
@@ -60,7 +63,11 @@ final class ModelDetector implements DetectorInterface
         bool $acknowledgeExternalTransfer = false,
         private readonly array $options = [],
         private readonly ?CustomEntityStoreInterface $learnedTypes = null,
+        private readonly int $chunkSize = self::DEFAULT_CHUNK_SIZE,
     ) {
+        if ($chunkSize < self::MIN_CHUNK_SIZE) {
+            throw new \InvalidArgumentException(\sprintf('The chunk size must be at least %d characters.', self::MIN_CHUNK_SIZE));
+        }
         if ('' === trim($model)) {
             throw new \InvalidArgumentException('The model name must not be empty.');
         }
@@ -83,18 +90,30 @@ final class ModelDetector implements DetectorInterface
 
         $learned = $this->learnedTypes?->all() ?? [];
 
+        // Long texts go out in chunks. All requests are started before the first answer is read,
+        // so HTTP-based platforms process them concurrently. One failing chunk fails the detection.
+        $instructions = self::instructions($learned);
         try {
-            $answer = $this->platform->invoke($this->model, new MessageBag(
-                Message::forSystem(self::instructions($learned)),
-                Message::ofUser($text),
-            ), $this->options)->asText();
+            $pending = array_map(fn (string $chunk) => $this->platform->invoke($this->model, new MessageBag(
+                Message::forSystem($instructions),
+                Message::ofUser($chunk),
+            ), $this->options), self::chunks($text, max(self::MIN_CHUNK_SIZE, $this->chunkSize)));
+            $answers = array_map(static fn ($result): string => $result->asText(), $pending);
         } catch (\Throwable $e) {
             throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
         }
 
+        // Values found in any chunk are grounded in the whole text.
+        $findings = [];
+        foreach ($answers as $answer) {
+            foreach ($this->parse($answer, $learned) as $finding) {
+                $findings[] = $finding;
+            }
+        }
+
         $entities = [];
         $seen = [];
-        foreach ($this->parse($answer, $learned) as [$type, $value, $label]) {
+        foreach ($findings as [$type, $value, $label]) {
             if (isset($seen[($label ?? $type->value)."\0".$value])) {
                 continue;
             }
@@ -110,6 +129,81 @@ final class ModelDetector implements DetectorInterface
         usort($entities, static fn (Entity $a, Entity $b): int => $a->offset <=> $b->offset);
 
         return $entities;
+    }
+
+    /**
+     * Splits a text into chunks of at most $size characters along paragraphs; a paragraph that is too
+     * long is split at lines, then at spaces. Each chunk starts with the last piece of the previous one
+     * when it fits, so values at a boundary (e.g. an address block with a blank line) are seen whole.
+     *
+     * @param int<1, max> $size
+     *
+     * @return list<string>
+     */
+    private static function chunks(string $text, int $size): array
+    {
+        if (mb_strlen($text) <= $size) {
+            return [$text];
+        }
+
+        $pieces = [];
+        $paragraphs = preg_split('/\n[ \t]*\n/u', $text);
+        foreach (false === $paragraphs ? [$text] : $paragraphs as $paragraph) {
+            foreach (self::fit($paragraph, $size, ["\n", ' ']) as $piece) {
+                if ('' !== trim($piece)) {
+                    $pieces[] = $piece;
+                }
+            }
+        }
+
+        $chunks = [];
+        $current = [];
+        foreach ($pieces as $piece) {
+            if ([] !== $current && mb_strlen(implode("\n\n", [...$current, $piece])) > $size) {
+                $chunks[] = implode("\n\n", $current);
+                $last = $current[\count($current) - 1];
+                $current = mb_strlen($last."\n\n".$piece) <= $size ? [$last] : [];
+            }
+            $current[] = $piece;
+        }
+        $chunks[] = implode("\n\n", $current);
+
+        return $chunks;
+    }
+
+    /**
+     * Splits $text at the first separator into parts of at most $size characters; parts still too long
+     * are split at the next separator, and hard as a last resort.
+     *
+     * @param int<1, max>            $size
+     * @param list<non-empty-string> $separators
+     *
+     * @return list<string>
+     */
+    private static function fit(string $text, int $size, array $separators): array
+    {
+        if (mb_strlen($text) <= $size) {
+            return [$text];
+        }
+        $separator = array_shift($separators);
+        if (null === $separator) {
+            return mb_str_split($text, $size);
+        }
+
+        $parts = [];
+        $current = '';
+        foreach (explode($separator, $text) as $unit) {
+            foreach (self::fit($unit, $size, $separators) as $part) {
+                if ('' !== $current && mb_strlen($current.$separator.$part) > $size) {
+                    $parts[] = $current;
+                    $current = '';
+                }
+                $current = '' === $current ? $part : $current.$separator.$part;
+            }
+        }
+        $parts[] = $current;
+
+        return $parts;
     }
 
     /**

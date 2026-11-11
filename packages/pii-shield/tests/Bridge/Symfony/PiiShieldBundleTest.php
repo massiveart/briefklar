@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Briefklar\PiiShield\Tests\Bridge\Symfony;
 
 use Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle;
+use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
 use Briefklar\PiiShield\Learning\EntityLearner;
 use Briefklar\PiiShield\PiiMaskerInterface;
@@ -127,9 +128,17 @@ final class PiiShieldBundleTest extends TestCase
         $builder = $this->load(['model' => ['platform' => 'ai.platform.ollama', 'model' => 'qwen3:4b-instruct', 'options' => ['think' => false]]]);
 
         $definition = $builder->getDefinition('pii_shield.detector.model');
+        self::assertSame(ModelDetector::DEFAULT_CHUNK_SIZE, $definition->getArgument(6));
         self::assertSame('ai.platform.ollama', (string) $definition->getArgument(0));
         self::assertSame('qwen3:4b-instruct', $definition->getArgument(1));
         self::assertArrayHasKey('pii_shield.detector', $definition->getTags());
+    }
+
+    public function testChunkSizeIsConfigurable(): void
+    {
+        $builder = $this->load(['model' => ['platform' => 'ai.platform.ollama', 'model' => 'qwen3:8b', 'chunk_size' => 2_000]]);
+
+        self::assertSame(2_000, $builder->getDefinition('pii_shield.detector.model')->getArgument(6));
     }
 
     public function testExternalModelsNeedAnAcknowledgement(): void

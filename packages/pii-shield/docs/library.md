@@ -40,6 +40,7 @@ pii_shield:
         location: local         # local | on_premise | external
         acknowledge_external_transfer: false   # required for external
         options: { think: false }
+        chunk_size: 6000        # characters per model call; longer texts are split along paragraphs
     vault:                      # restore in a later request
         enabled: false
         key: '%env(base64:PII_SHIELD_VAULT_KEY)%'   # 32 bytes, EncryptedVault::generateKey()
@@ -146,6 +147,8 @@ $shield = new PiiShield([...EntityExtractor::defaultDetectors(), $model], $vault
 | public provider | `External` + `acknowledgeExternalTransfer: true` | Mistral, OpenAI, Anthropic, … |
 
 Detection is the one step that sees the **unredacted** text. An external provider therefore needs an explicit acknowledgement (data processing agreement, possibly a third-country transfer); without it the detector refuses to start. Values the model invents are dropped (every finding is located in the original text), reasoning output (`<think>`) is ignored, and an unusable answer throws `DetectionFailedException` instead of silently continuing. See ADR 0006.
+
+**Long texts** are split into chunks of at most `chunkSize` characters (default 6,000, fits models with an 8k-token context) along paragraphs, then lines, then spaces; each chunk repeats the previous chunk's last paragraph, so values at a boundary are seen whole. All chunks are sent before the first answer is read, so OpenAI-compatible servers, vLLM and hosted APIs process them concurrently (Ollama only with `OLLAMA_NUM_PARALLEL` > 1). A value found in any chunk is redacted in the whole text. Smaller chunks also help recall: with `qwen3:8b`, three letters (3,100 characters) in one call missed an address, a licence plate and two names that 1,500-character chunks found.
 
 Tested end-to-end with `qwen3.8:27b` on a local Ollama: Czech passport number, credit card, health data, IP address and a Czech phone number were found; amounts, deadlines and legal citations were kept.
 
