@@ -223,6 +223,34 @@ final class ModelDetectorTest extends TestCase
         self::assertCount(2, $entities, 'found in the first chunk, redacted in the last too');
     }
 
+    public function testAValueAtAnyCutInsideAParagraphIsSentWhole(): void
+    {
+        $words = array_fill(0, 200, 'Wort');
+        for ($position = 0; $position < 200; $position += 7) {
+            $text = implode(' ', [...\array_slice($words, 0, $position), 'Maria Musterfrau', ...\array_slice($words, $position)]);
+            $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 300);
+
+            $detector->detect($text);
+
+            $sent = $this->sentTexts();
+            self::assertGreaterThan(1, \count($sent));
+            self::assertNotEmpty(array_filter($sent, static fn (string $chunk): bool => str_contains($chunk, 'Maria Musterfrau')), "name at word {$position} is cut in every chunk");
+        }
+    }
+
+    public function testTooManyChunksFailBeforeAnythingIsSent(): void
+    {
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 100);
+
+        try {
+            $detector->detect(str_repeat('Wort ', 20 * ModelDetector::MAX_CHUNKS));
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException $e) {
+            self::assertStringContainsString('too long', $e->getMessage());
+        }
+        self::assertCount(0, $this->client->getCalls());
+    }
+
     public function testChunkSizeMustLeaveRoomForAParagraph(): void
     {
         $this->expectException(\InvalidArgumentException::class);
