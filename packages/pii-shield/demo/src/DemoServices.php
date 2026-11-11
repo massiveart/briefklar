@@ -173,7 +173,8 @@ final class DemoServices
         if (!is_dir($dir)) {
             mkdir($dir, 0700, true);
         }
-        foreach (glob($dir.'/demo*.log') ?: [] as $file) {
+        $files = glob($dir.'/demo*.log');
+        foreach (false === $files ? [] : $files as $file) {
             if (filemtime($file) < time() - self::LOG_RETENTION_DAYS * 86_400) {
                 @unlink($file);
             }

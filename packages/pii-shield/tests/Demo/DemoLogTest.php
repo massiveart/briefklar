@@ -30,7 +30,8 @@ final class DemoLogTest extends TestCase
     {
         (new DemoServices($this->dir))->log(['action' => 'analyze']);
 
-        $files = glob($this->dir.'/log/demo-*.log') ?: [];
+        $files = glob($this->dir.'/log/demo-*.log');
+        self::assertIsArray($files);
         self::assertCount(1, $files);
         self::assertSame(0600, fileperms($files[0]) & 0777);
         self::assertStringContainsString('"action":"analyze"', (string) file_get_contents($files[0]));
