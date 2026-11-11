@@ -30,12 +30,15 @@ final class ModelDetector implements DetectorInterface
 {
     public const string NAME = 'model';
     private const float CONFIDENCE = 0.85;
-    /** Characters per model call: with instructions and answer it fits small local models (8k-token context). */
-    public const int DEFAULT_CHUNK_SIZE = 6_000;
+    /**
+     * Characters per model call. Ollama's default context on GPUs under 24 GB is 4,096 tokens: 4,000 characters
+     * of German text plus the instructions take about 2,100 (measured with qwen3:8b), leaving room for the answer.
+     */
+    public const int DEFAULT_CHUNK_SIZE = 4_000;
     private const int MIN_CHUNK_SIZE = 100;
     /** Each chunk repeats the last fifth of the previous one. */
     private const int OVERLAP_DIVISOR = 5;
-    /** More chunks fail closed instead of fanning out (about 300,000 characters at the default size). */
+    /** More chunks fail closed instead of fanning out (about 200,000 characters at the default size). */
     public const int MAX_CHUNKS = 50;
     /** Requests in flight at the same time. */
     private const int CONCURRENCY = 4;

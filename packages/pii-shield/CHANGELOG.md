@@ -2,6 +2,12 @@
 
 All notable changes to `briefklar/pii-shield`. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/) (0.x: the API may still change).
 
+## [Unreleased]
+
+### Changed
+
+- `ModelDetector` default chunk size 6,000 → 4,000 characters: a 6,000-character chunk took 3,079 of the 4,096 tokens Ollama uses by default on GPUs under 24 GB, too little room for answers on texts with much personal data.
+
 ## [0.1.0] - 2026-11-11
 
 First release, built for the Symfony AI & MCP Hackathon 2026.

@@ -40,7 +40,7 @@ pii_shield:
         location: local         # local | on_premise | external
         acknowledge_external_transfer: false   # required for external
         options: { think: false }
-        chunk_size: 6000        # characters per model call; longer texts are split along paragraphs
+        chunk_size: 4000        # characters per model call; fits Ollama's default 4k-token context
     vault:                      # restore in a later request
         enabled: false
         key: '%env(base64:PII_SHIELD_VAULT_KEY)%'   # 32 bytes, EncryptedVault::generateKey()
@@ -148,7 +148,7 @@ $shield = new PiiShield([...EntityExtractor::defaultDetectors(), $model], $vault
 
 Detection is the one step that sees the **unredacted** text. An external provider therefore needs an explicit acknowledgement (data processing agreement, possibly a third-country transfer); without it the detector refuses to start. Values the model invents are dropped (every finding is located in the original text), reasoning output (`<think>`) is ignored, and an unusable answer throws `DetectionFailedException` instead of silently continuing. See ADR 0006.
 
-**Long texts** are split into chunks of at most `chunkSize` characters (default 6,000, fits models with an 8k-token context), cut at a paragraph, else a line, else a space. Each chunk repeats the last fifth of the previous one, wherever the cut was, so any value shorter than that overlap is sent whole at least once. Four chunks are in flight at a time, so OpenAI-compatible servers, vLLM and hosted APIs process them concurrently (Ollama only with `OLLAMA_NUM_PARALLEL` > 1). More than `ModelDetector::MAX_CHUNKS` (50, about 300,000 characters) fails closed with `DetectionFailedException` before anything is sent. A value found in any chunk is redacted in the whole text. Smaller chunks also help recall: with `qwen3:8b`, three letters (3,100 characters) in one call missed an address, a licence plate and two names that 1,500-character chunks found.
+**Long texts** are split into chunks of at most `chunkSize` characters (default 4,000: with the instructions about 2,100 tokens, so the answer still fits Ollama's default 4,096-token context), cut at a paragraph, else a line, else a space. Each chunk repeats the last fifth of the previous one, wherever the cut was, so any value shorter than that overlap is sent whole at least once. Four chunks are in flight at a time, so OpenAI-compatible servers, vLLM and hosted APIs process them concurrently (Ollama only with `OLLAMA_NUM_PARALLEL` > 1). More than `ModelDetector::MAX_CHUNKS` (50, about 200,000 characters at the default size) fails closed with `DetectionFailedException` before anything is sent. A value found in any chunk is redacted in the whole text. Smaller chunks also help recall: with `qwen3:8b`, three letters (3,100 characters) in one call missed an address, a licence plate and two names that 1,500-character chunks found.
 
 Tested end-to-end with `qwen3.8:27b` on a local Ollama: Czech passport number, credit card, health data, IP address and a Czech phone number were found; amounts, deadlines and legal citations were kept.
 
