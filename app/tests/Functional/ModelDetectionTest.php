@@ -14,7 +14,7 @@ use Symfony\Component\DomCrawler\Field\FileFormField;
 /**
  * Milestone M3: model-based PII detection (PII_MODEL_DETECTION) on top of the regex detectors.
  *
- * App fixture 03 names the recipient without salutation and gives a one-line address, which the
+ * Letter 03 (/fixtures/letters, "detection": "model") names the recipient without salutation and gives a one-line address, which the
  * regex detectors cannot find. ScriptedDetectionModel stands in for the local Ollama.
  */
 final class ModelDetectionTest extends WebTestCase

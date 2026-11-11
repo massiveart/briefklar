@@ -26,7 +26,7 @@ final class PdfFixtureFactory
     public static function letter(string $name): string
     {
         $path = \dirname(__DIR__, 3).'/fixtures/letters/'.$name.'.txt';
-        $text = is_file($path) ? file_get_contents($path) : false;
+        $text = file_get_contents($path);
         if (false === $text) {
             throw new \RuntimeException(\sprintf('Fixture "%s" not found.', $path));
         }

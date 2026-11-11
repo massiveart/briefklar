@@ -19,11 +19,11 @@ Symfony application: upload, local OCR, explanation agent, UI, MCP server.
 - **Input:** after the system prompt is added, the processor replaces personal data in the whole request with typed placeholders (`⟦PERSON_1⟧`, `⟦IBAN_1⟧`, ...). The provider never sees the original values. Amounts, deadlines, authority names and legal references stay.
 - **Output:** the structured `LetterExplanation` comes back with the original values restored, so the app code never deals with placeholders. Placeholders the model invented cannot be restored; the result page flags them.
 - **Fails closed:** if redaction fails, nothing is sent and the user gets the generic error (`LetterExplainer` catches pii-shield exceptions).
-- Vault and model-based detection are not configured (one request, regex and checksum detectors only); learned types are disabled.
+- Vault is not configured (one request); learned types are disabled. Detection is regex and checksum based; model-based detection is optional, see below.
 
 **Model-based detection (optional, `PII_MODEL_DETECTION=1`):** the patterns miss names without salutation and one-line addresses. `App\Redaction\SwitchableModelDetector` adds pii-shield's `ModelDetector` (ADR 0006) to the detectors, switched at runtime, off by default so a fresh clone needs no model. It always asks the local Ollama (`OLLAMA_ENDPOINT`, model `PII_DETECTION_MODEL`, default `qwen3:8b` with `think: false`), whichever provider explains the letter, because this is the one step that sees the unredacted text. If it is on and the model fails, nothing is sent. Expect 7–20 s extra per letter on a laptop. Answers are capped with `num_predict: 1024`. With `qwen3:8b` (12.11.2026, letters 01–03) nothing leaks and nothing the explanation needs is lost; the model sometimes types an authority e-mail as `OTHER`, which then gets redacted. `tests/Functional/ModelDetectionTest.php` covers off, on and fail closed with a scripted model and letter `03-anonymverfuegung` (`"detection": "model"` in `/fixtures/letters`).
 
-`tests/Functional/PiiProtectionTest.php` uploads the fixture letters as text PDF and as scan, in both explanation styles, and checks the recorded provider request against `../fixtures/letters/*.expected.json`: no PII value (multi-line addresses line by line) may appear, every `must_survive` value must.
+`tests/Functional/PiiProtectionTest.php` uploads the regex fixture letters (01, 02) as text PDF and as scan, in both explanation styles, and checks the recorded provider request against `../fixtures/letters/*.expected.json`: no PII value (multi-line addresses line by line) may appear, every `must_survive` value must.
 
 ## Text extraction (`src/Extraction/`)
 
