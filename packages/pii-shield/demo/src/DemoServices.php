@@ -313,7 +313,7 @@ final class DemoServices
 
             [$platform, $location, $options] = $this->platform($provider, $endpoint, false !== ($settings['fast'] ?? true));
 
-            return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options, $this->learnedStore());
+            return new ModelDetector($platform, $model, $location, true === ($settings['acknowledgeExternal'] ?? false), $options, $this->learnedStore(), keepAuthorityContacts: false !== ($settings['keepAuthorityContacts'] ?? true));
         };
     }
 

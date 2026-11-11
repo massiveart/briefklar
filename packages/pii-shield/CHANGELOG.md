@@ -4,6 +4,11 @@ All notable changes to `briefklar/pii-shield`. Format: [Keep a Changelog](https:
 
 ## [Unreleased]
 
+### Fixed
+
+- Model findings are checked in their context (handover #59, letter `03-anonymverfuegung`): addresses are extended by postcode and town, dates and times are dropped, words in legal citations kept, file numbers need a digit and a keyword, authority contacts (letterhead, "wenden Sie sich an") kept unless `keepAuthorityContacts: false` (bundle: `keep_authority_contacts`).
+- "wenden Sie sich an" marks an authority contact for the e-mail and phone detectors too.
+
 ### Changed
 
 - `ModelDetector` asks once more for a chunk whose answer is unusable (small models sometimes repeat their findings until the answer is cut off; answers vary under concurrent load). Unusable twice still fails closed.

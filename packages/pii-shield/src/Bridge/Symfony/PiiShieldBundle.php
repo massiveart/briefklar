@@ -187,6 +187,7 @@ final class PiiShieldBundle extends AbstractBundle
                     $config['model']['options'] ?? [],
                     $learnedStore,
                     $config['model']['chunk_size'] ?? ModelDetector::DEFAULT_CHUNK_SIZE,
+                    $config['keep_authority_contacts'],
                 ])
                 ->tag('pii_shield.detector');
         }

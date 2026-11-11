@@ -13,7 +13,9 @@ use Briefklar\PiiShield\EntityType;
  */
 final class FileNumberDetector implements DetectorInterface
 {
-    private const string PATTERN = '/\b(?:Zahl|GZ|Gz\.|Geschäftszahl|Aktenzahl|Aktenzeichen|Az\.|Kundennummer|Kunden-Nr\.?|Vertragsnummer|Versicherungsnummer|Verwendungszweck)[ \t]*:?[ \t]*(?<ref>(?=[A-Z0-9.\/-]*\d)[A-Z0-9][A-Z0-9.\/-]{2,}[A-Z0-9])(?![\w\/-])/u';
+    /** Words that introduce a file or customer number; also used to check a model's findings. */
+    public const string KEYWORDS = '(?:Zahl|GZ|Gz\.|Geschäftszahl|Aktenzahl|Aktenzeichen|Az\.|Kundennummer|Kunden-Nr\.?|Vertragsnummer|Versicherungsnummer|Verwendungszweck)';
+    private const string PATTERN = '/\b'.self::KEYWORDS.'[ \t]*:?[ \t]*(?<ref>(?=[A-Z0-9.\/-]*\d)[A-Z0-9][A-Z0-9.\/-]{2,}[A-Z0-9])(?![\w\/-])/u';
 
     public function detect(string $text): array
     {
