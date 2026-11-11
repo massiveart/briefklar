@@ -1,0 +1,22 @@
+{
+    // Mutation testing: are the tests able to notice when the code changes?
+    // Scope: detection, validation, placeholders and restore, the vault: the parts that protect data.
+    $schema: "vendor/infection/infection/resources/schema.json",
+    source: {
+        directories: ["src"],
+        excludes: ["Bridge/Symfony", "Exception"],
+    },
+    timeout: 20,
+    logs: {
+        text: "var/infection/infection.log",
+        summary: "var/infection/summary.log",
+        html: "var/infection/infection.html",
+        github: true,
+    },
+    mutators: {
+        "@default": true,
+    },
+    minMsi: 0,
+    minCoveredMsi: 0,
+    testFrameworkOptions: "--exclude-group=performance", // timing-based, not meaningful per mutant
+}

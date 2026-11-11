@@ -12,7 +12,7 @@ RUN :=
 RUN_STDIO :=
 endif
 
-.PHONY: build install test qa cs-check cs-fix phpstan demo down sh mcp
+.PHONY: build install test qa cs-check cs-fix phpstan mutation demo down sh mcp
 
 build:
 	docker compose build php
@@ -33,6 +33,11 @@ cs-fix:
 
 phpstan:
 	$(RUN) vendor/bin/phpstan analyse --no-progress
+
+# Mutation testing (infection.json5); needs a coverage driver (pcov or Xdebug), so local PHP: make mutation DOCKER=0.
+# CI runs it on every push (job pii-shield-mutation).
+mutation:
+	$(RUN) vendor/bin/infection --threads=max
 
 # Demo page and APIs on http://127.0.0.1:8088 (Ollama on this machine, Redis in a container).
 demo:
