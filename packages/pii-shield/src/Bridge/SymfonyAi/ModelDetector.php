@@ -33,6 +33,12 @@ final class ModelDetector implements DetectorInterface
     /** Characters per model call: with instructions and answer it fits small local models (8k-token context). */
     public const int DEFAULT_CHUNK_SIZE = 6_000;
     private const int MIN_CHUNK_SIZE = 100;
+    /** Each chunk repeats the last fifth of the previous one. */
+    private const int OVERLAP_DIVISOR = 5;
+    /** More chunks fail closed instead of fanning out (about 300,000 characters at the default size). */
+    public const int MAX_CHUNKS = 50;
+    /** Requests in flight at the same time. */
+    private const int CONCURRENCY = 4;
 
     /** Labels models commonly use instead of ours. */
     private const array ALIASES = [
@@ -90,15 +96,24 @@ final class ModelDetector implements DetectorInterface
 
         $learned = $this->learnedTypes?->all() ?? [];
 
-        // Long texts go out in chunks. All requests are started before the first answer is read,
-        // so HTTP-based platforms process them concurrently. One failing chunk fails the detection.
+        // Long texts go out in chunks, CONCURRENCY at a time: a batch is started before its first answer
+        // is read, so HTTP-based platforms process it concurrently. One failing chunk fails the detection.
+        $chunks = self::chunks($text, max(self::MIN_CHUNK_SIZE, $this->chunkSize));
+        if (\count($chunks) > self::MAX_CHUNKS) {
+            throw new DetectionFailedException(\sprintf('The text is too long for model-based detection: %d chunks of %d characters, at most %d.', \count($chunks), $this->chunkSize, self::MAX_CHUNKS));
+        }
         $instructions = self::instructions($learned);
+        $answers = [];
         try {
-            $pending = array_map(fn (string $chunk) => $this->platform->invoke($this->model, new MessageBag(
-                Message::forSystem($instructions),
-                Message::ofUser($chunk),
-            ), $this->options), self::chunks($text, max(self::MIN_CHUNK_SIZE, $this->chunkSize)));
-            $answers = array_map(static fn ($result): string => $result->asText(), $pending);
+            foreach (array_chunk($chunks, self::CONCURRENCY) as $batch) {
+                $pending = array_map(fn (string $chunk) => $this->platform->invoke($this->model, new MessageBag(
+                    Message::forSystem($instructions),
+                    Message::ofUser($chunk),
+                ), $this->options), $batch);
+                foreach ($pending as $result) {
+                    $answers[] = $result->asText();
+                }
+            }
         } catch (\Throwable $e) {
             throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
         }
@@ -132,9 +147,10 @@ final class ModelDetector implements DetectorInterface
     }
 
     /**
-     * Splits a text into chunks of at most $size characters along paragraphs; a paragraph that is too
-     * long is split at lines, then at spaces. Each chunk starts with the last piece of the previous one
-     * when it fits, so values at a boundary (e.g. an address block with a blank line) are seen whole.
+     * Splits a text into chunks of at most $size characters: a window over the original text, cut at the
+     * last paragraph break in its second half, else the last line break, else the last space. Each chunk
+     * starts OVERLAP of the window before the previous end (at a word start), wherever the cut was, so a
+     * value shorter than the overlap is always sent whole in at least one chunk.
      *
      * @param int<1, max> $size
      *
@@ -142,68 +158,38 @@ final class ModelDetector implements DetectorInterface
      */
     private static function chunks(string $text, int $size): array
     {
-        if (mb_strlen($text) <= $size) {
+        $chars = mb_str_split($text);
+        $length = \count($chars);
+        if ($length <= $size) {
             return [$text];
         }
 
-        $pieces = [];
-        $paragraphs = preg_split('/\n[ \t]*\n/u', $text);
-        foreach (false === $paragraphs ? [$text] : $paragraphs as $paragraph) {
-            foreach (self::fit($paragraph, $size, ["\n", ' ']) as $piece) {
-                if ('' !== trim($piece)) {
-                    $pieces[] = $piece;
-                }
-            }
-        }
-
+        $overlap = intdiv($size, self::OVERLAP_DIVISOR);
         $chunks = [];
-        $current = [];
-        foreach ($pieces as $piece) {
-            if ([] !== $current && mb_strlen(implode("\n\n", [...$current, $piece])) > $size) {
-                $chunks[] = implode("\n\n", $current);
-                $last = $current[\count($current) - 1];
-                $current = mb_strlen($last."\n\n".$piece) <= $size ? [$last] : [];
-            }
-            $current[] = $piece;
-        }
-        $chunks[] = implode("\n\n", $current);
-
-        return $chunks;
-    }
-
-    /**
-     * Splits $text at the first separator into parts of at most $size characters; parts still too long
-     * are split at the next separator, and hard as a last resort.
-     *
-     * @param int<1, max>            $size
-     * @param list<non-empty-string> $separators
-     *
-     * @return list<string>
-     */
-    private static function fit(string $text, int $size, array $separators): array
-    {
-        if (mb_strlen($text) <= $size) {
-            return [$text];
-        }
-        $separator = array_shift($separators);
-        if (null === $separator) {
-            return mb_str_split($text, $size);
-        }
-
-        $parts = [];
-        $current = '';
-        foreach (explode($separator, $text) as $unit) {
-            foreach (self::fit($unit, $size, $separators) as $part) {
-                if ('' !== $current && mb_strlen($current.$separator.$part) > $size) {
-                    $parts[] = $current;
-                    $current = '';
+        $start = 0;
+        while (true) {
+            $end = min($length, $start + $size);
+            if ($end < $length) {
+                $window = implode('', \array_slice($chars, $start, $end - $start));
+                foreach (["\n\n", "\n", ' '] as $separator) {
+                    $cut = mb_strrpos($window, $separator);
+                    if (false !== $cut && $cut >= intdiv($end - $start, 2)) {
+                        $end = $start + $cut + mb_strlen($separator);
+                        break;
+                    }
                 }
-                $current = '' === $current ? $part : $current.$separator.$part;
             }
-        }
-        $parts[] = $current;
+            $chunks[] = implode('', \array_slice($chars, $start, $end - $start));
+            if ($end >= $length) {
+                return $chunks;
+            }
 
-        return $parts;
+            $next = $end - $overlap;
+            while ($next > $start + 1 && $next < $end && !\in_array($chars[$next - 1], [' ', "\n", "\t"], true)) {
+                --$next; // back to the start of the word, so the overlap begins with a whole word
+            }
+            $start = max($start + 1, $next);
+        }
     }
 
     /**
