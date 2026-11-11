@@ -129,7 +129,9 @@ final class PiiShieldBundleTest extends TestCase
 
         $definition = $builder->getDefinition('pii_shield.detector.model');
         self::assertSame(ModelDetector::DEFAULT_CHUNK_SIZE, $definition->getArgument(6));
-        self::assertSame('ai.platform.ollama', (string) $definition->getArgument(0));
+        $platform = $definition->getArgument(0);
+        self::assertInstanceOf(\Symfony\Component\DependencyInjection\Reference::class, $platform);
+        self::assertSame('ai.platform.ollama', (string) $platform);
         self::assertSame('qwen3:4b-instruct', $definition->getArgument(1));
         self::assertArrayHasKey('pii_shield.detector', $definition->getTags());
     }

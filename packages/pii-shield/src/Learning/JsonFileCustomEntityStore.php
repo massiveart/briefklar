@@ -29,7 +29,6 @@ final class JsonFileCustomEntityStore implements CustomEntityStoreInterface
         $types = [];
         foreach ($data as $entry) {
             if (\is_array($entry)) {
-                /* @var array<string, mixed> $entry */
                 $types[] = CustomEntityType::fromArray($entry);
             }
         }

@@ -9,6 +9,7 @@ use Briefklar\PiiShield\Exception\UnsupportedContentException;
 use Briefklar\PiiShield\PiiShield;
 use Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Explanation;
 use Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Payment;
+use Briefklar\PiiShield\Tests\Dig;
 use PHPUnit\Framework\TestCase;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\InputProcessorInterface;
@@ -127,7 +128,7 @@ final class PiiShieldProcessorTest extends TestCase
         $result = $agent->call(new MessageBag(Message::ofUser(self::LETTER)))->getResult();
 
         self::assertSame('Johann Beispielmann und ⟦PERSON_9⟧', $result->getContent());
-        self::assertSame(['⟦PERSON_9⟧'], $result->getMetadata()->get(PiiShieldProcessor::METADATA_KEY)['unknown_placeholders'] ?? null);
+        self::assertSame(['⟦PERSON_9⟧'], Dig::get($result->getMetadata()->get(PiiShieldProcessor::METADATA_KEY), 'unknown_placeholders'));
     }
 
     public function testOutputOfAnUnprocessedInputIsLeftAlone(): void
