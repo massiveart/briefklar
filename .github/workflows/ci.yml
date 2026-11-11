@@ -40,6 +40,17 @@ jobs:
           coverage: pcov
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/infection --threads=max --no-progress --show-mutations=0
+      - name: Escaped mutants per file
+        if: always()
+        run: |
+          echo '### Escaped mutants per file' >> "$GITHUB_STEP_SUMMARY"
+          grep -oE '^[0-9]+\) [^:]+' var/infection/infection.log | sed -E 's/^[0-9]+\) //' | sort | uniq -c | sort -rn | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+          grep -oE '^[0-9]+\) [^:]+' var/infection/infection.log | sed -E 's/^[0-9]+\) //' | sort | uniq -c | sort -rn || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: infection-report
+          path: packages/pii-shield/var/infection/
 
   app:
     runs-on: ubuntu-latest
