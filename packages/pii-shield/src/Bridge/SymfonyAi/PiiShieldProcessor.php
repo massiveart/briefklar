@@ -103,7 +103,7 @@ final class PiiShieldProcessor implements InputProcessorInterface, OutputProcess
         $restoredResult = match (true) {
             $result instanceof TextResult => new TextResult($restore($result->getContent()), $result->getSignature(), $result->getPhase()),
             $result instanceof ObjectResult => new ObjectResult(
-                (new StructuredRestorer($restore(...)))->restore($result->getContent()),
+                (new StructuredRestorer($restore(...)))->restoreOutput($result->getContent()),
                 null !== $result->getText() ? $restore($result->getText()) : null,
             ),
             default => null,

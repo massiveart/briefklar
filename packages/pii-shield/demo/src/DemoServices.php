@@ -261,7 +261,7 @@ final class DemoServices
             if (\is_array($columns) && isset($columns[2]) && '00000000' === $columns[1] && 8 === \strlen($columns[2]) && ctype_xdigit($columns[2])) {
                 $address = unpack('V', (string) hex2bin($columns[2]));
 
-                return false === $address ? null : long2ip((int) $address[1]);
+                return \is_array($address) && \is_int($address[1] ?? null) ? long2ip($address[1]) : null;
             }
         }
 

@@ -8,6 +8,7 @@ use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Briefklar\PiiShield\Demo\ServiceApi;
 use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
 use Briefklar\PiiShield\Learning\EntityLearner;
+use Briefklar\PiiShield\Tests\Dig;
 use Briefklar\PiiShield\Vault\EncryptedVault;
 use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
 use PHPUnit\Framework\TestCase;
@@ -58,14 +59,14 @@ final class ServiceApiTest extends TestCase
         self::assertSame(200, $response['status']);
         $body = (array) $response['body'];
         self::assertSame("Herrn\n⟦PERSON_1⟧\n\nSVNR ⟦SVNR_1⟧, Versicherung VN-2026-000417", $body['text']);
-        self::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', (string) $body['vaultId']);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', Dig::string($body, 'vaultId'));
         self::assertSame([['placeholder' => '⟦PERSON_1⟧', 'type' => 'PERSON'], ['placeholder' => '⟦SVNR_1⟧', 'type' => 'SVNR']], $body['placeholders']);
         self::assertStringNotContainsString('Beispielmann', (string) json_encode($body));
     }
 
     public function testRestoreAndForget(): void
     {
-        $vaultId = (string) ((array) $this->call('POST', '/v1/redact', ['text' => self::LETTER])['body'])['vaultId'];
+        $vaultId = Dig::string($this->call('POST', '/v1/redact', ['text' => self::LETTER]), 'body', 'vaultId');
 
         $restored = $this->call('POST', '/v1/restore', ['text' => 'Hallo ⟦PERSON_1⟧, ⟦IBAN_9⟧?', 'vaultId' => $vaultId]);
         self::assertSame(200, $restored['status']);
@@ -90,7 +91,7 @@ final class ServiceApiTest extends TestCase
         self::assertSame('VN-\d{4}-\d{6}', ((array) ((array) $learned['body'])['type'])['pattern']);
 
         $redacted = (array) $this->call('POST', '/v1/redact', ['text' => self::LETTER])['body'];
-        self::assertStringEndsWith('Versicherung ⟦INSURANCE_NUMBER_1⟧', (string) $redacted['text']);
+        self::assertStringEndsWith('Versicherung ⟦INSURANCE_NUMBER_1⟧', Dig::string($redacted, 'text'));
 
         self::assertSame(['INSURANCE_NUMBER'], array_column((array) ((array) $this->call('GET', '/v1/entities')['body'])['types'], 'name'));
         self::assertSame(204, $this->call('DELETE', '/v1/entities/INSURANCE_NUMBER')['status']);

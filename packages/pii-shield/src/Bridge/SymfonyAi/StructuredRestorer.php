@@ -27,6 +27,18 @@ final class StructuredRestorer
         $this->copies = new \SplObjectStorage();
     }
 
+    /**
+     * Structured output keeps its shape: an array stays an array with the same keys, an object an object.
+     *
+     * @param array<string, mixed>|object $output
+     *
+     * @return array<string, mixed>|object
+     */
+    public function restoreOutput(array|object $output): array|object
+    {
+        return \is_array($output) ? array_map($this->restore(...), $output) : $this->restoreObject($output);
+    }
+
     public function restore(mixed $value): mixed
     {
         return match (true) {

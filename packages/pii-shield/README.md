@@ -69,7 +69,7 @@ PHP and Composer run in Docker (`compose.yaml`, dev stage of the `Dockerfile`); 
 cd packages/pii-shield
 make install        # composer install
 make test           # PHPUnit
-make qa             # php-cs-fixer (@Symfony) check + PHPStan level 8
+make qa             # php-cs-fixer (@Symfony) check + PHPStan level max (strict rules)
 make cs-fix         # apply coding standard
 make sh             # shell with PHP and Composer
 ```

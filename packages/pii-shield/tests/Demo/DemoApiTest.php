@@ -46,7 +46,7 @@ final class DemoApiTest extends TestCase
 
                 return [$vault, $storage];
             },
-            static fn (array $model): ModelDetector => new ModelDetector($platform, (string) ($model['model'] ?? '')),
+            static fn (array $model): ModelDetector => new ModelDetector($platform, \is_string($model['model'] ?? null) ? $model['model'] : ''),
             $this->learner,
         );
     }
