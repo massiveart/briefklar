@@ -140,6 +140,37 @@ final class PiiShieldBundleTest extends TestCase
         $this->load(['model' => ['platform' => 'ai.platform.anthropic', 'model' => 'claude-sonnet-5-5', 'location' => 'external']]);
     }
 
+    public function testOptionsCanBeDisabledExplicitly(): void
+    {
+        $builder = $this->load(['model' => ['enabled' => false], 'vault' => ['enabled' => false], 'learning' => ['enabled' => false]]);
+
+        self::assertFalse($builder->hasDefinition('pii_shield.detector.model'));
+        self::assertFalse($builder->hasDefinition('pii_shield.vault'));
+        self::assertFalse($builder->hasDefinition('pii_shield.learner'));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function enabledOptionsWithoutRequiredValues(): iterable
+    {
+        yield 'model without platform' => [['model' => ['enabled' => true, 'model' => 'qwen3:8b']], 'platform'];
+        yield 'model without model' => [['model' => ['platform' => 'ai.platform.ollama']], 'model'];
+        yield 'vault without key' => [['vault' => ['enabled' => true]], 'key'];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('enabledOptionsWithoutRequiredValues')]
+    public function testEnabledOptionsStillRequireTheirValues(array $config, string $missing): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage($missing);
+
+        $this->load($config);
+    }
+
     public function testUnknownTypesAreRejected(): void
     {
         $this->expectException(InvalidConfigurationException::class);
