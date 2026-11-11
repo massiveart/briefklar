@@ -12,6 +12,7 @@ use Briefklar\PiiShield\Exception\DetectionFailedException;
 use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
 use Briefklar\PiiShield\Learning\CustomEntityType;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\ModelCatalog\FallbackModelCatalog;
 use Symfony\AI\Platform\ModelRouter\CatalogBasedModelRouter;
 use Symfony\AI\Platform\Platform;
@@ -168,6 +169,92 @@ final class ModelDetectorTest extends TestCase
         $detector = $this->detector('{"entities":[]}', location: ModelLocation::External, acknowledgeExternal: true);
 
         self::assertSame([], $detector->detect(self::TEXT));
+    }
+
+    public function testShortTextsAreSentInOneCall(): void
+    {
+        $this->detector('{"entities":[]}')->detect(self::TEXT);
+
+        self::assertCount(1, $this->client->getCalls());
+    }
+
+    public function testLongTextsAreSentInChunksAlongParagraphs(): void
+    {
+        $paragraphs = array_map(static fn (int $i): string => "Absatz {$i}: ".str_repeat('Text ', 30), range(1, 12));
+        $text = implode("\n\n", $paragraphs);
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 500);
+
+        $detector->detect($text);
+
+        $sent = $this->sentTexts();
+        self::assertGreaterThan(1, \count($sent));
+        foreach ($sent as $chunk) {
+            self::assertLessThanOrEqual(500, mb_strlen($chunk));
+        }
+        foreach ($paragraphs as $paragraph) {
+            self::assertNotEmpty(array_filter($sent, static fn (string $chunk): bool => str_contains($chunk, $paragraph)), 'every paragraph is sent whole');
+        }
+    }
+
+    public function testAParagraphLongerThanAChunkIsSplitAtLinesAndSpaces(): void
+    {
+        $text = implode("\n", array_map(static fn (int $i): string => "Zeile {$i} ".str_repeat('Wort ', 20), range(1, 30)));
+        $detector = $this->chunkingDetector(static fn (): string => '{"entities":[]}', 300);
+
+        $detector->detect($text);
+
+        $sent = $this->sentTexts();
+        foreach ($sent as $chunk) {
+            self::assertLessThanOrEqual(300, mb_strlen($chunk));
+        }
+        self::assertStringContainsString('Zeile 30', implode('', $sent));
+    }
+
+    public function testFindingsOfAnyChunkAreRedactedInTheWholeText(): void
+    {
+        $text = "Frau Maria Musterfrau ist Antragstellerin.\n\n".str_repeat("Weiterer Absatz ohne Daten.\n\n", 40).'Gezeichnet: Maria Musterfrau';
+        $detector = $this->chunkingDetector(static fn (Model $model, array $payload): string => str_contains((string) json_encode($payload, \JSON_UNESCAPED_UNICODE), 'Antragstellerin')
+            ? '{"entities":[{"type":"PERSON","value":"Maria Musterfrau"}]}'
+            : '{"entities":[]}', 400);
+
+        $entities = $detector->detect($text);
+
+        self::assertGreaterThan(1, \count($this->client->getCalls()));
+        self::assertCount(2, $entities, 'found in the first chunk, redacted in the last too');
+    }
+
+    public function testChunkSizeMustLeaveRoomForAParagraph(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->chunkingDetector(static fn (): string => '{"entities":[]}', 99);
+    }
+
+    /**
+     * @return list<string> the user message of every call
+     */
+    private function sentTexts(): array
+    {
+        return array_map(static function (array $call): string {
+            /** @var array{messages: list<array{role: string, content: string}>} $payload */
+            $payload = $call['payload'];
+
+            return $payload['messages'][1]['content'];
+        }, $this->client->getCalls());
+    }
+
+    /**
+     * @param \Closure(Model, array<mixed>): string $response
+     */
+    private function chunkingDetector(\Closure $response, int $chunkSize): ModelDetector
+    {
+        $this->client = new MockModelClient($response);
+        $platform = new Platform(
+            [new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())],
+            new CatalogBasedModelRouter(),
+        );
+
+        return new ModelDetector($platform, 'test-model', chunkSize: $chunkSize);
     }
 
     private function detector(string $response, string $model = 'test-model', ModelLocation $location = ModelLocation::Local, bool $acknowledgeExternal = false): ModelDetector

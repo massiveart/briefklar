@@ -97,6 +97,10 @@ final class PiiShieldBundle extends AbstractBundle
                             ->defaultFalse()
                         ->end()
                         ->arrayNode('options')->info('Passed to the platform, e.g. {think: false}.')->variablePrototype()->end()->end()
+                        ->integerNode('chunk_size')
+                            ->info('Characters per model call; longer texts are split along paragraphs and sent concurrently.')
+                            ->min(100)->defaultValue(ModelDetector::DEFAULT_CHUNK_SIZE)
+                        ->end()
                     ->end()
                     ->validate()
                         ->ifTrue(static fn (array $m): bool => $m['enabled'] && (null === $m['platform'] || '' === $m['platform']))
@@ -147,7 +151,7 @@ final class PiiShieldBundle extends AbstractBundle
      */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{types: list<string>, keep_authority_contacts: bool, allowlist: list<string>, model: array{enabled: bool, platform?: string, model?: string, location?: string, acknowledge_external_transfer?: bool, options?: array<string, mixed>}, vault: array{enabled: bool, key?: string, cache_pool?: string, ttl?: int}, learning: array{enabled: bool, path: string, cache_pool: string|null}, agent_processor: array{enabled: bool, agents: list<string>}} $config */
+        /** @var array{types: list<string>, keep_authority_contacts: bool, allowlist: list<string>, model: array{enabled: bool, platform?: string, model?: string, location?: string, acknowledge_external_transfer?: bool, options?: array<string, mixed>, chunk_size?: int}, vault: array{enabled: bool, key?: string, cache_pool?: string, ttl?: int}, learning: array{enabled: bool, path: string, cache_pool: string|null}, agent_processor: array{enabled: bool, agents: list<string>}} $config */
         $services = $container->services();
 
         foreach ($config['types'] as $type) {
@@ -182,6 +186,7 @@ final class PiiShieldBundle extends AbstractBundle
                     $config['model']['acknowledge_external_transfer'] ?? false,
                     $config['model']['options'] ?? [],
                     $learnedStore,
+                    $config['model']['chunk_size'] ?? ModelDetector::DEFAULT_CHUNK_SIZE,
                 ])
                 ->tag('pii_shield.detector');
         }
