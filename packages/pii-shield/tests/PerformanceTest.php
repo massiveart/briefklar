@@ -8,6 +8,7 @@ use Briefklar\PiiShield\EntityExtractor;
 use Briefklar\PiiShield\PiiMasker;
 use Briefklar\PiiShield\PiiShield;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,6 +16,7 @@ use PHPUnit\Framework\TestCase;
  * block a worker. Measured as growth, not absolute time, so it holds on slow CI machines:
  * four times the text may take at most eight times as long (quadratic would be sixteen).
  */
+#[Group('performance')]
 final class PerformanceTest extends TestCase
 {
     private const int SIZE = 1_000;
