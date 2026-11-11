@@ -8,3 +8,7 @@ services:
         class: Symfony\AI\Platform\Platform
         factory: ['App\Tests\Support\ScriptedPlatform', 'create']
         arguments: ['@event_dispatcher', '@App\Tests\Support\ScriptedPlatform']
+
+    # Joins the real pii-shield detectors; fails on a marker to test that redaction fails closed.
+    App\Tests\Support\FailingDetector:
+        tags: ['pii_shield.detector']

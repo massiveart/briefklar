@@ -24,11 +24,16 @@ final class ScriptedPlatform
     private array $requests = [];
 
     /**
-     * @var array<string, string> marker in the letter text => fixture name
+     * Fixture name => markers, any of which identifies the letter. Several markers per letter,
+     * because OCR output differs between Tesseract builds and CPUs (a misread word must not
+     * turn a scan into a "provider outage"). Matched case-insensitively inside <letter>…</letter>
+     * only: the system prompt mentions words like "Strafverfügung" too.
+     *
+     * @var array<string, list<string>>
      */
     private array $answers = [
-        'STRAFVERFÜGUNG' => '01-strafverfuegung',
-        'Buchungsmitteilung' => '02-finanzamt-vorschreibung', // deliberately wrong deadline
+        '01-strafverfuegung' => ['Strafverfügung', 'Bezirkshauptmannschaft', 'Verkehrsrecht'],
+        '02-finanzamt-vorschreibung' => ['Buchungsmitteilung', 'Abgabenkonto', 'Finanzamt'], // deliberately wrong deadline
     ];
 
     public static function create(EventDispatcherInterface $dispatcher, self $recorder): Platform
@@ -55,8 +60,9 @@ final class ScriptedPlatform
         $request = json_encode($payload, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
         $this->requests[] = $request;
 
-        foreach ($this->answers as $marker => $fixture) {
-            if (str_contains($request, $marker)) {
+        $letter = self::letterIn($request);
+        foreach ($this->answers as $fixture => $markers) {
+            if (array_any($markers, static fn (string $marker): bool => false !== mb_stripos($letter, $marker))) {
                 $answer = file_get_contents(\dirname(__DIR__).'/Fixtures/explanations/'.$fixture.'.json');
                 if (false === $answer) {
                     throw new \RuntimeException(\sprintf('Missing canned explanation "%s".', $fixture));
@@ -68,5 +74,13 @@ final class ScriptedPlatform
 
         // Behaves like a provider outage for any other letter.
         throw new PlatformException('Scripted provider has no answer for this letter.');
+    }
+
+    private static function letterIn(string $request): string
+    {
+        $start = mb_strrpos($request, '<letter>');
+        $end = mb_strrpos($request, '</letter>');
+
+        return false === $start || false === $end || $end < $start ? '' : mb_substr($request, $start, $end - $start);
     }
 }

@@ -30,14 +30,10 @@ services:
         arguments:
             $pdftoppmBinary: '%env(PDFTOPPM_BINARY)%'
 
-    # pii-shield: the app depends only on the interface. Switching to the real
-    # shield (task A) is a one-line change of this alias, no code change.
-    Briefklar\PiiShield\NullPiiShield: ~
-    Briefklar\PiiShield\PiiShieldInterface: '@Briefklar\PiiShield\NullPiiShield'
+    # pii-shield (PiiShieldInterface, agent processor) comes from PiiShieldBundle, see config/packages/pii_shield.yaml.
 
 when@test:
     services:
-        # Keep the alias reachable from the test container even while no service uses it yet.
         test.pii_shield:
             alias: Briefklar\PiiShield\PiiShieldInterface
             public: true

@@ -9,6 +9,8 @@ letter:
         label: Brief (PDF oder Foto)
         help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
         submit: Brief erklären
+        submitting: Brief wird erklärt …
+        progress: Wir lesen deinen Brief, entfernen persönliche Daten und lassen ihn erklären. Das kann bis zu einer Minute dauern. Bitte lade die Seite nicht neu.
         easy_language: Erklärung in Leichter Sprache
         easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
     result:
@@ -17,6 +19,7 @@ letter:
         deadline: Frist
         no_deadline: Im Brief steht keine Frist.
         deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.
+        invented_placeholders: Die Erklärung nennt Platzhalter, die nicht für Angaben aus deinem Brief stehen (%placeholders%). Diese Stellen sind unzuverlässig, bitte prüfe sie im Original.
         amount: Betrag
         summary: Worum geht es?
         actions: Was musst du tun?
