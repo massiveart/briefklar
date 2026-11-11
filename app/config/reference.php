@@ -1901,15 +1901,15 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     allowlist?: list<scalar|Param|null>,
  *     model?: bool|array{ // Detection by a model via Symfony AI Platform, in addition to the patterns.
  *         enabled?: bool|Param, // Default: false
- *         platform?: scalar|Param|null, // Service id of a Symfony AI platform, e.g. "ai.platform.ollama".
- *         model?: scalar|Param|null, // Model name, e.g. "qwen3:4b-instruct".
+ *         platform?: scalar|Param|null, // Service id of a Symfony AI platform, e.g. "ai.platform.ollama". Required when enabled. // Default: null
+ *         model?: scalar|Param|null, // Model name, e.g. "qwen3:8b". Required when enabled. // Default: null
  *         location?: "local"|"on_premise"|"external"|Param, // Default: "local"
  *         acknowledge_external_transfer?: bool|Param, // Detection sends unredacted text to the model. Required for "external". // Default: false
  *         options?: list<mixed>,
  *     },
  *     vault?: bool|array{ // Store mappings encrypted to restore in a later request.
  *         enabled?: bool|Param, // Default: false
- *         key?: scalar|Param|null, // 32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()).
+ *         key?: scalar|Param|null, // 32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled. // Default: null
  *         cache_pool?: scalar|Param|null, // PSR-6 pool service id. // Default: "cache.app"
  *         ttl?: int|Param, // Default: 3600
  *     },
