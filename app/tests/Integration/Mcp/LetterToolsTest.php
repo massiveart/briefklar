@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Mcp;
 
+use App\Explanation\ExplanationTimeLimit;
 use App\Mcp\LetterTools;
 use App\Tests\Support\FailingDetector;
 use App\Tests\Support\PdfFixtureFactory;
@@ -74,6 +75,19 @@ final class LetterToolsTest extends KernelTestCase
         self::assertStringNotContainsString('⟦', $answer);
         foreach (self::piiValues('01-strafverfuegung') as $value) {
             self::assertStringNotContainsString($value, self::getContainer()->get(ScriptedPlatform::class)->requests()[0]);
+        }
+    }
+
+    public function testRaisesPhpsTimeLimitLikeTheWebUpload(): void
+    {
+        // Over HTTP, PHP's 30 s default cut off a local model (seen with Claude Code against /mcp).
+        try {
+            $this->tools()->explainLetter(PdfFixtureFactory::letter('01-strafverfuegung'));
+            $expected = self::getContainer()->get(ExplanationTimeLimit::class)->seconds();
+            self::assertSame((string) $expected, \ini_get('max_execution_time'));
+            self::assertGreaterThan(30, $expected);
+        } finally {
+            set_time_limit(0); // the CLI default, for the following tests
         }
     }
 

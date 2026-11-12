@@ -8,6 +8,7 @@ use App\Explanation\ExplainedLetter;
 use App\Explanation\ExplanationFailedException;
 use App\Explanation\ExplanationLanguage;
 use App\Explanation\ExplanationStyle;
+use App\Explanation\ExplanationTimeLimit;
 use App\Explanation\LetterExplainer;
 use App\Explanation\PlaceholderExplainer;
 use App\Extraction\ExtractedText;
@@ -79,6 +80,7 @@ final readonly class LetterTools
         private LetterExplainer $explainer,
         private PiiShieldInterface $shield,
         private LoggerInterface $logger,
+        private ExplanationTimeLimit $timeLimit,
     ) {
     }
 
@@ -97,6 +99,8 @@ final readonly class LetterTools
         #[Schema(description: 'standard, or easy_language for very short sentences ("Leichte Sprache").', enum: ['standard', 'easy_language'])] string $style = 'standard',
         #[Schema(description: 'Language of the explanation.', enum: ['de', 'en'])] string $language = 'de',
     ): array {
+        // Over HTTP, PHP's 30 s limit would cut off OCR and a local model (issue seen with Claude Code).
+        $this->timeLimit->apply();
         try {
             $file = $this->letters->resolve($path);
         } catch (LetterNotAllowedException $e) {
@@ -131,6 +135,7 @@ final readonly class LetterTools
         if ('' === trim($text)) {
             throw new ToolCallException('The letter text is empty.');
         }
+        $this->timeLimit->apply();
         $letter = new ExtractedText($text, ExtractionMethod::PlainText);
 
         return $this->explained(fn (): ExplainedLetter => $this->explainer->explain($letter, self::style($style), self::language($language)));
