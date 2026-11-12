@@ -29,3 +29,11 @@ Bugs and rough edges found in Symfony AI and `mcp/sdk` during the hackathon. Eac
 - Expected: a hook before deserialization (raw JSON) for output processors, or access to the raw structured text. `ObjectResult::getText()` is often null.
 - Actual: only the deserialized object is available.
 - Filed: not yet
+
+## HTTP transport fails with a 500 until a PSR-17 implementation is installed
+- Package / version: `symfony/mcp-bundle` 1.0.0-BETA1 with `mcp/sdk` 0.9.0
+- Reproduction: in a Symfony 8.1 app without any PSR-7/PSR-17 package, `composer require symfony/mcp-bundle`, keep `transports.http: true`, POST an `initialize` request to `/mcp`.
+- Expected: the bundle requires (or the recipe installs) a PSR-17 implementation, or the docs say to add one.
+- Actual: `Http\Discovery\Exception\NotFoundException: No PSR-17 server request factory found` from `McpController` via `PsrHttpFactory::createRequest()`. The Flex recipe of `php-http/discovery` adds `config/packages/http_discovery.yaml` pointing to `Http\Discovery\Psr17Factory`, and the bundle requires `php-http/discovery`, but nothing installs an implementation. STDIO works, so the problem shows up only on the first HTTP request.
+- Workaround: `composer require nyholm/psr7`.
+- Filed: not yet

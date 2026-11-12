@@ -88,6 +88,55 @@ The app is available in German (`/de`) and English (`/en`); `/` redirects by `Ac
 
 `ExplanationLanguage` is the single list of languages (route requirement, switcher, model instruction). Adding one: a case there, `translations/messages.<locale>.yaml` and `validators.<locale>.yaml`, and the locale in `enabled_locales` (`config/packages/translation.yaml`).
 
+## MCP server (`src/Mcp/`)
+
+The app is also an MCP server, `briefklar` (`config/packages/mcp.yaml`, `symfony/mcp-bundle` 1.0.0-BETA1, `mcp/sdk` 0.9.0, pinned exactly). Same agents, prompts and pii-shield as the web app.
+
+| Tool | Input | Returns | What the client's model sees |
+|---|---|---|---|
+| `explain_letter_file` | `path` in the letter folder, `style`, `language` | explanation + checks, **with placeholders** | never the letter; deadline, amount and legal references stay readable, names and account numbers are `⟦…⟧` |
+| `explain_letter` | `text`, `style`, `language` | explanation + checks, restored | the letter: the user already gave it to the client, so prefer `explain_letter_file` |
+| `redact_text` | `text` | redacted text and placeholder types, never the originals | placeholders only; no `restore_text`, the app keeps no mapping |
+
+Results come as `structuredContent` with an `outputSchema`, plus the same JSON as text. `checks` carries what the web page shows as warnings: deadline not found in the letter, invented dates or placeholders, unclear steps, read by OCR.
+
+- **Letter folder:** `explain_letter_file` reads only from `MCP_LETTER_DIR` (empty by default, then the tool says so), only PDF, PNG, JPG and TIFF, resolved with `realpath()` so `../` and symlinks leading outside are refused (`LetterDirectory`).
+- **Placeholders in the answer:** `PlaceholderExplainer` redacts the letter itself and sends the redacted text through the same shielded agent; pii-shield finds nothing left to redact and has nothing of its own to restore, so the placeholders stay. Every model call still passes the shield. As a safety net the answer is checked for every redacted original value and not returned if one shows up.
+- **HTTP (`/mcp`):** localhost only (`allowed_hosts`, and `compose.yaml` publishes the port on 127.0.0.1), JSON only and no foreign `Origin` except the MCP Inspector (`McpRequestGuard`), so a website cannot trigger a tool call.
+- **STDIO:** always with `--env=prod`, nothing else may write to stdout.
+- Expected failures (letter not allowed or unreadable, provider down, redaction failed) come back as a tool result with `isError`, never with letter content.
+
+Connect a client (paths are examples; the letter folder is mounted read-only):
+
+```bash
+# Claude Code, STDIO through Docker
+claude mcp add briefklar -- docker compose -f /path/to/briefklar/compose.yaml run --rm --no-deps -T \
+  -v ~/Briefe:/srv/letters:ro -e MCP_LETTER_DIR=/srv/letters app bin/console mcp:server briefklar --env=prod
+
+# Claude Code, HTTP against the running app (docker compose up -d); set MCP_LETTER_DIR in app/.env.local for the file tool
+claude mcp add --transport http briefklar http://localhost:8080/mcp
+
+# MCP Inspector: connect to http://localhost:8080/mcp (Streamable HTTP)
+npx @modelcontextprotocol/inspector
+```
+
+Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "briefklar": {
+      "command": "docker",
+      "args": ["compose", "-f", "/path/to/briefklar/compose.yaml", "run", "--rm", "--no-deps", "-T",
+               "-v", "/Users/you/Briefe:/srv/letters:ro", "-e", "MCP_LETTER_DIR=/srv/letters",
+               "app", "bin/console", "mcp:server", "briefklar", "--env=prod"]
+    }
+  }
+}
+```
+
+Tests: `tests/Integration/Mcp/LetterToolsTest.php` (no PII to the provider or back to the client, refused paths, failures), `tests/Unit/Mcp/LetterDirectoryTest.php`, `tests/Functional/McpHttpTest.php` (Host, Origin and content-type checks).
+
 ## Development
 
 Secrets never go into git. Create your local `app/.env.local` once (ignored; `compose.yaml` loads it into the container):
