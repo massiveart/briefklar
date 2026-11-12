@@ -24,6 +24,7 @@ final readonly class ExplanationRules
     public const string INFORMAL_ADDRESS = 'du, not Sie';
     public const string MIDDLE_DOTS = 'middle dots';
     public const string ACTIONS_CONSISTENT = 'actions consistent';
+    public const string NO_INVENTED_DATES = 'no invented dates';
 
     /** Formal address in German; the prompts ask for "du". */
     private const string FORMAL_ADDRESS = '/\b(?:Sie|Ihnen|Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres)\b/u';
@@ -48,6 +49,8 @@ final readonly class ExplanationRules
             self::INFORMAL_ADDRESS => $german ? array_all($prose, static fn (string $t): bool => 1 !== preg_match(self::FORMAL_ADDRESS, $t)) : null,
             // actionRequired must match the steps, and an amount to pay always needs a step.
             self::ACTIONS_CONSISTENT => $e->actionRequired === ([] !== $e->actions) && (null === $e->amount || [] !== $e->actions),
+            // Dates in subject, summary, actions and questions must be in the letter (ProseDateCheck).
+            self::NO_INVENTED_DATES => [] === $result->inventedDates,
             self::MIDDLE_DOTS => $german && ExplanationStyle::EasyLanguage === $result->style
                 ? array_any($prose, static fn (string $t): bool => str_contains($t, '·'))
                 : null,

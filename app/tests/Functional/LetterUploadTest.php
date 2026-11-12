@@ -105,6 +105,7 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('.sender', 'Bezirkshauptmannschaft Musterstadt');
         self::assertSelectorTextContains('.deadline__value', 'binnen zwei Wochen ab Zustellung');
         self::assertSelectorNotExists('.deadline .warning');
+        self::assertSelectorNotExists('.date-note');
         self::assertSelectorTextContains('.amount', '110,00 Euro');
         self::assertSelectorTextContains('.references', '§ 49 VStG');
         self::assertSelectorTextContains('.disclaimer', 'keine Rechtsberatung');
@@ -146,6 +147,19 @@ final class LetterUploadTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.deadline__value', '2026-11-30');
         self::assertSelectorTextContains('.deadline .warning', 'nicht im Brief gefunden');
+    }
+
+    public function testFlagsDatesInTheTextThatAreNotInTheLetter(): void
+    {
+        $client = self::createClient();
+        // Canned answer 02: "Überweise 1.245,00 Euro bis 30.11.2026 …", the letter says 15.11.2026.
+        $this->uploadText($client, PdfFixtureFactory::letter('02-finanzamt-vorschreibung'));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.date-note', '30.11.2026');
+        self::assertSelectorTextContains('.date-note', 'nicht im Brief');
+        // The model text itself stays as it is.
+        self::assertSelectorTextContains('.actions', 'bis 30.11.2026');
     }
 
     public function testShowsStepsEvenWhenTheModelSaysNothingIsRequired(): void

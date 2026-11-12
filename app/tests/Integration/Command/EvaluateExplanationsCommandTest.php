@@ -20,16 +20,17 @@ final class EvaluateExplanationsCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('all kept', $tester->getDisplay());
-        self::assertStringContainsString('Rules kept: 7 of 7. Failed calls: 0.', $tester->getDisplay());
+        self::assertStringContainsString('Rules kept: 8 of 8. Failed calls: 0.', $tester->getDisplay());
     }
 
     public function testReportsBrokenRulesAndFails(): void
     {
-        // The canned answer for letter 02 states a deadline that is not in the letter and invents ⟦IBAN_1⟧.
+        // The canned answer for letter 02 states a deadline and a date that are not in the letter and invents ⟦IBAN_1⟧.
         $tester = $this->evaluate(['fixtures' => ['02-finanzamt-vorschreibung'], '--style' => 'standard', '--language' => 'de']);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
         self::assertStringContainsString('deadline verbatim, placeholders restored', $tester->getDisplay());
+        self::assertStringContainsString('no invented dates', $tester->getDisplay());
     }
 
     public function testRunsEveryStyleAndLanguageByDefault(): void
