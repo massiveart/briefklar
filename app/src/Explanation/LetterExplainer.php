@@ -31,6 +31,7 @@ final readonly class LetterExplainer
         #[Autowire(service: 'ai.agent.letter_explainer_easy')]
         private AgentInterface $easyLanguageAgent,
         private DeadlineCheck $deadlineCheck,
+        private ProseDateCheck $proseDateCheck,
     ) {
     }
 
@@ -71,6 +72,14 @@ final readonly class LetterExplainer
             ? array_values(array_filter($shieldReport['unknown_placeholders'], \is_string(...)))
             : [];
 
-        return new ExplainedLetter($explanation, $deadlineStated, $letter->method, $style, $language, $inventedPlaceholders);
+        return new ExplainedLetter(
+            $explanation,
+            $deadlineStated,
+            $letter->method,
+            $style,
+            $language,
+            $inventedPlaceholders,
+            $this->proseDateCheck->datesNotInLetter($explanation, $letter->text),
+        );
     }
 }

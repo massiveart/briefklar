@@ -1,9 +1,9 @@
 {
     "sender": "Finanzamt Österreich",
     "subject": "Das Finanzamt hat eine Vorauszahlung auf deine Einkommensteuer gebucht.",
-    "summary": "Deliberately wrong canned answer: the deadline below is not the one in the letter, the action refers to a placeholder that was never in the letter (⟦IBAN_1⟧), and actionRequired contradicts the action (seen with qwen3:8b). Used to test that all three are handled.",
+    "summary": "Deliberately wrong canned answer: the deadline below is not the one in the letter, the action names a date and refers to a placeholder that are not in the letter (30.11.2026, ⟦IBAN_1⟧), and actionRequired contradicts the action (seen with qwen3:8b). Used to test that all of these are handled.",
     "actionRequired": false,
-    "actions": ["Überweise 1.245,00 Euro auf das Konto ⟦IBAN_1⟧."],
+    "actions": ["Überweise 1.245,00 Euro bis 30.11.2026 auf das Konto ⟦IBAN_1⟧."],
     "deadline": "2026-11-30 – Der Betrag ist am 15.11.2026 fällig.",
     "amount": "1.245,00 Euro",
     "legalReferences": ["§ 217 BAO"],

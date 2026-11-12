@@ -13,6 +13,7 @@ final readonly class ExplainedLetter
 {
     /**
      * @param list<string> $inventedPlaceholders placeholders in the answer that were not in the letter (pii-shield could not restore them)
+     * @param list<string> $inventedDates        dates in the free text that are not in the letter (ProseDateCheck), as the model wrote them
      */
     public function __construct(
         public LetterExplanation $explanation,
@@ -21,6 +22,7 @@ final readonly class ExplainedLetter
         public ExplanationStyle $style,
         public ExplanationLanguage $language,
         public array $inventedPlaceholders = [],
+        public array $inventedDates = [],
     ) {
     }
 
