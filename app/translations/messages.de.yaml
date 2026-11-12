@@ -13,6 +13,15 @@ letter:
         progress: Wir lesen deinen Brief, entfernen persönliche Daten und lassen ihn erklären. Das kann bis zu einer Minute dauern. Bitte lade die Seite nicht neu.
         easy_language: Erklärung in Leichter Sprache
         easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
+    samples:
+        title: Kein Brief zur Hand?
+        intro: Probiere es mit einem erfundenen Beispielbrief. Lade ihn herunter und oben wieder hoch. Der Scan hat keinen Text und wird per Texterkennung gelesen.
+        text: PDF
+        scan: Scan
+        letters:
+            01-strafverfuegung: Strafverfügung wegen zu schnellen Fahrens
+            02-finanzamt-vorschreibung: Buchungsmitteilung vom Finanzamt (Einkommensteuer-Vorauszahlung)
+            03-anonymverfuegung: Anonymverfügung wegen Falschparkens
     result:
         title: Erklärung deines Briefs
         easy_language: In Leichter Sprache

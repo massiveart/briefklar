@@ -13,6 +13,7 @@ use App\Extraction\ExtractionFailedException;
 use App\Extraction\UnsupportedDocumentException;
 use App\Form\LetterUpload;
 use App\Form\LetterUploadType;
+use App\Sample\SampleLetters;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -34,6 +35,7 @@ final class LetterController extends AbstractController
         private readonly LetterExplainer $explainer,
         private readonly TranslatorInterface $translator,
         private readonly LoggerInterface $logger,
+        private readonly SampleLetters $samples,
         #[Autowire('%env(int:EXPLANATION_TIMEOUT)%')]
         private readonly int $explanationTimeout,
     ) {
@@ -84,6 +86,9 @@ final class LetterController extends AbstractController
             }
         }
 
-        return $this->render('letter/upload.html.twig', ['form' => $form], new Response(status: $form->isSubmitted() ? 422 : 200));
+        return $this->render('letter/upload.html.twig', [
+            'form' => $form,
+            'samples' => $this->samples->names(),
+        ], new Response(status: $form->isSubmitted() ? 422 : 200));
     }
 }

@@ -13,6 +13,15 @@ letter:
         progress: We are reading your letter, removing personal data and having it explained. This can take up to a minute. Please do not reload the page.
         easy_language: Explanation in Easy Read
         easy_language_help: Very short sentences, simple words, difficult words are explained.
+    samples:
+        title: No letter at hand?
+        intro: Try it with an invented sample letter. Download it and upload it above. The scan has no text and is read by OCR.
+        text: PDF
+        scan: Scan
+        letters:
+            01-strafverfuegung: Penalty notice for speeding
+            02-finanzamt-vorschreibung: Tax office notice of an income tax prepayment
+            03-anonymverfuegung: Fine for illegal parking
     result:
         title: Explanation of your letter
         easy_language: In Easy Read
