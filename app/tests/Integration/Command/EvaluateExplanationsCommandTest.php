@@ -20,7 +20,7 @@ final class EvaluateExplanationsCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('all kept', $tester->getDisplay());
-        self::assertStringContainsString('Rules kept: 6 of 6. Failed calls: 0.', $tester->getDisplay());
+        self::assertStringContainsString('Rules kept: 7 of 7. Failed calls: 0.', $tester->getDisplay());
     }
 
     public function testReportsBrokenRulesAndFails(): void

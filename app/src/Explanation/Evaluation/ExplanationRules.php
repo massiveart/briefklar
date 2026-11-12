@@ -23,6 +23,7 @@ final readonly class ExplanationRules
     public const string PLACEHOLDERS_RESTORED = 'placeholders restored';
     public const string INFORMAL_ADDRESS = 'du, not Sie';
     public const string MIDDLE_DOTS = 'middle dots';
+    public const string ACTIONS_CONSISTENT = 'actions consistent';
 
     /** Formal address in German; the prompts ask for "du". */
     private const string FORMAL_ADDRESS = '/\b(?:Sie|Ihnen|Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres)\b/u';
@@ -45,6 +46,8 @@ final readonly class ExplanationRules
             self::PLACEHOLDERS_RESTORED => [] === $result->inventedPlaceholders
                 && array_all([$e->sender, $e->amount ?? '', $e->deadline ?? '', ...$prose, ...$e->legalReferences], static fn (string $t): bool => !str_contains($t, '⟦')),
             self::INFORMAL_ADDRESS => $german ? array_all($prose, static fn (string $t): bool => 1 !== preg_match(self::FORMAL_ADDRESS, $t)) : null,
+            // actionRequired must match the steps, and an amount to pay always needs a step.
+            self::ACTIONS_CONSISTENT => $e->actionRequired === ([] !== $e->actions) && (null === $e->amount || [] !== $e->actions),
             self::MIDDLE_DOTS => $german && ExplanationStyle::EasyLanguage === $result->style
                 ? array_any($prose, static fn (string $t): bool => str_contains($t, '·'))
                 : null,

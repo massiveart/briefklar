@@ -49,6 +49,12 @@ final class ExplanationRulesTest extends TestCase
         yield 'sie (they) lower case' => [['summary' => 'Die Stadt sagt, sie will 36,00 Euro.'], R::INFORMAL_ADDRESS, true];
         yield 'formal address not checked in English' => [['language' => ExplanationLanguage::English, 'summary' => 'Sie means you.'], R::INFORMAL_ADDRESS, null];
 
+        yield 'actions consistent' => [[], R::ACTIONS_CONSISTENT, true];
+        yield 'steps but not required (qwen3:8b, 12.11.2026)' => [['actionRequired' => false], R::ACTIONS_CONSISTENT, false];
+        yield 'required without steps' => [['actions' => []], R::ACTIONS_CONSISTENT, false];
+        yield 'amount without steps' => [['actionRequired' => false, 'actions' => []], R::ACTIONS_CONSISTENT, false];
+        yield 'nothing to do, nothing to pay' => [['actionRequired' => false, 'actions' => [], 'amount' => null], R::ACTIONS_CONSISTENT, true];
+
         yield 'middle dots only for easy German' => [[], R::MIDDLE_DOTS, null];
         yield 'easy German with middle dot' => [['style' => ExplanationStyle::EasyLanguage, 'summary' => 'Du musst die Park·gebühr zahlen.'], R::MIDDLE_DOTS, true];
         yield 'easy German without middle dot' => [['style' => ExplanationStyle::EasyLanguage], R::MIDDLE_DOTS, false];
@@ -83,12 +89,17 @@ final class ExplanationRulesTest extends TestCase
         $language = $c['language'] ?? ExplanationLanguage::German;
         \assert($style instanceof ExplanationStyle && $language instanceof ExplanationLanguage);
 
+        $actionRequired = $c['actionRequired'] ?? true;
+        /** @var list<string> $actions */
+        $actions = $c['actions'] ?? ['Bezahle 36,00 Euro.'];
+        \assert(\is_bool($actionRequired));
+
         $explanation = new LetterExplanation(
             $sender,
             'Du sollst eine Parkgebühr zahlen.',
             $summary,
-            true,
-            ['Bezahle 36,00 Euro.'],
+            $actionRequired,
+            $actions,
             'binnen vier Wochen ab Ausstellung – Der Betrag von 36,00 Euro ist binnen vier Wochen ab Ausstellung zu bezahlen (§ 7 Abs. 1 BspG).',
             $amount,
             $references,

@@ -148,6 +148,17 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('.deadline .warning', 'nicht im Brief gefunden');
     }
 
+    public function testShowsStepsEvenWhenTheModelSaysNothingIsRequired(): void
+    {
+        $client = self::createClient();
+        // Canned answer 02: actionRequired false next to a payment step.
+        $this->uploadText($client, PdfFixtureFactory::letter('02-finanzamt-vorschreibung'));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.actions', 'Überweise 1.245,00 Euro');
+        self::assertSelectorTextNotContains('main', 'Du musst nichts tun');
+    }
+
     public function testShowsFriendlyErrorWhenProviderFails(): void
     {
         $client = self::createClient();
