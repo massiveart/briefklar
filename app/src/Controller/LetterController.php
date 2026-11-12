@@ -9,6 +9,7 @@ use App\Explanation\ExplanationFailedException;
 use App\Explanation\ExplanationLanguage;
 use App\Explanation\ExplanationStyle;
 use App\Explanation\LetterExplainer;
+use App\Explanation\ProviderSetup;
 use App\Extraction\ExtractionChain;
 use App\Extraction\ExtractionFailedException;
 use App\Extraction\UnsupportedDocumentException;
@@ -34,6 +35,7 @@ final class LetterController extends AbstractController
     public function __construct(
         private readonly ExtractionChain $extraction,
         private readonly LetterExplainer $explainer,
+        private readonly ProviderSetup $providerSetup,
         private readonly TranslatorInterface $translator,
         private readonly LoggerInterface $logger,
         private readonly PaymentQrCode $paymentQr,
@@ -90,7 +92,10 @@ final class LetterController extends AbstractController
             }
         }
 
-        return $this->render('letter/upload.html.twig', ['form' => $form], new Response(status: $form->isSubmitted() ? 422 : 200));
+        return $this->render('letter/upload.html.twig', [
+            'form' => $form,
+            'missing_provider_key' => $this->providerSetup->missingKey(),
+        ], new Response(status: $form->isSubmitted() ? 422 : 200));
     }
 
     private function paymentQrSvg(ExplainedLetter $explained): ?string
