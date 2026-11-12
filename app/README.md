@@ -116,9 +116,11 @@ claude mcp add briefklar -- docker compose -f /path/to/briefklar/compose.yaml ru
 # Claude Code, HTTP against the running app (docker compose up -d); set MCP_LETTER_DIR in app/.env.local for the file tool
 claude mcp add --transport http briefklar http://localhost:8080/mcp
 
-# MCP Inspector: connect to http://localhost:8080/mcp (Streamable HTTP)
+# MCP Inspector: add a server, transport streamable-http, URL http://localhost:8080/mcp
 npx @modelcontextprotocol/inspector
 ```
+
+With a local model an explanation takes 30 to 70 seconds (the first call loads the model). The explain tools send a progress notification after each step (reading, then redacting and explaining), which clients that reset their timeout on progress honour; the model call itself is one step. The MCP Inspector stops at 60 seconds by default: raise its *Request Timeout* (server settings → Timeouts) to 180000 ms for a cold model.
 
 Claude Desktop (`claude_desktop_config.json`):
 

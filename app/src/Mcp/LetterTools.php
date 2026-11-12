@@ -21,8 +21,10 @@ use Briefklar\PiiShield\Exception\ExceptionInterface as PiiShieldException;
 use Briefklar\PiiShield\PiiShieldInterface;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Mcp\Exception\ClientException;
 use Mcp\Exception\ToolCallException;
 use Mcp\Schema\ToolAnnotations;
+use Mcp\Server\ClientGateway;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mime\MimeTypes;
 
@@ -32,6 +34,10 @@ use Symfony\Component\Mime\MimeTypes;
  * Expected failures (letter not allowed, unreadable, provider down) become ToolCallException, which the
  * client receives as a tool result with isError instead of a protocol error. Messages never contain
  * letter content, and nothing of the letter is logged.
+ *
+ * OCR plus a local model take about a minute, which is the default request timeout of some clients
+ * (MCP Inspector). The explain tools therefore send progress notifications between the steps when the
+ * client asked for them; the SDK injects ClientGateway and leaves it out of the input schema.
  */
 final readonly class LetterTools
 {
@@ -49,8 +55,10 @@ final readonly class LetterTools
                     'summary' => ['type' => 'string'],
                     'actionRequired' => ['type' => 'boolean'],
                     'actions' => ['type' => 'array', 'items' => ['type' => 'string']],
-                    'deadline' => ['type' => ['string', 'null'], 'description' => 'As stated in the letter, never computed.'],
-                    'amount' => ['type' => ['string', 'null']],
+                    // anyOf instead of "type": ["string", "null"]: clients that map schemas onto a single-type
+                    // dialect (e.g. Gemini function declarations) reject type arrays (MCP Inspector warning).
+                    'deadline' => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'description' => 'As stated in the letter, never computed.'],
+                    'amount' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
                     'legalReferences' => ['type' => 'array', 'items' => ['type' => 'string']],
                     'questionsToAsk' => ['type' => 'array', 'items' => ['type' => 'string']],
                 ],
@@ -98,6 +106,7 @@ final readonly class LetterTools
         #[Schema(description: 'File name relative to the letter folder, e.g. "strafverfuegung.pdf".')] string $path,
         #[Schema(description: 'standard, or easy_language for very short sentences ("Leichte Sprache").', enum: ['standard', 'easy_language'])] string $style = 'standard',
         #[Schema(description: 'Language of the explanation.', enum: ['de', 'en'])] string $language = 'de',
+        ?ClientGateway $client = null,
     ): array {
         // Over HTTP, PHP's 30 s limit would cut off OCR and a local model (issue seen with Claude Code).
         $this->timeLimit->apply();
@@ -107,12 +116,15 @@ final readonly class LetterTools
             throw new ToolCallException($e->getMessage(), previous: $e);
         }
 
+        self::progress($client, 0, 'Reading the letter');
         try {
             $letter = $this->extraction->extract($file, (string) (new MimeTypes())->guessMimeType($file));
         } catch (UnsupportedDocumentException|ExtractionFailedException $e) {
             $this->logger->warning('MCP letter extraction failed: {reason}', ['reason' => $e->getMessage()]);
             throw new ToolCallException('The letter could not be read. Try a sharper scan or a PDF.', previous: $e);
         }
+
+        self::progress($client, 1, 'Redacting personal data and explaining the letter');
 
         return $this->explained(fn (): ExplainedLetter => $this->placeholderExplainer->explain($letter, self::style($style), self::language($language)));
     }
@@ -131,12 +143,14 @@ final readonly class LetterTools
         #[Schema(description: 'Full text of the letter.')] string $text,
         #[Schema(description: 'standard, or easy_language for very short sentences ("Leichte Sprache").', enum: ['standard', 'easy_language'])] string $style = 'standard',
         #[Schema(description: 'Language of the explanation.', enum: ['de', 'en'])] string $language = 'de',
+        ?ClientGateway $client = null,
     ): array {
         if ('' === trim($text)) {
             throw new ToolCallException('The letter text is empty.');
         }
         $this->timeLimit->apply();
         $letter = new ExtractedText($text, ExtractionMethod::PlainText);
+        self::progress($client, 1, 'Redacting personal data and explaining the letter');
 
         return $this->explained(fn (): ExplainedLetter => $this->explainer->explain($letter, self::style($style), self::language($language)));
     }
@@ -189,6 +203,18 @@ final readonly class LetterTools
             ],
             'notice' => self::NOTICE,
         ];
+    }
+
+    /**
+     * Two steps: reading (file tool only) and explaining. A notification that cannot be delivered must not
+     * fail the explanation; ClientGateway sends nothing when the client did not ask for progress.
+     */
+    private static function progress(?ClientGateway $client, int $step, string $message): void
+    {
+        try {
+            $client?->progress($step, 2, $message);
+        } catch (ClientException) {
+        }
     }
 
     private static function style(string $style): ExplanationStyle

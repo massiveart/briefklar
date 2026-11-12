@@ -10,8 +10,14 @@ use App\Tests\Support\FailingDetector;
 use App\Tests\Support\PdfFixtureFactory;
 use App\Tests\Support\ScriptedPlatform;
 use Mcp\Exception\ToolCallException;
+use Mcp\Schema\Notification\ProgressNotification;
+use Mcp\Server\ClientGateway;
+use Mcp\Server\Protocol;
+use Mcp\Server\Session\SessionInterface;
+use Mcp\Server\Suspension\NotificationSuspension;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * The MCP tools against the real agent pipeline (pii-shield included) and ScriptedPlatform, which records
@@ -89,6 +95,30 @@ final class LetterToolsTest extends KernelTestCase
         } finally {
             set_time_limit(0); // the CLI default, for the following tests
         }
+    }
+
+    public function testReportsProgressBetweenTheSteps(): void
+    {
+        // OCR plus a local model take about a minute, the default request timeout of the MCP Inspector.
+        // The SDK's ClientGateway suspends the fiber per notification so the transport can stream it.
+        $session = self::createStub(SessionInterface::class);
+        $session->method('getId')->willReturn(Uuid::v4());
+        $session->method('get')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => Protocol::SESSION_ACTIVE_REQUEST_META === $key ? ['progressToken' => 'letter-1'] : $default);
+        $tools = $this->tools();
+
+        $fiber = new \Fiber(static fn (): array => $tools->explainLetterFile('strafverfuegung.pdf', client: new ClientGateway($session)));
+        $sent = [];
+        for ($suspended = $fiber->start(); !$fiber->isTerminated(); $suspended = $fiber->resume()) {
+            self::assertInstanceOf(NotificationSuspension::class, $suspended);
+            self::assertInstanceOf(ProgressNotification::class, $suspended->notification);
+            $sent[] = [$suspended->notification->progressToken, $suspended->notification->progress, $suspended->notification->total, $suspended->notification->message];
+        }
+
+        self::assertSame([
+            ['letter-1', 0.0, 2.0, 'Reading the letter'],
+            ['letter-1', 1.0, 2.0, 'Redacting personal data and explaining the letter'],
+        ], $sent);
+        self::assertSame('110,00 Euro', $fiber->getReturn()['explanation']['amount']);
     }
 
     public function testRedactTextReturnsPlaceholdersAndTypesOnly(): void
