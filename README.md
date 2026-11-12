@@ -17,7 +17,7 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 
 ## Quickstart (target: 5 minutes)
 
-Needs Docker and a [Hugging Face access token](https://huggingface.co/settings/tokens) that may call Inference Providers.
+Needs Docker and a [Hugging Face access token](https://huggingface.co/settings/tokens) that may call Inference Providers. OCR and redaction run locally in the container; only the redacted text, with placeholders instead of names, addresses and numbers, goes to the provider.
 
 ```bash
 git clone https://github.com/massiveart/briefklar.git && cd briefklar
@@ -26,7 +26,7 @@ docker compose up -d                                        # first start instal
 open http://localhost:8080
 ```
 
-Synthetic letters to try are in `fixtures/letters` (text files; save one as PDF or take a photo of a printout). Without a key the upload page says what is missing. `docker compose logs -f app` shows the first start.
+Synthetic letters to try are in `fixtures/letters` (text files; save one as PDF or take a photo of a printout). Without a key the upload page says what is missing. `docker compose logs -f app` shows the first start. On Linux, `app/vendor/` then belongs to root, because Composer runs as root in the container; `sudo chown -R $USER app/vendor` if that gets in the way.
 
 **Fully local, no provider at all:** the explanation runs on Ollama.
 
