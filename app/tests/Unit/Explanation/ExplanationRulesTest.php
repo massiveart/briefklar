@@ -55,6 +55,9 @@ final class ExplanationRulesTest extends TestCase
         yield 'amount without steps' => [['actionRequired' => false, 'actions' => []], R::ACTIONS_CONSISTENT, false];
         yield 'nothing to do, nothing to pay' => [['actionRequired' => false, 'actions' => [], 'amount' => null], R::ACTIONS_CONSISTENT, true];
 
+        yield 'no invented dates' => [[], R::NO_INVENTED_DATES, true];
+        yield 'computed date in a step (qwen3:8b, 12.11.2026)' => [['inventedDates' => ['12.11.2026']], R::NO_INVENTED_DATES, false];
+
         yield 'middle dots only for easy German' => [[], R::MIDDLE_DOTS, null];
         yield 'easy German with middle dot' => [['style' => ExplanationStyle::EasyLanguage, 'summary' => 'Du musst die Park·gebühr zahlen.'], R::MIDDLE_DOTS, true];
         yield 'easy German without middle dot' => [['style' => ExplanationStyle::EasyLanguage], R::MIDDLE_DOTS, false];
@@ -80,6 +83,8 @@ final class ExplanationRulesTest extends TestCase
         $questions = $c['questions'] ?? ['Bis wann gilt die Ausstellung?'];
         /** @var list<string> $invented */
         $invented = $c['invented'] ?? [];
+        /** @var list<string> $inventedDates */
+        $inventedDates = $c['inventedDates'] ?? [];
         $amount = \array_key_exists('amount', $c) ? $c['amount'] : '36,00 Euro';
         \assert(null === $amount || \is_string($amount));
         $sender = $c['sender'] ?? 'Magistrat der Stadt Beispielstadt';
@@ -106,6 +111,6 @@ final class ExplanationRulesTest extends TestCase
             $questions,
         );
 
-        return new ExplainedLetter($explanation, (bool) ($c['deadlineStated'] ?? true), ExtractionMethod::PdfTextLayer, $style, $language, $invented);
+        return new ExplainedLetter($explanation, (bool) ($c['deadlineStated'] ?? true), ExtractionMethod::PdfTextLayer, $style, $language, $invented, $inventedDates);
     }
 }

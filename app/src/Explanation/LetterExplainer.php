@@ -32,6 +32,7 @@ final readonly class LetterExplainer
         #[Autowire(service: 'ai.agent.letter_explainer_easy')]
         private AgentInterface $easyLanguageAgent,
         private DeadlineCheck $deadlineCheck,
+        private ProseDateCheck $proseDateCheck,
         private PaymentDetailsExtractor $paymentExtractor,
         #[Autowire('%env(bool:PAYMENT_QR)%')]
         private bool $paymentQr,
@@ -78,6 +79,15 @@ final readonly class LetterExplainer
         // From the letter text only, never from the answer alone (see PaymentDetailsExtractor).
         $payment = $this->paymentQr ? $this->paymentExtractor->extract($letter->text, $explanation) : null;
 
-        return new ExplainedLetter($explanation, $deadlineStated, $letter->method, $style, $language, $inventedPlaceholders, $payment);
+        return new ExplainedLetter(
+            $explanation,
+            $deadlineStated,
+            $letter->method,
+            $style,
+            $language,
+            $inventedPlaceholders,
+            $this->proseDateCheck->datesNotInLetter($explanation, $letter->text),
+            $payment,
+        );
     }
 }
