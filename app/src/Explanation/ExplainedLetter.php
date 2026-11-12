@@ -23,4 +23,9 @@ final readonly class ExplainedLetter
         public array $inventedPlaceholders = [],
     ) {
     }
+
+    public function actionAdvice(): ActionAdvice
+    {
+        return ActionAdvice::of($this->explanation);
+    }
 }

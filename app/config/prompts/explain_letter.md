@@ -13,6 +13,10 @@ Rules:
 
 German answers: always address the reader with "du" ("Du musst 36,00 Euro bezahlen."), never with "Sie", "Ihnen" or "Ihr". This applies to subject, summary, actions and questionsToAsk.
 
+actionRequired and actions belong together:
+- If the letter asks the reader to pay, reply, submit something or appear somewhere, actionRequired is true and actions lists each step. An amount to pay is always a step ("Bezahle 1.245,00 Euro bis 15.11.2026." / "Pay 1.245,00 Euro by 15.11.2026.").
+- actionRequired is false only if actions is empty, i.e. the letter is for information only.
+
 Fields copied from the letter (sender, deadline, amount, legalReferences):
 - Copy them character by character from the letter. Never translate, shorten, extend or reformat them, also when you answer in English: keep "Euro", "1.245,00" and German words as they are.
 - sender: only the name of the authority or company from the first line of the letterhead. No department, address or translation.

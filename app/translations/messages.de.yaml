@@ -24,6 +24,7 @@ letter:
         summary: Worum geht es?
         actions: Was musst du tun?
         no_action: Du musst nichts tun.
+        action_unclear: Wir konnten nicht sicher erkennen, was du tun musst. Lies im Brief nach, ob du etwas bezahlen, beantworten oder einreichen musst.
         questions: Was du nachfragen kannst
         legal_references: Genannte Rechtsgrundlagen
         original_wording: Frist, Betrag und Rechtsgrundlagen sind wörtlich aus dem Brief übernommen.

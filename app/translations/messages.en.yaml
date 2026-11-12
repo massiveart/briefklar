@@ -24,6 +24,7 @@ letter:
         summary: What is it about?
         actions: What do you have to do?
         no_action: You do not have to do anything.
+        action_unclear: We could not tell for sure what you have to do. Check the letter for anything you have to pay, answer or hand in.
         questions: What you can ask
         legal_references: Legal provisions cited
         original_wording: Deadline, amount and legal provisions are quoted as written in the letter.
