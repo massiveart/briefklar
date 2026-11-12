@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Explanation\ExplainedLetter;
 use App\Explanation\ExplanationFailedException;
 use App\Explanation\ExplanationLanguage;
 use App\Explanation\ExplanationStyle;
@@ -13,6 +14,7 @@ use App\Extraction\ExtractionFailedException;
 use App\Extraction\UnsupportedDocumentException;
 use App\Form\LetterUpload;
 use App\Form\LetterUploadType;
+use App\Payment\PaymentQrCode;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -34,6 +36,7 @@ final class LetterController extends AbstractController
         private readonly LetterExplainer $explainer,
         private readonly TranslatorInterface $translator,
         private readonly LoggerInterface $logger,
+        private readonly PaymentQrCode $paymentQr,
         #[Autowire('%env(int:EXPLANATION_TIMEOUT)%')]
         private readonly int $explanationTimeout,
     ) {
@@ -73,7 +76,10 @@ final class LetterController extends AbstractController
                     ExplanationLanguage::from($request->getLocale()),
                 );
 
-                return $this->render('letter/result.html.twig', ['result' => $explained]);
+                return $this->render('letter/result.html.twig', [
+                    'result' => $explained,
+                    'payment_qr' => $this->paymentQrSvg($explained),
+                ]);
             } catch (UnsupportedDocumentException|ExtractionFailedException $e) {
                 // Log the reason, never the content.
                 $this->logger->warning('Letter extraction failed: {reason}', ['reason' => $e->getMessage(), 'mime' => $file->getMimeType()]);
@@ -85,5 +91,21 @@ final class LetterController extends AbstractController
         }
 
         return $this->render('letter/upload.html.twig', ['form' => $form], new Response(status: $form->isSubmitted() ? 422 : 200));
+    }
+
+    private function paymentQrSvg(ExplainedLetter $explained): ?string
+    {
+        if (null === $explained->payment) {
+            return null;
+        }
+
+        try {
+            return $this->paymentQr->svg($explained->payment);
+        } catch (\InvalidArgumentException $e) {
+            // Does not fit the EPC limits: no code rather than a wrong one. No payment data in the log.
+            $this->logger->notice('Payment QR code skipped: {reason}', ['reason' => $e->getMessage()]);
+
+            return null;
+        }
     }
 }

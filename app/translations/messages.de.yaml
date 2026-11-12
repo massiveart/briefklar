@@ -25,6 +25,16 @@ letter:
         summary: Worum geht es?
         actions: Was musst du tun?
         no_action: Du musst nichts tun.
+        payment:
+            title: Mit der Banking-App bezahlen
+            intro: Scanne den Code mit deiner Banking-App, zum Beispiel über „Zahlen mit Code“ oder „QR-Code scannen“. Die Überweisung ist dann ausgefüllt. Abschicken musst du sie selbst.
+            qr_label: QR-Code für die Überweisung
+            payee: Empfänger
+            amount: Betrag
+            amount_missing: Bitte selbst eintragen, siehe Brief
+            reference: Verwendungszweck
+            reference_missing: Im Brief nicht angegeben
+            check: Vergleiche Empfänger, IBAN und Betrag in deiner Banking-App mit dem Brief, bevor du die Überweisung abschickst.
         action_unclear: Wir konnten nicht sicher erkennen, was du tun musst. Lies im Brief nach, ob du etwas bezahlen, beantworten oder einreichen musst.
         questions: Was du nachfragen kannst
         legal_references: Genannte Rechtsgrundlagen
