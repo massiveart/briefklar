@@ -17,14 +17,26 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 
 ## Quickstart (target: 5 minutes)
 
+Needs Docker and a [Hugging Face access token](https://huggingface.co/settings/tokens) that may call Inference Providers.
+
 ```bash
-git clone <repo-url> briefklar && cd briefklar
-cp app/.env.dist app/.env.local      # add one provider key, e.g. HUGGINGFACE_API_KEY
-docker compose up -d
+git clone https://github.com/massiveart/briefklar.git && cd briefklar
+echo "HUGGINGFACE_API_KEY=hf_your_token" >> app/.env.local   # git-ignored, never committed
+docker compose up -d                                        # first start installs dependencies (about a minute)
 open http://localhost:8080
 ```
 
-Fully offline variant with a local model: `docker compose --profile local up -d` (uses Ollama).
+Synthetic letters to try are in `fixtures/letters` (text files; save one as PDF or take a photo of a printout). Without a key the upload page says what is missing. `docker compose logs -f app` shows the first start.
+
+**Fully local, no provider at all:** the explanation runs on Ollama.
+
+```bash
+printf "AI_PLATFORM=ollama\nAI_MODEL=qwen3:8b\n" >> app/.env.local
+docker compose --profile local up -d
+docker compose exec ollama ollama pull qwen3:8b               # about 5 GB, once
+```
+
+Docker on macOS has no GPU access, so the model runs on the CPU and is slow. Faster on a Mac: run Ollama natively (`brew install ollama && brew services start ollama && ollama pull qwen3:8b`), add `OLLAMA_ENDPOINT=http://host.docker.internal:11434` to `app/.env.local` and start without the profile. Details in [app/README.md](app/README.md).
 
 ## Development
 

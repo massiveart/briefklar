@@ -1,6 +1,8 @@
 services:
   app:
     build: .
+    # The checkout is mounted over the image's /srv, so a fresh clone has no vendor/: install it on the first start.
+    command: ["sh", "-c", "[ -f vendor/autoload_runtime.php ] || composer install --no-interaction --prefer-dist; exec frankenphp run --config /etc/frankenphp/Caddyfile --adapter caddyfile"]
     ports:
       - "8080:8080"
     env_file:
