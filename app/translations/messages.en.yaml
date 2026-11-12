@@ -24,6 +24,16 @@ letter:
         summary: What is it about?
         actions: What do you have to do?
         no_action: You do not have to do anything.
+        payment:
+            title: Pay with your banking app
+            intro: Scan the code with your banking app, for example with "Pay with code" or "Scan QR code". The transfer is then filled in. You send it yourself.
+            qr_label: QR code for the bank transfer
+            payee: Payee
+            amount: Amount
+            amount_missing: Please enter it yourself, see the letter
+            reference: Payment reference
+            reference_missing: Not stated in the letter
+            check: Compare payee, IBAN and amount in your banking app with the letter before you send the transfer.
         action_unclear: We could not tell for sure what you have to do. Check the letter for anything you have to pay, answer or hand in.
         questions: What you can ask
         legal_references: Legal provisions cited
