@@ -2,7 +2,8 @@ services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      # This machine only: the app and its MCP endpoint (/mcp) spend the provider key and read MCP_LETTER_DIR.
+      - "127.0.0.1:8080:8080"
     env_file:
       - path: app/.env.local
         required: false
