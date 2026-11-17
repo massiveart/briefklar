@@ -58,8 +58,11 @@ final class LetterUploadTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('#deadline-heading', 'Deadline');
-        // the deadline stays verbatim as written in the letter, so it can be checked against the original
-        self::assertSelectorTextContains('.deadline__value', 'binnen zwei Wochen ab Zustellung');
+        // the deadline stays verbatim as written in the letter, so it can be checked against the original;
+        // the sentence it came from is shown apart, as a quote, not as part of the deadline
+        self::assertSelectorTextSame('.deadline__value', 'binnen zwei Wochen ab Zustellung');
+        self::assertSelectorTextContains('.deadline__source', 'In the letter');
+        self::assertSelectorTextContains('.deadline__source', 'Bitte überweisen Sie den Betrag');
         self::assertSelectorTextContains('.disclaimer', 'not legal advice');
         $requests = self::getContainer()->get(ScriptedPlatform::class)->requests();
         self::assertCount(1, $requests);
@@ -145,7 +148,8 @@ final class LetterUploadTest extends WebTestCase
         $this->uploadText($client, PdfFixtureFactory::letter('02-finanzamt-vorschreibung'));
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.deadline__value', '2026-11-30');
+        // ISO date from the model, shown the way the letter writes dates
+        self::assertSelectorTextSame('.deadline__value', '30.11.2026');
         self::assertSelectorTextContains('.deadline .warning', 'nicht im Brief gefunden');
     }
 

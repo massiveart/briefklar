@@ -28,6 +28,7 @@ letter:
         easy_language: In Leichter Sprache
         deadline: Frist
         no_deadline: Im Brief steht keine Frist.
+        deadline_source: Im Brief
         deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.
         invented_placeholders: Die Erklärung nennt Platzhalter, die nicht für Angaben aus deinem Brief stehen (%placeholders%). Diese Stellen sind unzuverlässig, bitte prüfe sie im Original.
         invented_dates: Die Erklärung nennt Daten, die so nicht im Brief stehen (%dates%). Sie wurden vermutlich berechnet oder geraten. Maßgeblich ist nur, was im Original steht.

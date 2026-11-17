@@ -358,6 +358,9 @@ form ul li::before {
 }
 .warning .icon { margin-top: 2px; }
 .deadline .warning { margin-top: var(--space-2); }
+/* The sentence the deadline came from: quieter than the deadline, to compare with the original. */
+.deadline .deadline__source { margin-top: var(--space-2); font-size: 14px; color: var(--color-text-muted); }
+.deadline__source-label { font-weight: 600; }
 .placeholder-note, .date-note { margin: 0 0 var(--space-6); }
 
 .amount {
