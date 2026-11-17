@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Explanation;
 
 use App\Extraction\ExtractedText;
+use App\Payment\PaymentDetailsExtractor;
 use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
 use Briefklar\PiiShield\Exception\ExceptionInterface as PiiShieldException;
 use Symfony\AI\Agent\AgentInterface;
@@ -31,6 +32,10 @@ final readonly class LetterExplainer
         #[Autowire(service: 'ai.agent.letter_explainer_easy')]
         private AgentInterface $easyLanguageAgent,
         private DeadlineCheck $deadlineCheck,
+        private ProseDateCheck $proseDateCheck,
+        private PaymentDetailsExtractor $paymentExtractor,
+        #[Autowire('%env(bool:PAYMENT_QR)%')]
+        private bool $paymentQr,
     ) {
     }
 
@@ -71,6 +76,18 @@ final readonly class LetterExplainer
             ? array_values(array_filter($shieldReport['unknown_placeholders'], \is_string(...)))
             : [];
 
-        return new ExplainedLetter($explanation, $deadlineStated, $letter->method, $style, $language, $inventedPlaceholders);
+        // From the letter text only, never from the answer alone (see PaymentDetailsExtractor).
+        $payment = $this->paymentQr ? $this->paymentExtractor->extract($letter->text, $explanation) : null;
+
+        return new ExplainedLetter(
+            $explanation,
+            $deadlineStated,
+            $letter->method,
+            $style,
+            $language,
+            $inventedPlaceholders,
+            $this->proseDateCheck->datesNotInLetter($explanation, $letter->text),
+            $payment,
+        );
     }
 }

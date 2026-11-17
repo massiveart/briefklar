@@ -25,6 +25,8 @@ Symfony application: upload, local OCR, explanation agent, UI, MCP server.
 
 `tests/Functional/PiiProtectionTest.php` uploads the regex fixture letters (01, 02) as text PDF and as scan, in both explanation styles, and checks the recorded provider request against `../fixtures/letters/*.expected.json`: no PII value (multi-line addresses line by line) may appear, every `must_survive` value must.
 
+**Payment QR code (optional, `PAYMENT_QR=1`):** if a letter asks for a bank transfer, the result page shows an EPC QR code (EPC069-12 v3.0, "GiroCode", "Zahlen mit Code" in Austrian banking apps) that fills in the transfer. Off by default: it is the one feature where a wrong value could cost money. `App\Payment\PaymentDetailsExtractor` reads every field from the letter text itself, never from the model answer alone: exactly one IBAN with a valid checksum (fixed length per country), the payee only if the answer's sender is written in the letter, the amount only if the letter states exactly one euro amount and the answer names the same, the reference only after an explicit "Verwendungszweck:" (an ISO 11649 `RF…` reference goes into the structured field). Whatever is uncertain stays empty; without an IBAN there is no code. `EpcPayload` builds version 002 (no BIC, UTF-8, LF, at most 331 bytes); `PaymentQrCode` renders it locally as SVG with `bacon/bacon-qr-code` (error correction M, no ECI header), so no QR service sees the data. The page always tells the user to compare payee, IBAN and amount with the letter. The Austrian "Zahlen mit Code" frame is not drawn (the PSA guideline was not available).
+
 ## Text extraction (`src/Extraction/`)
 
 Everything runs locally, nothing is sent anywhere and nothing is stored (see `../docs/adr/0002-local-ocr-before-redaction.md`).
@@ -64,11 +66,15 @@ make console c="app:evaluate-explanations"            # all fixtures, both style
 make console c="app:evaluate-explanations 01-strafverfuegung --style=easy_language --language=de -v"
 ```
 
-Runs the synthetic fixture letters through the configured provider (pii-shield included, the provider sees placeholders only) and checks each answer with `ExplanationRules`: deadline verified by `DeadlineCheck`, amount, legal references and sender copied verbatim, no placeholder left, "du" instead of "Sie" in German, middle dots in Leichte Sprache. `-v` prints the answers. It exits non-zero if any rule is broken, so prompt changes can be compared by numbers. Model answers vary between runs; run it more than once before drawing conclusions.
+Runs the synthetic fixture letters through the configured provider (pii-shield included, the provider sees placeholders only) and checks each answer with `ExplanationRules`: deadline verified by `DeadlineCheck`, amount, legal references and sender copied verbatim, no placeholder left, "du" instead of "Sie" in German, middle dots in Leichte Sprache, `actionRequired` matching the steps, no date in the free text that is not in the letter. `-v` prints the answers. It exits non-zero if any rule is broken, so prompt changes can be compared by numbers. Model answers vary between runs; run it more than once before drawing conclusions.
 
 With `qwen3:8b` on a MacBook (11.11.2026), the "fields copied from the letter" section with a worked example in both prompts raised the result from 23 of 46 to 44 of 46 kept rules; middle dots in Leichte Sprache stay unreliable with a model of this size.
 
+`ActionAdvice` decides what the result page says under "What do you have to do?". Models answer `actionRequired` and `actions` inconsistently (`qwen3:8b` once returned `actionRequired: false` next to "Überweise 1.245,00 Euro"), so the steps are shown whenever there are any, and "you do not have to do anything" appears only if there are no steps, nothing is required and there is neither an amount nor a deadline. Otherwise the page says it could not tell and points to the letter. Both prompts state the rule, and `ExplanationRules` checks it as "actions consistent".
+
 `DeadlineCheck` verifies that the reported deadline is written in the letter (verbatim period, or an ISO date that appears as `28.10.2026`, `5.1.2027` or `14. November 2026`). If not, the result page shows a warning instead of silently trusting the model.
+
+`ProseDateCheck` does the same for the free text: every calendar date in subject, summary, actions and questions (German or English, numeric, with month name or ISO; `CalendarDates` finds them) must appear in the letter as the same day. `qwen3:8b` once turned "binnen zwei Wochen ab Zustellung" into the step "Bezahle 110,00 Euro bis 12.11.2026 …". The result page leaves the text as it is and shows a warning naming those dates; `ExplanationRules` checks it as "no invented dates", and both prompts forbid dates that are not in the letter in any field. Dates without a year ("bis 12.11.") are not recognised.
 
 Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in `config/services_test.yaml`) with canned answers from `tests/Fixtures/explanations/`. The agent pipeline (system prompt, processors, structured output) runs for real, and every provider request is recorded, so a test can check what would leave the server.
 
@@ -85,6 +91,57 @@ The upload page offers the synthetic letters from `../fixtures/letters` for down
 The app is available in German (`/de`) and English (`/en`); `/` redirects by `Accept-Language` (fallback German). The UI language is also the language of the explanation: the English page explains a German letter in English ("Easy Read" instead of "Leichte Sprache"). Sender, deadline, amount and legal references stay in the letter's original wording, so they can be found in the original and `DeadlineCheck` keeps working. The answer language is sent after `</letter>`, outside the part the model treats as data.
 
 `ExplanationLanguage` is the single list of languages (route requirement, switcher, model instruction). Adding one: a case there, `translations/messages.<locale>.yaml` and `validators.<locale>.yaml`, and the locale in `enabled_locales` (`config/packages/translation.yaml`).
+
+## MCP server (`src/Mcp/`)
+
+The app is also an MCP server, `briefklar` (`config/packages/mcp.yaml`, `symfony/mcp-bundle` 1.0.0-BETA1, `mcp/sdk` 0.9.0, pinned exactly). Same agents, prompts and pii-shield as the web app.
+
+| Tool | Input | Returns | What the client's model sees |
+|---|---|---|---|
+| `explain_letter_file` | `path` in the letter folder, `style`, `language` | explanation + checks, **with placeholders** | never the letter; deadline, amount and legal references stay readable, names and account numbers are `⟦…⟧` |
+| `explain_letter` | `text`, `style`, `language` | explanation + checks, restored | the letter: the user already gave it to the client, so prefer `explain_letter_file` |
+| `redact_text` | `text` | redacted text and placeholder types, never the originals | placeholders only; no `restore_text`, the app keeps no mapping |
+
+Results come as `structuredContent` with an `outputSchema`, plus the same JSON as text. `checks` carries what the web page shows as warnings: deadline not found in the letter, invented dates or placeholders, unclear steps, read by OCR.
+
+- **Letter folder:** `explain_letter_file` reads only from `MCP_LETTER_DIR` (empty by default, then the tool says so), only PDF, PNG, JPG and TIFF, resolved with `realpath()` so `../` and symlinks leading outside are refused (`LetterDirectory`).
+- **Placeholders in the answer:** `PlaceholderExplainer` redacts the letter itself and sends the redacted text through the same shielded agent; pii-shield finds nothing left to redact and has nothing of its own to restore, so the placeholders stay. Every model call still passes the shield. As a safety net the answer is checked for every redacted original value and not returned if one shows up.
+- **HTTP (`/mcp`):** localhost only (`allowed_hosts`, and `compose.yaml` publishes the port on 127.0.0.1), JSON only and no foreign `Origin` except the MCP Inspector (`McpRequestGuard`), so a website cannot trigger a tool call.
+- **STDIO:** always with `--env=prod`, nothing else may write to stdout.
+- Expected failures (letter not allowed or unreadable, provider down, redaction failed) come back as a tool result with `isError`, never with letter content.
+
+Connect a client (paths are examples; the letter folder is mounted read-only):
+
+```bash
+# Claude Code, STDIO through Docker
+claude mcp add briefklar -- docker compose -f /path/to/briefklar/compose.yaml run --rm --no-deps -T \
+  -v ~/Briefe:/srv/letters:ro -e MCP_LETTER_DIR=/srv/letters app bin/console mcp:server briefklar --env=prod
+
+# Claude Code, HTTP against the running app (docker compose up -d); set MCP_LETTER_DIR in app/.env.local for the file tool
+claude mcp add --transport http briefklar http://localhost:8080/mcp
+
+# MCP Inspector: add a server, transport streamable-http, URL http://localhost:8080/mcp
+npx @modelcontextprotocol/inspector
+```
+
+With a local model an explanation takes 30 to 70 seconds (the first call loads the model). The explain tools send a progress notification after each step (reading, then redacting and explaining), which clients that reset their timeout on progress honour; the model call itself is one step. The MCP Inspector stops at 60 seconds by default: raise its *Request Timeout* (server settings → Timeouts) to 180000 ms for a cold model.
+
+Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "briefklar": {
+      "command": "docker",
+      "args": ["compose", "-f", "/path/to/briefklar/compose.yaml", "run", "--rm", "--no-deps", "-T",
+               "-v", "/Users/you/Briefe:/srv/letters:ro", "-e", "MCP_LETTER_DIR=/srv/letters",
+               "app", "bin/console", "mcp:server", "briefklar", "--env=prod"]
+    }
+  }
+}
+```
+
+Tests: `tests/Integration/Mcp/LetterToolsTest.php` (no PII to the provider or back to the client, refused paths, failures), `tests/Unit/Mcp/LetterDirectoryTest.php`, `tests/Functional/McpHttpTest.php` (Host, Origin and content-type checks).
 
 ## Development
 

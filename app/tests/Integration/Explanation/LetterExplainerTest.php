@@ -30,6 +30,7 @@ final class LetterExplainerTest extends KernelTestCase
         self::assertNotNull($result->explanation->deadline);
         self::assertStringStartsWith('binnen zwei Wochen ab Zustellung', $result->explanation->deadline);
         self::assertTrue($result->deadlineStatedInLetter);
+        self::assertSame([], $result->inventedDates);
         self::assertSame(ExtractionMethod::PdfTextLayer, $result->extractionMethod);
         self::assertSame(ExplanationStyle::Standard, $result->style);
     }

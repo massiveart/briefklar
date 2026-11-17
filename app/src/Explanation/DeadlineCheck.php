@@ -11,11 +11,6 @@ namespace App\Explanation;
  */
 final readonly class DeadlineCheck
 {
-    private const array MONTHS = [
-        1 => ['januar', 'jänner'], 2 => ['februar', 'feber'], 3 => ['märz'], 4 => ['april'], 5 => ['mai'], 6 => ['juni'],
-        7 => ['juli'], 8 => ['august'], 9 => ['september'], 10 => ['oktober'], 11 => ['november'], 12 => ['dezember'],
-    ];
-
     public function isStatedInLetter(string $deadline, string $letter): bool
     {
         // The model reports "<deadline> – <source sentence>"; only the deadline part is checked.
@@ -34,14 +29,10 @@ final readonly class DeadlineCheck
 
     private static function containsDate(string $letter, int $year, int $month, int $day): bool
     {
-        if (!checkdate($month, $day, $year) || str_contains($letter, \sprintf('%04d-%02d-%02d', $year, $month, $day))) {
-            return checkdate($month, $day, $year);
-        }
+        $iso = \sprintf('%04d-%02d-%02d', $year, $month, $day);
 
-        $numeric = \sprintf('/(?<!\d)0?%d\.\s?0?%d\.\s?%d(?!\d)/u', $day, $month, $year);
-        $written = \sprintf('/(?<!\d)0?%d\.\s*(?:%s)\s+%d(?!\d)/iu', $day, implode('|', self::MONTHS[$month]), $year);
-
-        return 1 === preg_match($numeric, $letter) || 1 === preg_match($written, $letter);
+        return checkdate($month, $day, $year)
+            && array_any(CalendarDates::in($letter), static fn (array $date): bool => $iso === $date['iso']);
     }
 
     private static function normalize(string $text): string

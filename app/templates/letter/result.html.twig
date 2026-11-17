@@ -20,6 +20,15 @@
         </p>
     {% endif %}
 
+    {% if result.inventedDates is not empty %}
+        {# ProseDateCheck: dates in the text that are not in the letter, usually computed from a period. The text itself is shown unchanged. #}
+        <p class="warning date-note" role="note">
+            {# Lucide "triangle-alert" #}
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <span>{{ 'letter.result.invented_dates'|trans({'%dates%': result.inventedDates|join(', ')}) }}</span>
+        </p>
+    {% endif %}
+
     <section class="deadline card {{ e.deadline is null ? 'deadline--none' : (result.deadlineStatedInLetter ? '' : 'deadline--unverified') }}" aria-labelledby="deadline-heading">
         <h2 id="deadline-heading">{{ 'letter.result.deadline'|trans }}</h2>
         {% if e.deadline is null %}
@@ -47,14 +56,49 @@
 
     <section class="result-section" aria-labelledby="actions-heading">
         <h2 id="actions-heading">{{ 'letter.result.actions'|trans }}</h2>
-        {% if e.actionRequired and e.actions is not empty %}
+        {# ActionAdvice: steps are always shown; "nothing to do" only when no field says otherwise. #}
+        {% set advice = result.actionAdvice.value %}
+        {% if advice == 'steps' %}
             <ol class="actions">
                 {% for action in e.actions %}<li><span>{{ action }}</span></li>{% endfor %}
             </ol>
+        {% elseif advice == 'unclear' %}
+            <p class="warning action-unclear" role="note">
+                {# Lucide "triangle-alert" #}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                <span>{{ 'letter.result.action_unclear'|trans }}</span>
+            </p>
         {% else %}
             <p>{{ 'letter.result.no_action'|trans }}</p>
         {% endif %}
     </section>
+
+    {% if payment_qr is defined and payment_qr and result.payment %}
+        {% set p = result.payment %}
+        {# Read from the letter text, not from the model answer (PaymentDetailsExtractor); rendered locally (PaymentQrCode). #}
+        <section class="result-section payment" aria-labelledby="payment-heading">
+            <h2 id="payment-heading">{{ 'letter.result.payment.title'|trans }}</h2>
+            <p>{{ 'letter.result.payment.intro'|trans }}</p>
+            <div class="payment__body">
+                <div class="payment-qr" role="img" aria-label="{{ 'letter.result.payment.qr_label'|trans }}">{{ payment_qr|raw }}</div>
+                <dl class="payment__details">
+                    <dt>{{ 'letter.result.payment.payee'|trans }}</dt>
+                    <dd>{{ p.payee }}</dd>
+                    <dt>IBAN</dt>
+                    <dd class="payment__iban">{{ p.formattedIban }}</dd>
+                    <dt>{{ 'letter.result.payment.amount'|trans }}</dt>
+                    <dd>{{ p.amountCents is null ? 'letter.result.payment.amount_missing'|trans : (p.amountCents / 100)|number_format(2, ',', '.') ~ ' Euro' }}</dd>
+                    <dt>{{ 'letter.result.payment.reference'|trans }}</dt>
+                    <dd>{{ p.reference ?? p.text ?? 'letter.result.payment.reference_missing'|trans }}</dd>
+                </dl>
+            </div>
+            <p class="warning" role="note">
+                {# Lucide "triangle-alert" #}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                <span>{{ 'letter.result.payment.check'|trans }}</span>
+            </p>
+        </section>
+    {% endif %}
 
     {% if e.questionsToAsk is not empty %}
         <section class="result-section" aria-labelledby="questions-heading">

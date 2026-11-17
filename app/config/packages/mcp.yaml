@@ -1,0 +1,24 @@
+# MCP server "briefklar" (docs/tasks/C-mcp-server.md, issue #64): explain_letter_file, explain_letter, redact_text.
+# STDIO: bin/console mcp:server briefklar --env=prod (nothing else may write to stdout)
+# HTTP:  /mcp on the app's port, localhost only; McpRequestGuard adds JSON-only and Origin checks.
+mcp:
+    servers:
+        briefklar:
+            name: briefklar
+            version: '1.0.0'
+            description: 'Explains official letters in plain language; personal data is redacted before any model sees the letter.'
+            instructions: >-
+                Prefer explain_letter_file: the server reads the letter from its letter folder, so the letter never
+                enters your context, and the answer keeps placeholders like ⟦PERSON_1⟧ instead of names or account
+                numbers. explain_letter takes the text itself; use it only for text the user already shared with you.
+                Deadlines, amounts and legal references are copied from the letter; never compute a deadline yourself.
+            registry: 'App\Mcp\'
+            transports:
+                stdio: true
+                http: true
+            http:
+                path: /mcp
+                allowed_hosts: ['localhost', '127.0.0.1']
+                # MCP Inspector (npx @modelcontextprotocol/inspector), kept in sync with App\EventSubscriber\McpRequestGuard.
+                allowed_origins: ['http://localhost:6274', 'http://127.0.0.1:6274']
+
