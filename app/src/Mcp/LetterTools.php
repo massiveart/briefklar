@@ -109,7 +109,8 @@ final readonly class LetterTools
         ?ClientGateway $client = null,
     ): array {
         // Over HTTP, PHP's 30 s limit would cut off OCR and a local model (issue seen with Claude Code).
-        $this->timeLimit->apply();
+        // PlaceholderExplainer redacts, then the shielded agent redacts again: two detection passes.
+        $this->timeLimit->apply(redactionPasses: 2);
         try {
             $file = $this->letters->resolve($path);
         } catch (LetterNotAllowedException $e) {
@@ -120,7 +121,8 @@ final readonly class LetterTools
         try {
             $letter = $this->extraction->extract($file, (string) (new MimeTypes())->guessMimeType($file));
         } catch (UnsupportedDocumentException|ExtractionFailedException $e) {
-            $this->logger->warning('MCP letter extraction failed: {reason}', ['reason' => $e->getMessage()]);
+            // The class only: a future message could name the file, and file names can be personal data.
+            $this->logger->warning('MCP letter extraction failed: {cause}', ['cause' => $e::class]);
             throw new ToolCallException('The letter could not be read. Try a sharper scan or a PDF.', previous: $e);
         }
 

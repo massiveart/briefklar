@@ -36,4 +36,4 @@ Bugs and rough edges found in Symfony AI and `mcp/sdk` during the hackathon. Eac
 - Expected: the bundle requires (or the recipe installs) a PSR-17 implementation, or the docs say to add one.
 - Actual: `Http\Discovery\Exception\NotFoundException: No PSR-17 server request factory found` from `McpController` via `PsrHttpFactory::createRequest()`. The Flex recipe of `php-http/discovery` adds `config/packages/http_discovery.yaml` pointing to `Http\Discovery\Psr17Factory`, and the bundle requires `php-http/discovery`, but nothing installs an implementation. STDIO works, so the problem shows up only on the first HTTP request.
 - Workaround: `composer require nyholm/psr7`.
-- Filed: not yet
+- Filed: no, fixed upstream in symfony/ai 80854de613 ("[MCP Bundle] Let php-http/discovery install a PSR-17 implementation", 27.10.2026) after 1.0.0-BETA1. Drop `nyholm/psr7` when we upgrade past BETA1.

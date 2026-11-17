@@ -40,7 +40,7 @@ final class McpRequestGuard
             return;
         }
 
-        if ('POST' === $request->getMethod() && !str_starts_with((string) $request->headers->get('Content-Type'), 'application/json')) {
+        if ('POST' === $request->getMethod() && !str_starts_with(strtolower((string) $request->headers->get('Content-Type')), 'application/json')) {
             $event->setResponse(new JsonResponse(['error' => 'Send JSON (Content-Type: application/json).'], 415));
         }
     }
