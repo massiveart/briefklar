@@ -13,6 +13,7 @@ letter:
         progress: We are reading your letter, removing personal data and having it explained. This can take up to a minute. Please do not reload the page.
         easy_language: Explanation in Easy Read
         easy_language_help: Very short sentences, simple words, difficult words are explained.
+        setup_missing: 'No language model set up yet: add %key% to app/.env.local or choose a local model with AI_PLATFORM=ollama (see README).'
     result:
         title: Explanation of your letter
         easy_language: In Easy Read
