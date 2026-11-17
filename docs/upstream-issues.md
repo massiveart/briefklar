@@ -26,3 +26,10 @@ Bugs and rough edges found in Symfony AI and `mcp/sdk` during the hackathon. Eac
 - Reproduction: an output processor wants to post-process string fields of an `ObjectResult` whose content is a readonly DTO (structured output).
 - Workaround: copy the object with `ReflectionClass::newInstanceWithoutConstructor()` and initialise properties from the declaring class scope.
 - Filed: no. On re-check this is not an upstream gap: for structured output, `StructuredOutput\ResultConverter` passes the raw JSON to `ObjectResult`, so `getText()` returns it. An output processor can restore the JSON and deserialize it again instead of using reflection. Our earlier note ("`getText()` is often null") holds only for other converters (e.g. Whisper, Mistral OCR), which are not structured output.
+
+## Docs: processors run once per call, not per tool round
+- Package / version: `symfony/ai-agent` 1.0.0-BETA1 (same on `main` at 999d5fbeea)
+- Reproduction: an agent with an input processor and a tool. `Agent::call()` runs the input processors once; `Execution\Runner` appends assistant messages and tool results with `MessageBag::with()` and calls the platform again per tool round, without the input processors.
+- Expected: the docs say so. `agent.rst` says input processors run "before handing over the MessageBag … to the LLM", which reads like "before every model request".
+- Actual: undocumented. For a redaction processor, personal data returned by a tool reaches the provider unredacted, without an error.
+- Filed: docs PR https://github.com/symfony/ai/pull/2978
