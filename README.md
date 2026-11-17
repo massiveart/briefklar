@@ -26,7 +26,7 @@ docker compose up -d                                        # first start instal
 open http://localhost:8080
 ```
 
-Synthetic letters to try are in `fixtures/letters` (text files; save one as PDF or take a photo of a printout). Without a key the upload page says what is missing. `docker compose logs -f app` shows the first start. On Linux, `app/vendor/` then belongs to root, because Composer runs as root in the container; `sudo chown -R $USER app/vendor` if that gets in the way.
+No letter at hand? The upload page offers three invented sample letters to download, each as a text PDF and as a scan that is read by OCR (sources in `fixtures/letters`). Without a key the upload page says what is missing. `docker compose logs -f app` shows the first start. On Linux, `app/vendor/` then belongs to root, because Composer runs as root in the container; `sudo chown -R $USER app/vendor` if that gets in the way.
 
 **Fully local, no provider at all:** the explanation runs on Ollama.
 

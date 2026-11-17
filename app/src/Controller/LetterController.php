@@ -17,6 +17,7 @@ use App\Extraction\UnsupportedDocumentException;
 use App\Form\LetterUpload;
 use App\Form\LetterUploadType;
 use App\Payment\PaymentQrCode;
+use App\Sample\SampleLetters;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
@@ -37,6 +38,7 @@ final class LetterController extends AbstractController
         private readonly LoggerInterface $logger,
         private readonly PaymentQrCode $paymentQr,
         private readonly ExplanationTimeLimit $timeLimit,
+        private readonly SampleLetters $samples,
     ) {
     }
 
@@ -88,6 +90,7 @@ final class LetterController extends AbstractController
         return $this->render('letter/upload.html.twig', [
             'form' => $form,
             'missing_provider_key' => $this->providerSetup->missingKey(),
+            'samples' => $this->samples->names(),
         ], new Response(status: $form->isSubmitted() ? 422 : 200));
     }
 

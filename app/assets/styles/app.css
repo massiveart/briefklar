@@ -474,6 +474,14 @@ form ul li::before {
     .spinner { animation: none; border-top-color: var(--color-divider); border-color: var(--color-accent); }
 }
 
+/* ── Sample letters (upload page) ─────────────────────────────────────────── */
+.samples { margin-bottom: var(--space-4); }
+.samples h2 { font-size: 18px; margin: 0 0 var(--space-2); }
+.samples p { margin: 0 0 var(--space-2); color: var(--color-text-muted); }
+.samples ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.samples li { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; }
+.samples .sample-name { flex: 1 1 16rem; }
+.samples .sample-links { display: flex; gap: var(--space-3); }
 /* ── Payment QR code (result page, PAYMENT_QR) ───────────────────────────── */
 .payment__body { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-start; margin-bottom: var(--space-3); }
 /* Black on white with a quiet zone, whatever the theme: scanners need the contrast. */
