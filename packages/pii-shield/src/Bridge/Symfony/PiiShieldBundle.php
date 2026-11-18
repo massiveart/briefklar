@@ -119,7 +119,7 @@ final class PiiShieldBundle extends AbstractBundle
                     ->info('Store mappings encrypted to restore in a later request.')
                     ->canBeEnabled()
                     ->children()
-                        ->scalarNode('key')->info('32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled.')->defaultNull()->end()
+                        ->scalarNode('key')->info('32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled. Keep the key in an env var: a literal key is parsed for %parameters% and must escape % as %%.')->defaultNull()->end()
                         ->scalarNode('cache_pool')->info('PSR-6 pool service id.')->defaultValue('cache.app')->end()
                         ->integerNode('ttl')->min(1)->defaultValue(PiiShield::DEFAULT_VAULT_TTL)->end()
                     ->end()

@@ -21,10 +21,13 @@ use Symfony\Component\Filesystem\Filesystem;
 
 final class PiiShieldBundleTest extends TestCase
 {
+    private const string VAULT_KEY_ENV = 'PII_SHIELD_TEST_VAULT_KEY';
+
     private ?TestKernel $kernel = null;
 
     protected function tearDown(): void
     {
+        unset($_SERVER[self::VAULT_KEY_ENV]);
         if (null !== $this->kernel) {
             $dir = $this->kernel->getProjectDir();
             $this->kernel->shutdown();
@@ -79,7 +82,10 @@ final class PiiShieldBundleTest extends TestCase
 
     public function testVaultRestoresInALaterRequest(): void
     {
-        $container = $this->container(['vault' => ['key' => EncryptedVault::generateKey(), 'ttl' => 600]]);
+        // As documented: the raw key comes from an env var, so the container never parses it for %parameters%.
+        // The key starts with "%ab%" on purpose: written literally into the config it would be read as a parameter (#74).
+        $_SERVER[self::VAULT_KEY_ENV] = base64_encode('%ab%'.substr(EncryptedVault::generateKey(), 4));
+        $container = $this->container(['vault' => ['key' => '%env(base64:'.self::VAULT_KEY_ENV.')%', 'ttl' => 600]]);
         $shield = self::service($container, VaultAwarePiiShieldInterface::class);
 
         $vaultId = $shield->redact('SVNR 4568 150392')->vaultId;
