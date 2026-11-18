@@ -68,6 +68,14 @@
                         <p class="dropzone__error" data-dropzone-target="error" role="alert" hidden></p>
                         {{ form_errors(form.letter) }}
 
+                        <ul class="chips dropzone__chips">
+                            <li class="chip">{{ 'letter.upload.drop.chip_ocr'|trans }}</li>
+                            <li class="chip">{{ 'letter.upload.drop.chip_redacted'|trans }}</li>
+                            <li class="chip">{{ 'letter.upload.drop.chip_easy'|trans }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="upload-actions">
                         <div class="field field--checkbox">
                             {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
                             <div>
@@ -75,12 +83,7 @@
                                 {{ form_help(form.easyLanguage) }}
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary dropzone__submit" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
-                        <ul class="chips dropzone__chips">
-                            <li class="chip">{{ 'letter.upload.drop.chip_ocr'|trans }}</li>
-                            <li class="chip">{{ 'letter.upload.drop.chip_redacted'|trans }}</li>
-                            <li class="chip">{{ 'letter.upload.drop.chip_easy'|trans }}</li>
-                        </ul>
+                        <button type="submit" class="btn btn-primary upload-actions__submit" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
                     </div>
 
                     {# Shown by the upload-progress controller while the request runs; announced by screen readers. #}
@@ -97,9 +100,11 @@
             {% endblock %}
 
             {% if samples is not empty %}
-                <div class="samples">
-                    <p id="samples-title">{{ 'letter.samples.title'|trans }} {{ 'letter.samples.intro'|trans }}</p>
-                    <ul aria-labelledby="samples-title">
+                {# Tucked away: most visitors bring their own letter. Native <details>, works without JavaScript. #}
+                <details class="samples">
+                    <summary>{{ 'letter.samples.title'|trans }}</summary>
+                    <p>{{ 'letter.samples.intro'|trans }}</p>
+                    <ul>
                         {% for name in samples %}
                             <li>
                                 <span class="sample-name">{{ ('letter.samples.letters.' ~ name)|trans }}</span>
@@ -110,7 +115,7 @@
                             </li>
                         {% endfor %}
                     </ul>
-                </div>
+                </details>
             {% endif %}
         </div>
     </section>

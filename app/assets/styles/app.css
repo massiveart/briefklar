@@ -192,13 +192,24 @@ form li { color: var(--warn-text); font-size: 14px; }
 .hero .setup-note { margin-bottom: 20px; }
 .upload-form { margin: 0; }
 
-.samples { margin-top: 22px; text-align: center; color: var(--muted-2); font-size: 14px; }
-.samples p { margin: 0 0 10px; }
+.samples { margin: 18px auto 0; max-width: var(--measure); color: var(--muted-2); font-size: 14px; text-align: center; }
+.samples > summary { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--muted); font-weight: 600; list-style: none; padding: 6px 12px; border-radius: 999px; }
+.samples > summary::-webkit-details-marker { display: none; }
+.samples > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform .15s; }
+.samples[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
+.samples > summary:hover { color: var(--text); background: var(--surface-3); }
+.samples p { margin: 10px 0; }
 .samples ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; }
 .samples li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; justify-content: center; }
 .sample-name { color: var(--muted); }
 .sample-links { display: inline-flex; gap: 8px; }
 .sample-links a { font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(124, 245, 196, .35); }
+
+/* Options and submit, below the dropzone. */
+.upload-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin-top: 18px; }
+.upload-actions .field--checkbox { margin: 0; justify-content: flex-start; flex: 1 1 280px; }
+.upload-actions__submit { min-width: 220px; }
+@media (max-width: 640px) { .upload-actions__submit { width: 100%; } }
 
 /* ── Landing: steps ───────────────────────────────────────────────────────── */
 .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
@@ -264,8 +275,6 @@ form li { color: var(--warn-text); font-size: 14px; }
 }
 .dropzone__file[hidden], .dropzone__error[hidden] { display: none; }
 .dropzone__error { margin: 16px auto 0; color: var(--warn-text); font-size: 14px; font-weight: 600; }
-.dropzone .field--checkbox { margin: 22px 0 18px; }
-.dropzone__submit { min-width: 220px; }
 .dropzone__chips { margin-top: 20px; }
 /* Without JavaScript the native input is visible inside the zone. */
 .dropzone__input:not(.visually-hidden) { display: block; margin: 16px auto 0; color: var(--muted); max-width: 100%; }
