@@ -187,7 +187,6 @@ form li { color: var(--warn-text); font-size: 14px; }
 
 /* ── Landing: hero ────────────────────────────────────────────────────────── */
 .hero { background: radial-gradient(70% 55% at 50% 0%, rgba(106, 168, 255, .12) 0%, rgba(11, 13, 18, 0) 70%); padding-top: clamp(40px, 8vw, 88px); }
-.hero h1 { max-width: 16ch; }
 .hero .lead { margin-bottom: 28px; }
 .hero .setup-note { margin-bottom: 20px; }
 .upload-form { margin: 0; }
