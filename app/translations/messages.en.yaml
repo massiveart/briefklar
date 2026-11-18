@@ -54,6 +54,21 @@ letter:
                 title: Pay by QR code
                 text: For payments, a code for your banking app.
                 optional: Can be switched on in the configuration.
+        pii_shield:
+            eyebrow: What Symfony AI unlocked
+            title: "PII Shield: privacy as a processor,"
+            title_end: not as an afterthought.
+            sub: The privacy layer of Clarifile is a package of its own. You can use it in any Symfony AI app.
+            package:
+                title: A package of its own
+                text: Reversible redaction for any Symfony AI agent. Also runs as an HTTP service and as an MCP server.
+            processor:
+                title: Agent processor
+                text: Redacts the input before every model call and puts the real values back into the answer. Images are rejected.
+            dach:
+                title: Built for DACH
+                text: IBAN, social security and tax numbers are checked by checksum. Names and addresses come from a model you choose.
+            link: PII Shield on GitHub
         mcp:
             eyebrow: For AI assistants
             title: Also an MCP server

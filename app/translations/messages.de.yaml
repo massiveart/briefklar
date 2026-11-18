@@ -54,6 +54,21 @@ letter:
                 title: Bezahlen per QR-Code
                 text: Bei Zahlungen ein Code für deine Banking-App.
                 optional: Lässt sich in der Konfiguration einschalten.
+        pii_shield:
+            eyebrow: Was Symfony AI möglich macht
+            title: "PII Shield: Datenschutz als Prozessor,"
+            title_end: nicht als Nachgedanke.
+            sub: Die Datenschutz-Schicht von Clarifile ist ein eigenes Paket. Du kannst sie in jeder Symfony-AI-App verwenden.
+            package:
+                title: Ein eigenes Paket
+                text: Umkehrbare Schwärzung für jeden Symfony-AI-Agenten. Läuft auch als HTTP-Dienst und als MCP-Server.
+            processor:
+                title: Agent-Prozessor
+                text: Schwärzt die Eingabe vor jedem Modellaufruf und setzt die echten Werte wieder in die Antwort ein. Bilder werden abgelehnt.
+            dach:
+                title: Gebaut für DACH
+                text: IBAN, Sozialversicherungs- und Steuernummern werden per Prüfsumme geprüft. Namen und Adressen erkennt ein Modell deiner Wahl.
+            link: PII Shield auf GitHub
         mcp:
             eyebrow: Für KI-Assistenten
             title: Auch als MCP-Server
