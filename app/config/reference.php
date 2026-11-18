@@ -1910,14 +1910,16 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     },
  *     vault?: bool|array{ // Store mappings encrypted to restore in a later request.
  *         enabled?: bool|Param, // Default: false
- *         key?: scalar|Param|null, // 32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled. // Default: null
- *         cache_pool?: scalar|Param|null, // PSR-6 pool service id. // Default: "cache.app"
+ *         key?: scalar|Param|null, // 32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled. Keep the key in an env var: a literal key is parsed for %parameters% and must escape % as %%. // Default: null
+ *         cache_pool?: scalar|Param|null, // PSR-6 pool service id; default "cache.app". // Default: null
+ *         storage?: scalar|Param|null, // Service id of your own VaultStorageInterface (database, S3, ...) instead of a PSR-6 pool. Payloads arrive encrypted. // Default: null
  *         ttl?: int|Param, // Default: 3600
  *     },
  *     learning?: bool|array{ // Entity types learned from examples.
  *         enabled?: bool|Param, // Default: true
  *         path?: scalar|Param|null, // Default: "%kernel.project_dir%/var/pii_shield/learned_types.json"
  *         cache_pool?: scalar|Param|null, // Store in this PSR-6 pool instead of the JSON file. // Default: null
+ *         store?: scalar|Param|null, // Service id of your own CustomEntityStoreInterface instead of the JSON file. // Default: null
  *     },
  *     agent_processor?: bool|array{ // Redact input and restore output of Symfony AI agents.
  *         enabled?: bool|Param, // Default: true
