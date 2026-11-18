@@ -102,6 +102,29 @@ final class LetterUploadTest extends WebTestCase
         self::assertCount(1, $crawler->selectButton($submit));
     }
 
+    #[DataProvider('pages')]
+    public function testDropzoneOnlyHoldsTheFileChoice(string $page, string $submit): void
+    {
+        $crawler = self::createClient()->request('GET', $page);
+
+        // Options and the submit button sit below the zone, not inside it.
+        self::assertSelectorNotExists('.dropzone input[type=checkbox]');
+        self::assertSelectorNotExists('.dropzone button[type=submit]');
+        self::assertSelectorExists('.upload-actions input[type=checkbox][name="letter_upload[easyLanguage]"]');
+        self::assertCount(1, $crawler->filter('.upload-actions button[type=submit]')->reduce(static fn ($b): bool => trim($b->text()) === $submit));
+    }
+
+    public function testSampleLettersAreCollapsedByDefault(): void
+    {
+        $crawler = self::createClient()->request('GET', '/de');
+
+        $details = $crawler->filter('details.samples');
+        self::assertCount(1, $details);
+        self::assertNull($details->attr('open'));
+        self::assertSelectorTextContains('details.samples > summary', 'Kein Brief zur Hand?');
+        self::assertSelectorExists('details.samples a[href="/samples/scan/01-strafverfuegung.pdf"]');
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
