@@ -52,7 +52,7 @@ final class LetterUploadTest extends WebTestCase
         foreach (['#how-it-works', '#privacy', '#mcp'] as $anchor) {
             self::assertSelectorExists(\sprintf('header a[href$="%s"]', $anchor));
         }
-        self::assertSelectorExists('header a[href="https://github.com/massiveart/briefklar"]');
+        self::assertSelectorExists('header a[href="https://github.com/massiveart/clarifile"]');
         self::assertSelectorTextContains('.site-footer', 'keine Rechtsberatung');
         self::assertSame('EN', trim($crawler->filter('.lang-switch > *')->first()->text()));
     }

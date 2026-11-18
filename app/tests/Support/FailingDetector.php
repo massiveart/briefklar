@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Exception\DetectionFailedException;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Exception\DetectionFailedException;
 
 /**
  * Test-only detector (config/services_test.yaml): fails like an unreachable detection model

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Validator;
+namespace Clarifile\PiiShield\Validator;
 
 /**
  * Austrian social security number (Sozialversicherungsnummer).

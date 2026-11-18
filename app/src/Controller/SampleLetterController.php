@@ -37,7 +37,7 @@ final class SampleLetterController extends AbstractController
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => HeaderUtils::makeDisposition(
                 HeaderUtils::DISPOSITION_ATTACHMENT,
-                \sprintf('briefklar-sample-%s%s.pdf', $name, 'scan' === $kind ? '-scan' : ''),
+                \sprintf('clarifile-sample-%s%s.pdf', $name, 'scan' === $kind ? '-scan' : ''),
             ),
         ]);
     }

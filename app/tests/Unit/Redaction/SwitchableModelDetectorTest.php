@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Redaction;
 
 use App\Redaction\SwitchableModelDetector;
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\DetectionFailedException;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\DetectionFailedException;
 use PHPUnit\Framework\TestCase;
 
 final class SwitchableModelDetectorTest extends TestCase

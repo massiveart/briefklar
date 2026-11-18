@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
 /**
  * Placeholder format "⟦TYPE_n⟧" (see docs/adr/0003-reversible-placeholders.md).

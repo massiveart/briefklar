@@ -1,4 +1,4 @@
-# briefklar/pii-shield
+# clarifile/pii-shield
 
 Reversible redaction of personal data (PII) for [Symfony AI](https://ai.symfony.com): the model only sees
 `⟦PERSON_1⟧`, your user gets the answer with the real values.
@@ -16,7 +16,7 @@ Reversible redaction of personal data (PII) for [Symfony AI](https://ai.symfony.
 **As a library** (PHP 8.4, Composer):
 
 ```php
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\PiiShield;
 
 $shield = PiiShield::withDefaultDetectors();
 $redaction = $shield->redact("Herrn\nJohann Beispielmann\n\nSVNR 4568 150392");
@@ -25,7 +25,7 @@ $shield->restore('⟦PERSON_1⟧, Ihre SVNR ist ⟦SVNR_1⟧.', $redaction)->tex
 // "Johann Beispielmann, Ihre SVNR ist 4568 150392."
 ```
 
-In a Symfony app, register `Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle` and configure `config/packages/pii_shield.yaml`:
+In a Symfony app, register `Clarifile\PiiShield\Bridge\Symfony\PiiShieldBundle` and configure `config/packages/pii_shield.yaml`:
 your Symfony AI agents get redaction and restore automatically.
 
 → [docs/library.md](docs/library.md): bundle configuration, vaults, masking, model-based detection, Symfony AI agents, learning, detectors, rules.
@@ -45,8 +45,8 @@ curl -s localhost:8080/v1/redact -H 'Authorization: Bearer change-me' -H 'Conten
 `learn_entity_type`, `list_entity_types` over STDIO or Streamable HTTP (`/mcp`):
 
 ```bash
-claude mcp add pii-shield -- make -s -C /path/to/briefklar/packages/pii-shield mcp            # Docker
-claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield   # local PHP
+claude mcp add pii-shield -- make -s -C /path/to/clarifile/packages/pii-shield mcp            # Docker
+claude mcp add pii-shield -- php /path/to/clarifile/packages/pii-shield/demo/bin/console mcp:server pii_shield   # local PHP
 ```
 
 ## Demo

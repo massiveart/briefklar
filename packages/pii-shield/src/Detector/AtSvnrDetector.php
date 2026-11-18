@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Validator\AtSvnrValidator;
-use Briefklar\PiiShield\Validator\ValidatorInterface;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Validator\AtSvnrValidator;
+use Clarifile\PiiShield\Validator\ValidatorInterface;
 
 final class AtSvnrDetector implements DetectorInterface
 {

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Learning;
+namespace Clarifile\PiiShield\Tests\Learning;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\LearningFailedException;
-use Briefklar\PiiShield\Learning\CustomEntityDetector;
-use Briefklar\PiiShield\Learning\CustomEntityType;
-use Briefklar\PiiShield\PiiMasker;
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\LearningFailedException;
+use Clarifile\PiiShield\Learning\CustomEntityDetector;
+use Clarifile\PiiShield\Learning\CustomEntityType;
+use Clarifile\PiiShield\PiiMasker;
+use Clarifile\PiiShield\PiiShield;
 use PHPUnit\Framework\TestCase;
 
 final class CustomEntityTest extends TestCase

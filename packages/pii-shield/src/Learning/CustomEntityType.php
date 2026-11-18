@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\LearningFailedException;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\LearningFailedException;
 
 /**
  * A learned entity type: a name, a description, examples and optionally a pattern.

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests;
+namespace Clarifile\PiiShield\Tests;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\EntityType;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\EntityType;
 use PHPUnit\Framework\TestCase;
 
 final class EntityExtractorTest extends TestCase

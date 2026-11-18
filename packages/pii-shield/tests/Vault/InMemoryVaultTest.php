@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Vault;
+namespace Clarifile\PiiShield\Tests\Vault;
 
-use Briefklar\PiiShield\Vault\InMemoryVault;
+use Clarifile\PiiShield\Vault\InMemoryVault;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Clock\MockClock;
 

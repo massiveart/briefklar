@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo\Controller;
+namespace Clarifile\PiiShield\Demo\Controller;
 
-use Briefklar\PiiShield\Demo\ServiceApi;
+use Clarifile\PiiShield\Demo\ServiceApi;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +24,7 @@ final class ServiceController
     public function openapi(): Response
     {
         $packaged = \dirname(__DIR__, 3).'/docs/openapi.yaml';
-        $installed = \dirname(__DIR__, 2).'/vendor/briefklar/pii-shield/docs/openapi.yaml';
+        $installed = \dirname(__DIR__, 2).'/vendor/clarifile/pii-shield/docs/openapi.yaml';
 
         return new Response((string) file_get_contents(is_file($packaged) ? $packaged : $installed), 200, ['Content-Type' => 'application/yaml; charset=utf-8']);
     }

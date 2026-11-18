@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Exception;
+namespace Clarifile\PiiShield\Exception;
 
 /**
  * A message contains content that cannot be redacted (images, audio, documents, URLs).

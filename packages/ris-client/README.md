@@ -1,4 +1,4 @@
-# briefklar/ris-client (stretch goal)
+# clarifile/ris-client (stretch goal)
 
 Resolves legal citations found in letters (e.g. `§ 49 VStG`) against Austria's Rechtsinformationssystem (RIS) open data API.
 

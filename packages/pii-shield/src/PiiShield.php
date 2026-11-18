@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Exception\VaultException;
-use Briefklar\PiiShield\Vault\VaultInterface;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Exception\VaultException;
+use Clarifile\PiiShield\Vault\VaultInterface;
 
 /**
  * Replaces each detected entity with a consistent, typed placeholder (see EntityExtractor for detection rules).

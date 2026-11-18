@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Validator\DeTaxIdValidator;
-use Briefklar\PiiShield\Validator\ValidatorInterface;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Validator\DeTaxIdValidator;
+use Clarifile\PiiShield\Validator\ValidatorInterface;
 
 /**
  * AT Steuernummer (e.g. "46 123/4567"), DE Steuernummer (e.g. "181/815/08155")

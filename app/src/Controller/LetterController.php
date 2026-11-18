@@ -52,7 +52,7 @@ final class LetterController extends AbstractController
 
     /**
      * The upload is processed within this request only. PHP deletes the temporary upload file
-     * when the request ends; nothing is written anywhere else (see docs/tasks/B-briefklar-app.md).
+     * when the request ends; nothing is written anywhere else (see docs/tasks/B-clarifile-app.md).
      */
     #[Route('/{_locale}', name: 'letter_upload', requirements: ['_locale' => new EnumRequirement(ExplanationLanguage::class)], methods: ['GET', 'POST'])]
     public function upload(Request $request): Response

@@ -1,5 +1,5 @@
 {
-  "name": "briefklar/pii-shield",
+  "name": "clarifile/pii-shield",
   "description": "Reversible PII redaction for Symfony AI with DACH recognizers (AT SVNR, IBAN, tax numbers) and checksum validation.",
   "type": "library",
   "license": "MIT",
@@ -57,13 +57,13 @@
   },
   "autoload": {
     "psr-4": {
-      "Briefklar\\PiiShield\\": "src/"
+      "Clarifile\\PiiShield\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Briefklar\\PiiShield\\Tests\\": "tests/",
-      "Briefklar\\PiiShield\\Demo\\": "demo/src/"
+      "Clarifile\\PiiShield\\Tests\\": "tests/",
+      "Clarifile\\PiiShield\\Demo\\": "demo/src/"
     }
   },
   "scripts": {

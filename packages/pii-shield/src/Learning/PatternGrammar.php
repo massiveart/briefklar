@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
 /**
  * Whitelist grammar for hand-written patterns, parsed left to right (no regex over the regex).

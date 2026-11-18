@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo\Mcp;
+namespace Clarifile\PiiShield\Demo\Mcp;
 
-use Briefklar\PiiShield\Demo\ServiceApi;
+use Clarifile\PiiShield\Demo\ServiceApi;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Exception\ToolCallException;

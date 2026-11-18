@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Vault;
+namespace Clarifile\PiiShield\Vault;
 
 use Psr\Clock\ClockInterface;
 

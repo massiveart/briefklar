@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Vault;
+namespace Clarifile\PiiShield\Tests\Vault;
 
-use Briefklar\PiiShield\Exception\VaultException;
-use Briefklar\PiiShield\Vault\EncryptedVault;
-use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
+use Clarifile\PiiShield\Exception\VaultException;
+use Clarifile\PiiShield\Vault\EncryptedVault;
+use Clarifile\PiiShield\Vault\Storage\Psr6CacheStorage;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;

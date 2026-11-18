@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
 /**
  * Runs a UTF-8 regex and returns matches with character (not byte) offsets.

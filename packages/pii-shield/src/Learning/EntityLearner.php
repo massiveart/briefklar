@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Exception\LearningFailedException;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Exception\LearningFailedException;
 
 /**
  * Teach pii-shield new entity types from examples ("mask things like this too").

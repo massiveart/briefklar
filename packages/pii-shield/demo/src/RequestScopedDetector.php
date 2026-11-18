@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo;
+namespace Clarifile\PiiShield\Demo;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
 
 /**
  * Demo helper: remembers the findings for the last text (a model is asked once per request,

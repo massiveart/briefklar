@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests;
+namespace Clarifile\PiiShield\Tests;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\PiiMasker;
-use Briefklar\PiiShield\PiiShield;
-use Briefklar\PiiShield\RedactionResult;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\PiiMasker;
+use Clarifile\PiiShield\PiiShield;
+use Clarifile\PiiShield\RedactionResult;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -132,7 +132,7 @@ final class FixtureLetterTest extends TestCase
     private function skipWithoutFixtures(string $text, ?array $expected = null): void
     {
         if ('' === $text) {
-            self::markTestSkipped('Fixture letters are only available inside the briefklar monorepo.');
+            self::markTestSkipped('Fixture letters are only available inside the Clarifile monorepo.');
         }
         if ('model' === ($expected['detection'] ?? null)) {
             self::markTestSkipped('Needs model-based detection; covered by ModelDetectorTest.');

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Bridge\Symfony;
+namespace Clarifile\PiiShield\Tests\Bridge\Symfony;
 
-use Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle;
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\PiiMaskerInterface;
-use Briefklar\PiiShield\PiiShieldInterface;
-use Briefklar\PiiShield\Tests\Bridge\Symfony\Fixtures\TestKernel;
-use Briefklar\PiiShield\Vault\EncryptedVault;
-use Briefklar\PiiShield\VaultAwarePiiShieldInterface;
+use Clarifile\PiiShield\Bridge\Symfony\PiiShieldBundle;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\PiiMaskerInterface;
+use Clarifile\PiiShield\PiiShieldInterface;
+use Clarifile\PiiShield\Tests\Bridge\Symfony\Fixtures\TestKernel;
+use Clarifile\PiiShield\Vault\EncryptedVault;
+use Clarifile\PiiShield\VaultAwarePiiShieldInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

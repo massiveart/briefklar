@@ -1,6 +1,6 @@
 # Plan
 
-Team: André (pii-shield, MCP), Cornelius (briefklar app).
+Team: André (pii-shield, MCP), Cornelius (Clarifile app).
 Window: Mon 09.11.2026 to Sun 22.11.2026, 18:00 CET. Internal submission target: **Sun 22.11., 12:00** (6 h buffer).
 
 ## Scope

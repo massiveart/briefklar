@@ -2,7 +2,7 @@
 
 > Understand official letters without handing your personal data to an LLM.
 
-**Clarifile** (formerly briefklar; the repository, namespaces and packages keep that name) explains letters from authorities (tax office, district authority, social insurance) in plain language: *who wrote this, what do they want, what do I have to do, by when*. Before any text reaches a language model, a reversible PII shield replaces names, addresses, social security numbers, IBANs and file numbers with placeholders, and restores them only in the answer you see.
+**Clarifile** (formerly briefklar) explains letters from authorities (tax office, district authority, social insurance) in plain language: *who wrote this, what do they want, what do I have to do, by when*. Before any text reaches a language model, a reversible PII shield replaces names, addresses, social security numbers, IBANs and file numbers with placeholders, and restores them only in the answer you see.
 
 Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Symfony AI and the official PHP MCP SDK.
 
@@ -12,7 +12,7 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 |---|---|---|
 | `packages/pii-shield` | Reversible PII redaction for Symfony AI (input/output processors), DACH recognizers with checksum validation | Yes, designed as standalone package |
 | `packages/ris-client` | Resolves legal citations in a letter (e.g. "§ 49 VStG") against Austria's open legal database RIS *(stretch goal)* | Yes |
-| `app/` | The briefklar web app plus an MCP server exposing `explain_letter` and `redact_text` | No, it's the demo |
+| `app/` | The Clarifile web app plus an MCP server exposing `explain_letter` and `redact_text` | No, it's the demo |
 | `fixtures/letters` | Synthetic letters with expected PII annotations, used for tests and the demo | |
 
 ## Quickstart (target: 5 minutes)
@@ -20,7 +20,7 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 Needs Docker and a [Hugging Face access token](https://huggingface.co/settings/tokens) that may call Inference Providers. OCR and redaction run locally in the container; only the redacted text, with placeholders instead of names, addresses and numbers, goes to the provider.
 
 ```bash
-git clone https://github.com/massiveart/briefklar.git && cd briefklar
+git clone https://github.com/massiveart/clarifile.git && cd clarifile
 echo "HUGGINGFACE_API_KEY=hf_your_token" >> app/.env.local   # git-ignored, never committed
 docker compose up -d                                        # first start installs dependencies (about a minute)
 open http://localhost:8080
@@ -57,7 +57,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Not legal advice
 
-briefklar explains what a letter says. It does not give legal advice, and deadlines it extracts must be verified against the original letter.
+Clarifile explains what a letter says. It does not give legal advice, and deadlines it extracts must be verified against the original letter.
 
 ## License
 

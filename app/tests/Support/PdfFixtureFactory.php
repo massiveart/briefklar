@@ -53,7 +53,7 @@ final class PdfFixtureFactory
      */
     public static function toTempFile(string $bytes, string $suffix): string
     {
-        $path = sys_get_temp_dir().'/briefklar_fixture_'.bin2hex(random_bytes(6)).$suffix;
+        $path = sys_get_temp_dir().'/clarifile_fixture_'.bin2hex(random_bytes(6)).$suffix;
         file_put_contents($path, $bytes);
         register_shutdown_function(static fn () => is_file($path) && unlink($path));
 

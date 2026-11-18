@@ -1,7 +1,7 @@
 # Task C: MCP server (owner: André)
 
 ## Goal
-Expose briefklar as an MCP server, so any MCP client (Claude Desktop, Claude Code, others) can use it.
+Expose Clarifile as an MCP server, so any MCP client (Claude Desktop, Claude Code, others) can use it.
 
 ## Deliverables
 1. Check whether `symfony/mcp-bundle` is available and stable enough in the installed pre-release; otherwise use `mcp/sdk` directly with `Server::builder()` and a console command.

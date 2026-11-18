@@ -1,6 +1,6 @@
 {
-  "name": "briefklar/pii-shield-server",
-  "description": "Standalone HTTP service (/v1) and demo page for briefklar/pii-shield. Used for the Docker image; locally `make demo` runs it from the package.",
+  "name": "clarifile/pii-shield-server",
+  "description": "Standalone HTTP service (/v1) and demo page for clarifile/pii-shield. Used for the Docker image; locally `make demo` runs it from the package.",
   "type": "project",
   "license": "MIT",
   "repositories": {
@@ -14,7 +14,7 @@
   },
   "require": {
     "php": ">=8.4",
-    "briefklar/pii-shield": "*@dev",
+    "clarifile/pii-shield": "*@dev",
     "mcp/sdk": "0.9.0",
     "nyholm/psr7": "^1.8",
     "predis/predis": "^3.7",
@@ -33,7 +33,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Briefklar\\PiiShield\\Demo\\": "src/"
+      "Clarifile\\PiiShield\\Demo\\": "src/"
     }
   },
   "config": {

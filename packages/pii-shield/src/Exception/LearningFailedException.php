@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Exception;
+namespace Clarifile\PiiShield\Exception;
 
 /**
  * A custom entity type could not be learned; the message says why and how to fix it.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
-use Briefklar\PiiShield\Exception\LearningFailedException;
+use Clarifile\PiiShield\Exception\LearningFailedException;
 
 /**
  * Derives a regular expression from examples, e.g. "AB-1234/56" + "XY-9876/01" → "[A-Z]{2}-\d{4}/\d{2}".

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Bridge\SymfonyAi;
+namespace Clarifile\PiiShield\Bridge\SymfonyAi;
 
 /**
  * Where the detection model runs. Detection necessarily sends the *unredacted* text to the model,

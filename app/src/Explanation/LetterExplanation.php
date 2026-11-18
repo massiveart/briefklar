@@ -9,7 +9,7 @@ use Symfony\AI\Platform\Contract\JsonSchema\Attribute\Schema;
 /**
  * Structured answer of the explanation agent.
  *
- * Shared contract (docs/tasks/B-briefklar-app.md): change only together with the pii-shield owner.
+ * Shared contract (docs/tasks/B-clarifile-app.md): change only together with the pii-shield owner.
  * Descriptions end up in the JSON schema sent to the model.
  */
 final readonly class LetterExplanation

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Bridge\SymfonyAi;
+namespace Clarifile\PiiShield\Tests\Bridge\SymfonyAi;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\DetectionFailedException;
-use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
-use Briefklar\PiiShield\Learning\CustomEntityType;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelLocation;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\DetectionFailedException;
+use Clarifile\PiiShield\Learning\CacheCustomEntityStore;
+use Clarifile\PiiShield\Learning\CustomEntityType;
 use PHPUnit\Framework\TestCase;
 use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\ModelCatalog\FallbackModelCatalog;

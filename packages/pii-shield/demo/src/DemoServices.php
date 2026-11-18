@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo;
+namespace Clarifile\PiiShield\Demo;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
-use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
-use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\Learning\JsonFileCustomEntityStore;
-use Briefklar\PiiShield\Vault\EncryptedVault;
-use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
-use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
-use Briefklar\PiiShield\Vault\VaultInterface;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelLocation;
+use Clarifile\PiiShield\Learning\CacheCustomEntityStore;
+use Clarifile\PiiShield\Learning\CustomEntityStoreInterface;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\Learning\JsonFileCustomEntityStore;
+use Clarifile\PiiShield\Vault\EncryptedVault;
+use Clarifile\PiiShield\Vault\Storage\Psr6CacheStorage;
+use Clarifile\PiiShield\Vault\Storage\VaultStorageInterface;
+use Clarifile\PiiShield\Vault\VaultInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\AI\Platform\Bridge\Anthropic\Factory as AnthropicFactory;
 use Symfony\AI\Platform\Bridge\Anthropic\ModelCatalog as AnthropicCatalog;

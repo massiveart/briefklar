@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Demo;
+namespace Clarifile\PiiShield\Tests\Demo;
 
-use Briefklar\PiiShield\Demo\DemoServices;
+use Clarifile\PiiShield\Demo\DemoServices;
 use PHPUnit\Framework\TestCase;
 
 final class LocalPeerTest extends TestCase

@@ -23,7 +23,7 @@ Contracts: `PiiShieldInterface` (redact/restore), `VaultAwarePiiShieldInterface`
 // config/bundles.php
 return [
     // ...
-    Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle::class => ['all' => true],
+    Clarifile\PiiShield\Bridge\Symfony\PiiShieldBundle::class => ['all' => true],
 ];
 ```
 
@@ -63,7 +63,7 @@ restores the output first.
 ## Redact and restore
 
 ```php
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\PiiShield;
 
 $shield = PiiShield::withDefaultDetectors(); // offline, regex + checksums
 
@@ -82,9 +82,9 @@ $answer->unknownPlaceholders; // placeholders the model invented, e.g. ['⟦IBAN
 When masking and unmasking happen in different requests (e.g. an MCP client calls `redact_text` and restores the model's answer later), give `PiiShield` a vault. Persistent storage is only possible through `EncryptedVault` (XChaCha20-Poly1305 via libsodium); the storage backend only ever sees ciphertext. A TTL is mandatory (default 3600 s).
 
 ```php
-use Briefklar\PiiShield\PiiShield;
-use Briefklar\PiiShield\Vault\EncryptedVault;
-use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
+use Clarifile\PiiShield\PiiShield;
+use Clarifile\PiiShield\Vault\EncryptedVault;
+use Clarifile\PiiShield\Vault\Storage\Psr6CacheStorage;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 
 // Any PSR-6 pool works: Redis, filesystem, PDO, ...
@@ -114,7 +114,7 @@ $shield->forget($vaultId); // delete immediately when done
 ### Irreversible masking (logs, previews)
 
 ```php
-use Briefklar\PiiShield\PiiMasker;
+use Clarifile\PiiShield\PiiMasker;
 
 PiiMasker::withDefaultDetectors()->mask('IBAN AT61 1904 3002 3457 3201, Frau Musterfrau');
 // "IBAN AT61 **** **** **** 3201, Frau [PERSON]"
@@ -127,10 +127,10 @@ Defaults: IBAN keeps first and last 4 characters, phone keeps the last 2, everyt
 Regex and checksums cover DACH formats. Everything else (names without salutation, foreign ID numbers, health data, any language) needs a model. `ModelDetector` uses any model reachable through Symfony AI Platform and runs next to the regex detectors:
 
 ```php
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelLocation;
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelLocation;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\PiiShield;
 use Symfony\AI\Platform\Bridge\Ollama\Factory;
 
 // Local or on your own GPU server (Ollama; for vLLM use the Generic bridge with its URL)
@@ -159,8 +159,8 @@ Tested end-to-end with `qwen3.8:27b` on a local Ollama: Czech passport number, c
 Register one `PiiShieldProcessor` as input **and** output processor. The provider only sees placeholders; the agent's result comes back with the original values.
 
 ```php
-use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
+use Clarifile\PiiShield\PiiShield;
 use Symfony\AI\Agent\Agent;
 
 $pii = new PiiShieldProcessor(PiiShield::withDefaultDetectors());
@@ -217,10 +217,10 @@ Teach pii-shield types it does not know, from examples. A pattern is derived fro
 that the model detector learns from the examples.
 
 ```php
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\Learning\JsonFileCustomEntityStore;
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\Learning\JsonFileCustomEntityStore;
+use Clarifile\PiiShield\PiiShield;
 
 $learner = new EntityLearner(new JsonFileCustomEntityStore('/var/lib/pii-shield/learned-types.json'));
 $result = $learner->learn('INSURANCE_NUMBER', 'Polizzennummer einer Versicherung', ['VN-2026-000417', 'VN-2025-998812']);

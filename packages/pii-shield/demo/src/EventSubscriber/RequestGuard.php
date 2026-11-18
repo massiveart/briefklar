@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo\EventSubscriber;
+namespace Clarifile\PiiShield\Demo\EventSubscriber;
 
-use Briefklar\PiiShield\Demo\DemoServices;
+use Clarifile\PiiShield\Demo\DemoServices;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

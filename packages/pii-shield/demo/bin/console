@@ -8,7 +8,7 @@ declare(strict_types=1);
  *   php packages/pii-shield/demo/bin/console mcp:server pii_shield
  */
 
-use Briefklar\PiiShield\Demo\Kernel;
+use Clarifile\PiiShield\Demo\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Validator;
+namespace Clarifile\PiiShield\Tests\Validator;
 
-use Briefklar\PiiShield\Validator\AtSvnrValidator;
+use Clarifile\PiiShield\Validator\AtSvnrValidator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
