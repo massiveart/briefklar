@@ -20,11 +20,11 @@ final class LetterUploadTest extends WebTestCase
      */
     public static function preferredLanguages(): iterable
     {
-        yield 'empty header' => ['', '/de'];
+        yield 'empty header' => ['', '/en'];
         yield 'german' => ['de-AT,de;q=0.9,en;q=0.8', '/de'];
         yield 'english' => ['en-US,en;q=0.9', '/en'];
         yield 'english before german' => ['en-GB,de;q=0.5', '/en'];
-        yield 'unsupported falls back to german' => ['fr-FR,fr;q=0.9', '/de'];
+        yield 'unsupported falls back to english' => ['fr-FR,fr;q=0.9', '/en'];
     }
 
     #[DataProvider('preferredLanguages')]
