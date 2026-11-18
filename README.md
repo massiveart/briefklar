@@ -1,8 +1,8 @@
-# briefklar
+# Clarifile
 
 > Understand official letters without handing your personal data to an LLM.
 
-**briefklar** explains letters from authorities (tax office, district authority, social insurance) in plain language: *who wrote this, what do they want, what do I have to do, by when*. Before any text reaches a language model, a reversible PII shield replaces names, addresses, social security numbers, IBANs and file numbers with placeholders, and restores them only in the answer you see.
+**Clarifile** (formerly briefklar; the repository, namespaces and packages keep that name) explains letters from authorities (tax office, district authority, social insurance) in plain language: *who wrote this, what do they want, what do I have to do, by when*. Before any text reaches a language model, a reversible PII shield replaces names, addresses, social security numbers, IBANs and file numbers with placeholders, and restores them only in the answer you see.
 
 Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Symfony AI and the official PHP MCP SDK.
 

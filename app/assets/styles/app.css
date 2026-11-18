@@ -232,7 +232,7 @@ form li { color: var(--warn-text); font-size: 14px; }
 .mcp h2 { margin-bottom: 10px; }
 .mcp__text { color: var(--muted); margin: 0; }
 .code { margin: 0; background: #070A0F; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.65; color: var(--mint); }
-.code__comment { color: #6B7489; }
+.code__comment { color: #7D869B; }
 #mcp .privacy { margin: 24px 0 0; justify-content: center; text-align: left; }
 
 /* ── Dropzone ─────────────────────────────────────────────────────────────── */

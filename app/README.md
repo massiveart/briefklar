@@ -1,6 +1,6 @@
-# briefklar app
+# Clarifile app
 
-Symfony application: upload, local OCR, explanation agent, UI, MCP server.
+Symfony application behind Clarifile (formerly briefklar; code, packages and the MCP server id keep that name): upload, local OCR, explanation agent, UI, MCP server.
 
 ## Stack
 
@@ -94,7 +94,7 @@ The app is available in German (`/de`) and English (`/en`); `/` redirects by `Ac
 
 ## MCP server (`src/Mcp/`)
 
-The app is also an MCP server, `briefklar` (`config/packages/mcp.yaml`, `symfony/mcp-bundle` 1.0.0-BETA1, `mcp/sdk` 0.9.0, pinned exactly). Same agents, prompts and pii-shield as the web app.
+The app is also an MCP server, shown to clients as Clarifile with the server id `briefklar` (`config/packages/mcp.yaml`, `symfony/mcp-bundle` 1.0.0-BETA1, `mcp/sdk` 0.9.0, pinned exactly). Same agents, prompts and pii-shield as the web app.
 
 | Tool | Input | Returns | What the client's model sees |
 |---|---|---|---|
@@ -114,11 +114,11 @@ Connect a client (paths are examples; the letter folder is mounted read-only):
 
 ```bash
 # Claude Code, STDIO through Docker
-claude mcp add briefklar -- docker compose -f /path/to/briefklar/compose.yaml run --rm --no-deps -T \
+claude mcp add clarifile -- docker compose -f /path/to/briefklar/compose.yaml run --rm --no-deps -T \
   -v ~/Briefe:/srv/letters:ro -e MCP_LETTER_DIR=/srv/letters app bin/console mcp:server briefklar --env=prod
 
 # Claude Code, HTTP against the running app (docker compose up -d); set MCP_LETTER_DIR in app/.env.local for the file tool
-claude mcp add --transport http briefklar http://localhost:8080/mcp
+claude mcp add --transport http clarifile http://localhost:8080/mcp
 
 # MCP Inspector: add a server, transport streamable-http, URL http://localhost:8080/mcp
 npx @modelcontextprotocol/inspector
@@ -131,7 +131,7 @@ Claude Desktop (`claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
-    "briefklar": {
+    "clarifile": {
       "command": "docker",
       "args": ["compose", "-f", "/path/to/briefklar/compose.yaml", "run", "--rm", "--no-deps", "-T",
                "-v", "/Users/you/Briefe:/srv/letters:ro", "-e", "MCP_LETTER_DIR=/srv/letters",
