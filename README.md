@@ -10,9 +10,8 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 
 | Path | What | Reusable on its own |
 |---|---|---|
-| `packages/pii-shield` | Reversible PII redaction for Symfony AI (input/output processors), DACH recognizers with checksum validation | Yes, designed as standalone package |
-| `packages/ris-client` | Resolves legal citations in a letter (e.g. "§ 49 VStG") against Austria's open legal database RIS *(stretch goal)* | Yes |
-| `app/` | The Clarifile web app plus an MCP server exposing `explain_letter` and `redact_text` | No, it's the demo |
+| `packages/pii-shield` | Reversible PII redaction for Symfony AI (input/output processors), DACH recognizers with checksum validation, plus its own MCP server | Yes, designed as standalone package |
+| `app/` | The Clarifile web app plus the MCP server `clarifile` (`explain_letter_file`, `explain_letter`, `redact_text`) | No, it's the demo |
 | `fixtures/letters` | Synthetic letters with expected PII annotations, used for tests and the demo | |
 
 ## Quickstart (target: 5 minutes)
@@ -54,6 +53,21 @@ upload (PDF/image)
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## MCP
+
+Two MCP servers, both on the official PHP MCP SDK via `symfony/mcp-bundle`, over STDIO and Streamable HTTP (`/mcp`):
+
+| Server | Tools | Why |
+|---|---|---|
+| `clarifile` (`app/`) | `explain_letter_file`, `explain_letter`, `redact_text` | `explain_letter_file` reads the letter from a folder on the server, runs OCR and redaction locally and answers with placeholders such as `⟦IBAN_1⟧`. The letter never enters the client model's context. |
+| `pii_shield` (`packages/pii-shield`) | `redact_text`, `restore_text`, `mask_text`, `learn_entity_type`, `list_entity_types` | Reversible redaction as a building block for any MCP client. |
+
+Setup for Claude Code, Claude Desktop and the MCP Inspector: [app/README.md](app/README.md) and [packages/pii-shield/README.md](packages/pii-shield/README.md).
+
+## Roadmap (after the hackathon)
+
+- Resolve legal citations in a letter (e.g. "§ 49 VStG") against Austria's open legal database RIS, so the explanation links to the law it quotes.
 
 ## Not legal advice
 

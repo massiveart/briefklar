@@ -173,6 +173,7 @@ $result->getMetadata()->get(PiiShieldProcessor::METADATA_KEY)['unknown_placehold
 - **Input:** all text in system, user, assistant and tool messages is redacted in one pass, so the same value has the same placeholder across messages. Images, audio, video, documents and URLs are rejected with `UnsupportedContentException`: extract text locally (OCR) and send text only. System prompt templates are passed through; don't put personal data into template variables.
 - **Output:** `TextResult` and `ObjectResult` are restored, structured output DTOs deeply (readonly properties included, dates and enums untouched).
 - **Not yet:** streamed results are passed through unrestored. Tools receive placeholders as arguments.
+- **Tool results are not redacted.** Input processors run once per `Agent::call()`. The tool loop in `symfony/ai-agent` (`Execution\Runner`) appends tool results and calls the platform again without them, so personal data a tool returns reaches the provider. Don't give a shielded agent tools that return personal data. Covering every round would need the platform events (`InvocationEvent` to redact the input, `ResultConvertedEvent` to restore the result); that is not implemented.
 - Tested against `symfony/ai-agent` / `symfony/ai-platform` **1.0.0-BETA1** (pinned, see ADR 0004), including a test that inspects the exact payload sent to a mocked platform.
 
 ## Detectors
