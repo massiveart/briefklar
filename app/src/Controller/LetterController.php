@@ -45,7 +45,7 @@ final class LetterController extends AbstractController
     #[Route('/', name: 'home', methods: ['GET'])]
     public function home(Request $request): RedirectResponse
     {
-        $locale = $request->getPreferredLanguage(ExplanationLanguage::locales()) ?? ExplanationLanguage::German->value;
+        $locale = $request->getPreferredLanguage(ExplanationLanguage::locales()) ?? ExplanationLanguage::English->value;
 
         return $this->redirectToRoute('letter_upload', ['_locale' => $locale]);
     }

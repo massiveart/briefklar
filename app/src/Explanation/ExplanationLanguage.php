@@ -13,8 +13,8 @@ namespace App\Explanation;
  */
 enum ExplanationLanguage: string
 {
-    case German = 'de';
     case English = 'en';
+    case German = 'de';
 
     /**
      * Name used in the instruction to the model.

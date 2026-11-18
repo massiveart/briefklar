@@ -1,6 +1,6 @@
-# briefklar app
+# Clarifile app
 
-Symfony application: upload, local OCR, explanation agent, UI, MCP server.
+Symfony application behind Clarifile (formerly briefklar; code, packages and the MCP server id keep that name): upload, local OCR, explanation agent, UI, MCP server.
 
 ## Stack
 
@@ -80,7 +80,7 @@ Tests replace only the platform (`tests/Support/ScriptedPlatform.php`, wired in 
 
 ## UI (`assets/styles/app.css`, `templates/`)
 
-The pages follow the "Classical" design system (Claude Design): its tokens (`--color-*`, `--font-*`, `--space-*`, `--radius-*`, `--shadow-*`) and component classes (`.nav`, `.btn`, `.field`/`.input`, `.card`, `.tag`) are copied into `app.css`. The system defines one light theme. Cormorant Garamond and Lora are self-hosted from `assets/fonts/` (SIL OFL 1.1, licences next to the files), so no visitor request goes to Google Fonts. The logo (`assets/images/logo.svg`, favicon `logo-mark.svg`) is an envelope whose flap turns into a check mark, stroked in the accent, next to the wordmark "brief*klar*" in Cormorant Garamond with the text outlined as paths. The system has no error colour, so warnings and form errors use the deep accent ramp plus an icon and text. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
+The pages follow the Clarifile design (`docs/superpowers/specs/2026-11-18-clarifile-redesign-design.md`): dark only, tokens as custom properties at the top of `app.css` (`--bg`, `--surface*`, `--border*`, `--text`, `--muted*`, `--mint`, `--blue`, `--grad`), the system font stack and no web fonts, so no visitor request goes to a third party. The logo (`assets/images/logo.svg`, favicon `logo-mark.svg`) is a document with a gradient check badge next to the wordmark "clari**file**". The upload page is one landing page: hero with the dropzone, how it works, what the model sees, what you get, MCP. The dropzone (`assets/controllers/dropzone_controller.js`) wraps the native file input and only hides it once JavaScript runs, so click, keyboard, screen readers and browsers without JavaScript keep working; type and size (`LetterUpload::MAX_BYTES`) are checked again on the server. Warnings use an icon plus text, never colour alone; text reaches at least 4.5:1. The deadline card is the most prominent element of the result page; an unverified deadline gets a dashed border and a warning.
 
 ## Sample letters (`src/Sample/`)
 
@@ -88,13 +88,13 @@ The upload page offers the synthetic letters from `../fixtures/letters` for down
 
 ## Languages
 
-The app is available in German (`/de`) and English (`/en`); `/` redirects by `Accept-Language` (fallback German). The UI language is also the language of the explanation: the English page explains a German letter in English ("Easy Read" instead of "Leichte Sprache"). Sender, deadline, amount and legal references stay in the letter's original wording, so they can be found in the original and `DeadlineCheck` keeps working. The answer language is sent after `</letter>`, outside the part the model treats as data.
+The app is available in German (`/de`) and English (`/en`); `/` redirects by `Accept-Language` (fallback English). The UI language is also the language of the explanation: the English page explains a German letter in English ("Easy Read" instead of "Leichte Sprache"). Sender, deadline, amount and legal references stay in the letter's original wording, so they can be found in the original and `DeadlineCheck` keeps working. The answer language is sent after `</letter>`, outside the part the model treats as data.
 
 `ExplanationLanguage` is the single list of languages (route requirement, switcher, model instruction). Adding one: a case there, `translations/messages.<locale>.yaml` and `validators.<locale>.yaml`, and the locale in `enabled_locales` (`config/packages/translation.yaml`).
 
 ## MCP server (`src/Mcp/`)
 
-The app is also an MCP server, `briefklar` (`config/packages/mcp.yaml`, `symfony/mcp-bundle` 1.0.0-BETA1, `mcp/sdk` 0.9.0, pinned exactly). Same agents, prompts and pii-shield as the web app.
+The app is also an MCP server, shown to clients as Clarifile with the server id `briefklar` (`config/packages/mcp.yaml`, `symfony/mcp-bundle` 1.0.0-BETA1, `mcp/sdk` 0.9.0, pinned exactly). Same agents, prompts and pii-shield as the web app.
 
 | Tool | Input | Returns | What the client's model sees |
 |---|---|---|---|
@@ -114,11 +114,11 @@ Connect a client (paths are examples; the letter folder is mounted read-only):
 
 ```bash
 # Claude Code, STDIO through Docker
-claude mcp add briefklar -- docker compose -f /path/to/briefklar/compose.yaml run --rm --no-deps -T \
+claude mcp add clarifile -- docker compose -f /path/to/briefklar/compose.yaml run --rm --no-deps -T \
   -v ~/Briefe:/srv/letters:ro -e MCP_LETTER_DIR=/srv/letters app bin/console mcp:server briefklar --env=prod
 
 # Claude Code, HTTP against the running app (docker compose up -d); set MCP_LETTER_DIR in app/.env.local for the file tool
-claude mcp add --transport http briefklar http://localhost:8080/mcp
+claude mcp add --transport http clarifile http://localhost:8080/mcp
 
 # MCP Inspector: add a server, transport streamable-http, URL http://localhost:8080/mcp
 npx @modelcontextprotocol/inspector
@@ -131,7 +131,7 @@ Claude Desktop (`claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
-    "briefklar": {
+    "clarifile": {
       "command": "docker",
       "args": ["compose", "-f", "/path/to/briefklar/compose.yaml", "run", "--rm", "--no-deps", "-T",
                "-v", "/Users/you/Briefe:/srv/letters:ro", "-e", "MCP_LETTER_DIR=/srv/letters",

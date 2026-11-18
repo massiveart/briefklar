@@ -20,11 +20,11 @@ final class LetterUploadTest extends WebTestCase
      */
     public static function preferredLanguages(): iterable
     {
-        yield 'empty header' => ['', '/de'];
+        yield 'empty header' => ['', '/en'];
         yield 'german' => ['de-AT,de;q=0.9,en;q=0.8', '/de'];
         yield 'english' => ['en-US,en;q=0.9', '/en'];
         yield 'english before german' => ['en-GB,de;q=0.5', '/en'];
-        yield 'unsupported falls back to german' => ['fr-FR,fr;q=0.9', '/de'];
+        yield 'unsupported falls back to english' => ['fr-FR,fr;q=0.9', '/en'];
     }
 
     #[DataProvider('preferredLanguages')]
@@ -37,6 +37,80 @@ final class LetterUploadTest extends WebTestCase
         self::assertResponseRedirects($expected);
     }
 
+    public function testShowsTheClarifileBrand(): void
+    {
+        self::createClient()->request('GET', '/en');
+
+        self::assertSelectorTextContains('title', 'Clarifile');
+        self::assertSelectorExists('header img[alt="Clarifile"]');
+    }
+
+    public function testFrameHasNavigationAndFooter(): void
+    {
+        $crawler = self::createClient()->request('GET', '/de');
+
+        foreach (['#how-it-works', '#privacy', '#mcp'] as $anchor) {
+            self::assertSelectorExists(\sprintf('header a[href$="%s"]', $anchor));
+        }
+        self::assertSelectorExists('header a[href="https://github.com/massiveart/briefklar"]');
+        self::assertSelectorTextContains('.site-footer', 'keine Rechtsberatung');
+        self::assertSame('EN', trim($crawler->filter('.lang-switch > *')->first()->text()));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string}>
+     */
+    public static function landingCopy(): iterable
+    {
+        yield 'german' => ['/de', 'Das Sprachmodell, das deinen Brief erklärt, sieht weder Namen noch Adressen noch Kontonummern.', 'Klarheit statt Amtsdeutsch', 'Lässt sich in der Konfiguration einschalten.'];
+        yield 'english' => ['/en', 'The language model that explains your letter never sees names, addresses or account numbers.', 'Clarity instead of officialese', 'Can be switched on in the configuration.'];
+    }
+
+    #[DataProvider('landingCopy')]
+    public function testLandingExplainsTheFlow(string $page, string $privacyPromise, string $whatYouGet, string $qrOptional): void
+    {
+        self::createClient()->request('GET', $page);
+
+        self::assertSelectorTextContains('.hero', $privacyPromise);
+        self::assertSelectorCount(4, '#how-it-works .step');
+        self::assertSelectorCount(1, '#how-it-works .where--model');
+        self::assertSelectorTextContains('#privacy', 'Max Muster');
+        self::assertSelectorTextContains('#privacy', '⟦PERSON_1⟧');
+        self::assertSelectorTextContains('#privacy', '⟦IBAN_1⟧');
+        self::assertSelectorTextContains('#what-you-get h2', $whatYouGet);
+        self::assertSelectorTextContains('#what-you-get .tag', 'optional');
+        self::assertSelectorTextContains('#what-you-get', $qrOptional);
+        foreach (['explain_letter_file', 'explain_letter', 'redact_text', 'claude mcp add'] as $text) {
+            self::assertSelectorTextContains('#mcp', $text);
+        }
+    }
+
+    #[DataProvider('pages')]
+    public function testDropzoneWrapsTheNativeInput(string $page, string $submit): void
+    {
+        $crawler = self::createClient()->request('GET', $page);
+
+        $input = $crawler->filter('.dropzone[data-controller~="dropzone"] input[type=file][name="letter_upload[letter]"]');
+        self::assertCount(1, $input);
+        self::assertSame('required', $input->attr('required'));
+        self::assertSame('application/pdf,image/png,image/jpeg,image/tiff', $input->attr('accept'));
+        // Without JavaScript the native input stays visible and usable.
+        self::assertNull($input->attr('hidden'));
+        self::assertStringNotContainsString('display', (string) $input->attr('style'));
+        self::assertStringNotContainsString('visually-hidden', (string) $input->attr('class'));
+        self::assertSelectorExists('.dropzone label[for="letter_upload_letter"]');
+        self::assertCount(1, $crawler->selectButton($submit));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function pages(): iterable
+    {
+        yield 'german' => ['/de', 'Brief erklären'];
+        yield 'english' => ['/en', 'Explain letter'];
+    }
+
     public function testEnglishUploadPageRenders(): void
     {
         $client = self::createClient();
@@ -44,7 +118,7 @@ final class LetterUploadTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('html[lang=en]');
-        self::assertSelectorTextContains('h1', 'Understand a letter');
+        self::assertSelectorTextContains('h1', 'Official letters, clearly explained.');
         self::assertSelectorExists('a[hreflang=de][href="/de"]');
     }
 
@@ -76,7 +150,7 @@ final class LetterUploadTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('html[lang=de]');
-        self::assertSelectorTextContains('h1', 'Brief verstehen');
+        self::assertSelectorTextContains('h1', 'Behördenbriefe, klar erklärt.');
         self::assertSelectorExists('input[type=file][name="letter_upload[letter]"]');
         self::assertSelectorExists('a[hreflang=en][href="/en"]');
     }
@@ -206,6 +280,45 @@ final class LetterUploadTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('form', 'Dieses Dateiformat wird nicht unterstützt');
+    }
+
+    public function testServerErrorIsLinkedToTheFileInput(): void
+    {
+        // The dropzone renders the widget on its own; screen readers still need the error tied to the input.
+        $client = self::createClient();
+        $form = $client->request('GET', '/de')->selectButton('Brief erklären')->form();
+        self::attach($form, PdfFixtureFactory::toTempFile('Nur Text, kein Brief.', '.txt'));
+        $client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        $input = $client->getCrawler()->filter('input[name="letter_upload[letter]"]');
+        self::assertSame('true', $input->attr('aria-invalid'));
+        self::assertStringContainsString('letter_upload_letter_error1', (string) $input->attr('aria-describedby'));
+        self::assertSelectorExists('#letter_upload_letter_error1');
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string, string}>
+     */
+    public static function honestCopy(): iterable
+    {
+        yield 'german' => ['/de', 'Die KI sieht', 'Was das Sprachmodell zu sehen bekommt', 'explain_letter_file', 'Bitte nur einen Brief auf einmal.'];
+        yield 'english' => ['/en', 'The AI only sees', 'What the language model gets to see', 'explain_letter_file', 'Please drop one letter at a time.'];
+    }
+
+    /**
+     * With PII_MODEL_DETECTION a local model reads the unredacted letter, and explain_letter hands the
+     * letter to the assistant: the copy only promises what holds in every configuration.
+     */
+    #[DataProvider('honestCopy')]
+    public function testCopyOnlyPromisesWhatHolds(string $page, string $tooBroad, string $privacyTitle, string $mcpTool, string $oneFile): void
+    {
+        $crawler = self::createClient()->request('GET', $page);
+
+        self::assertStringNotContainsString($tooBroad, $crawler->filter('#how-it-works')->text());
+        self::assertSelectorTextContains('#privacy h2', $privacyTitle);
+        self::assertSelectorTextContains('#mcp .mcp__text', $mcpTool);
+        self::assertStringContainsString($oneFile, (string) $crawler->filter('.dropzone')->attr('data-dropzone-messages-value'));
     }
 
     public function testRejectsPdfWithoutReadableText(): void

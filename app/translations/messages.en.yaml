@@ -1,11 +1,76 @@
 app:
-    name: briefklar
+    name: Clarifile
     language_switch: Language
+    nav:
+        label: Page navigation
+        how_it_works: How it works
+        privacy: Privacy
+    footer:
+        made_for: Clarifile · Symfony AI & MCP Hackathon 2026 · Open source (MIT)
+        not_legal_advice: An explanation, not legal advice.
 letter:
     privacy: Your letter is processed for this request only and is not stored. Text recognition runs locally on this server.
+    landing:
+        hero:
+            title_start: Official letters,
+            title_end: clearly explained.
+            lead: Upload your letter. We tell you what it says, what you have to do and by when, even if the letter is in German.
+            privacy_promise: The language model that explains your letter never sees names, addresses or account numbers.
+        how:
+            title: Four steps to an explanation
+            sub: Your letter is processed for this one request only. Everything that identifies you stays on the server.
+            where_local: local
+            where_model: language model
+            read:
+                title: Read
+                text: Text recognition runs locally on the server. Your photo or scan never leaves it.
+            redact:
+                title: Redact
+                text: Names, addresses, IBAN and file numbers are replaced with placeholders.
+            explain:
+                title: Explain
+                text: The language model that explains only sees the redacted text.
+            restore:
+                title: Restore
+                text: Your data is put back into the answer, for you only. Nothing is stored.
+        privacy:
+            title: What the language model gets to see
+            sub: On the left an excerpt from an invented letter, on the right the text the language model actually receives.
+            letter: Your letter
+            stays: stays here
+            model: Sent to the language model
+            redacted: redacted
+            note: Amount and deadline stay readable so the explanation is right.
+        get:
+            eyebrow: What you get
+            title: Clarity instead of officialese
+            facts:
+                title: Deadline, amount, steps
+                text: What the authority wants, what you have to do and by when, in plain words.
+            checked:
+                title: Checked deadlines
+                text: Every deadline is compared with the original letter. Anything not in it is flagged.
+            qr:
+                title: Pay by QR code
+                text: For payments, a code for your banking app.
+                optional: Can be switched on in the configuration.
+        mcp:
+            eyebrow: For AI assistants
+            title: Also an MCP server
+            text: Claude and other assistants can have letters explained through Clarifile. With explain_letter_file the server reads the letter itself; it never reaches the assistant, and the answer contains placeholders instead of personal data.
     upload:
-        title: Understand a letter
-        intro: Upload a letter from an authority. We explain in plain words what it is about and what you have to do, even if the letter is in German.
+        title: Understand official letters
+        drop:
+            title: Drop your letter here
+            hint: PDF, photo or scan · up to 10 MB · not stored
+            choose: Choose file
+            chosen: Selected
+            too_big: The file is larger than 10 MB.
+            wrong_type: Please choose a PDF, PNG, JPEG or TIFF.
+            one_file: Please drop one letter at a time.
+            chip_ocr: Local text recognition
+            chip_redacted: Personal data redacted
+            chip_easy: Easy language
         label: Letter (PDF or photo)
         help: PDF, PNG, JPEG or TIFF, up to 10 MB.
         submit: Explain letter

@@ -5,6 +5,7 @@
 {% block title %}{{ 'letter.result.title'|trans }}{% endblock %}
 
 {% block body %}
+<article class="page page--narrow result">
     <p class="sender">{{ e.sender }}</p>
     {% if result.style.value == 'easy_language' %}
         <p class="style-note"><span class="tag tag-neutral">{{ 'letter.result.easy_language'|trans }}</span></p>
@@ -126,4 +127,5 @@
     </aside>
 
     <p class="result-again"><a class="btn btn-primary" href="{{ path('letter_upload') }}">{{ 'letter.result.again'|trans }}</a></p>
+</article>
 {% endblock %}
