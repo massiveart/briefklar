@@ -219,6 +219,27 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('.upload-status', 'bis zu einer Minute');
     }
 
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function stepLabels(): iterable
+    {
+        yield 'german' => ['/de', 'Schritt {step} von {total}: {name}'];
+        yield 'english' => ['/en', 'Step {step} of {total}: {name}'];
+    }
+
+    #[DataProvider('stepLabels')]
+    public function testProgressStepsAreAnnouncedToScreenReaders(string $page, string $stepLabel): void
+    {
+        self::createClient()->request('GET', $page);
+
+        // The step pills are decoration (aria-hidden); the controller writes the current step into a
+        // visually hidden text inside the status region, so screen readers hear it change.
+        self::assertSelectorExists('.upload-steps[aria-hidden="true"]');
+        self::assertSelectorExists('[role=status] .visually-hidden[data-upload-progress-target="announcement"]');
+        self::assertSelectorExists(\sprintf('form[data-upload-progress-step-label-value="%s"]', $stepLabel));
+    }
+
     public function testUploadingFixture01AsPdfShowsExplanationWithDeadline(): void
     {
         $client = self::createClient();

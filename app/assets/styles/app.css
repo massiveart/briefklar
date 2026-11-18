@@ -199,6 +199,7 @@ form li { color: var(--warn-text); font-size: 14px; }
 .samples > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform .15s; }
 .samples[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
 .samples > summary:hover { color: var(--text); background: var(--surface-3); }
+.samples > summary:focus-visible { border-radius: 999px; color: var(--text); }
 .samples p { margin: 10px 0; }
 .samples ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; }
 .samples li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; justify-content: center; }
@@ -271,12 +272,18 @@ form li { color: var(--warn-text); font-size: 14px; }
 .dropzone__hint { color: var(--muted-2); font-size: 14px; }
 .dropzone__choose { margin-top: 12px; }
 .dropzone__zone:hover .dropzone__choose { border-color: var(--muted-2); }
+/* The native input is visually hidden: show its keyboard focus on the button it stands for. */
+.dropzone:has(.dropzone__input:focus-visible) .dropzone__choose { outline: 2px solid var(--mint); outline-offset: 3px; border-color: var(--mint); }
 .dropzone__file {
     margin: 16px auto 0; max-width: 100%; padding: 8px 14px; border-radius: 10px;
     background: rgba(124, 245, 196, .08); border: 1px solid rgba(124, 245, 196, .3); color: var(--mint);
     font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     display: inline-block;
 }
+/* The file name is shortened in the middle by the dropzone controller; size and label always stay. */
+.dropzone__file.is-split { display: inline-flex; gap: .3em; text-overflow: clip; }
+.dropzone__file-name { overflow: hidden; }
+
 .dropzone__file[hidden], .dropzone__error[hidden] { display: none; }
 .dropzone__error { margin: 16px auto 0; color: var(--warn-text); font-size: 14px; font-weight: 600; }
 .dropzone__chips { margin-top: 20px; }

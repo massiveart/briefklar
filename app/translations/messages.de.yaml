@@ -91,6 +91,7 @@ letter:
         submit: Brief erklären
         submitting: Brief wird erklärt …
         progress: Wir lesen deinen Brief, entfernen persönliche Daten und lassen ihn erklären. Das kann bis zu einer Minute dauern. Bitte lade die Seite nicht neu.
+        progress_step: 'Schritt {step} von {total}: {name}'
         easy_language: Erklärung in Leichter Sprache
         easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
         setup_missing: 'Noch kein Sprachmodell eingerichtet: Trage %key% in app/.env.local ein oder wähle mit AI_PLATFORM=ollama ein lokales Modell (siehe README).'
