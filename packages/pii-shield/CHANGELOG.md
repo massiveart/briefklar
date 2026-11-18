@@ -4,6 +4,10 @@ All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https:
 
 ## [Unreleased]
 
+### Added
+
+- Bundle: `vault.storage` and `learning.store` take the service id of your own `VaultStorageInterface` / `CustomEntityStoreInterface` (database, S3, ...). `VaultStorageInterface` is aliased to the configured storage. Setting one of them together with `cache_pool` is rejected.
+
 ### Fixed
 
 - `PiiShieldBundleTest` no longer fails at random when the generated vault key contains a `%name%` sequence (handover #74): the test passes the key through an env var, as documented. The `vault.key` config info and `docs/library.md` say that a literal key must escape `%` as `%%`.

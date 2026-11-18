@@ -46,5 +46,10 @@ final class TestKernel extends Kernel
             'cache' => ['app' => 'cache.adapter.array'],
         ]);
         $container->extension('pii_shield', $this->piiShieldConfig);
+
+        // An application's own storage implementations, referenced by service id in the tests.
+        $services = $container->services();
+        $services->set('app.vault_storage', InMemoryVaultStorage::class)->public();
+        $services->set('app.entity_store', InMemoryCustomEntityStore::class)->public();
     }
 }
