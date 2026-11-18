@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Vault\Storage;
+namespace Clarifile\PiiShield\Vault\Storage;
 
 /**
  * Raw byte storage behind EncryptedVault. Only ever receives ciphertext.

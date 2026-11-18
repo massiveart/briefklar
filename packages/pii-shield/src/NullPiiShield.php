@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
 /**
  * Pass-through implementation so the app can be built before the real shield exists.

@@ -35,7 +35,7 @@ final readonly class ScannedPdfOcrExtractor implements TextExtractorInterface
 
     public function extract(string $path): ?ExtractedText
     {
-        $workDir = ($this->tempDir ?? sys_get_temp_dir()).'/briefklar_ocr_'.bin2hex(random_bytes(8));
+        $workDir = ($this->tempDir ?? sys_get_temp_dir()).'/clarifile_ocr_'.bin2hex(random_bytes(8));
         if (!mkdir($workDir, 0700) && !is_dir($workDir)) {
             throw new \RuntimeException('Could not create OCR work directory.');
         }

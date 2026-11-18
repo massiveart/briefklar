@@ -13,7 +13,7 @@ final class SampleLettersTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir().'/briefklar_samples_'.bin2hex(random_bytes(6));
+        $this->directory = sys_get_temp_dir().'/clarifile_samples_'.bin2hex(random_bytes(6));
         mkdir($this->directory);
         file_put_contents($this->directory.'/02-regex.txt', 'Brief zwei');
         file_put_contents($this->directory.'/02-regex.expected.json', '{"pii": []}');

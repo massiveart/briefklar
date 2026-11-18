@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Demo;
+namespace Clarifile\PiiShield\Tests\Demo;
 
-use Briefklar\PiiShield\Demo\Kernel;
+use Clarifile\PiiShield\Demo\Kernel;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 

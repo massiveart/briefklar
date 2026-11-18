@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Masking\MaskingStrategyInterface;
-use Briefklar\PiiShield\Masking\PartialMask;
-use Briefklar\PiiShield\Masking\TypeLabelMask;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Masking\MaskingStrategyInterface;
+use Clarifile\PiiShield\Masking\PartialMask;
+use Clarifile\PiiShield\Masking\TypeLabelMask;
 
 /**
  * Same detection as PiiShield, but replaces entities irreversibly. No vault, no way back.

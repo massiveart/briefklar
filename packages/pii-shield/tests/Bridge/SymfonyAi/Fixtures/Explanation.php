@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures;
+namespace Clarifile\PiiShield\Tests\Bridge\SymfonyAi\Fixtures;
 
 /**
  * Structured output DTO as an agent would return it (readonly, nested).

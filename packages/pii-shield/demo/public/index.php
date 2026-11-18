@@ -7,8 +7,8 @@ declare(strict_types=1);
  * Locally: `make demo`, then http://127.0.0.1:8088. In Docker: service mode, /v1 only.
  */
 
-use Briefklar\PiiShield\Demo\DemoServices;
-use Briefklar\PiiShield\Demo\Kernel;
+use Clarifile\PiiShield\Demo\DemoServices;
+use Clarifile\PiiShield\Demo\Kernel;
 use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\HttpFoundation\Request;
 

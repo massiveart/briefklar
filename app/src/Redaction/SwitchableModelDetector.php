@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Redaction;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\DetectorInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 

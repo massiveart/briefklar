@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
 /**
  * Heuristic: is a contact detail (e-mail, phone) the sender authority's own contact?

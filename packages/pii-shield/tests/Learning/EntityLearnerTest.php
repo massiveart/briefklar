@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Learning;
+namespace Clarifile\PiiShield\Tests\Learning;
 
-use Briefklar\PiiShield\Exception\LearningFailedException;
-use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
-use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
-use Briefklar\PiiShield\Learning\CustomEntityType;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\Learning\JsonFileCustomEntityStore;
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\Exception\LearningFailedException;
+use Clarifile\PiiShield\Learning\CacheCustomEntityStore;
+use Clarifile\PiiShield\Learning\CustomEntityStoreInterface;
+use Clarifile\PiiShield\Learning\CustomEntityType;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\Learning\JsonFileCustomEntityStore;
+use Clarifile\PiiShield\PiiShield;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;

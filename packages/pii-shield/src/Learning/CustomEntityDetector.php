@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Detector\RegexMatcher;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\RegexMatcher;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
 
 /**
  * Finds a learned type by its pattern. Types without a pattern are left to the model detector.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Bridge\Symfony\Fixtures;
+namespace Clarifile\PiiShield\Tests\Bridge\Symfony\Fixtures;
 
-use Briefklar\PiiShield\Bridge\Symfony\PiiShieldBundle;
+use Clarifile\PiiShield\Bridge\Symfony\PiiShieldBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

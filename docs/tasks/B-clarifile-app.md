@@ -1,4 +1,4 @@
-# Task B: briefklar app (owner: Cornelius)
+# Task B: Clarifile app (owner: Cornelius)
 
 ## Goal
 A Symfony web app: upload a letter, get a clear explanation. Uses `pii-shield` through Symfony AI processors, so the app code itself never deals with redaction.

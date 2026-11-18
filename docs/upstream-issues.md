@@ -17,7 +17,7 @@ Bugs and rough edges found in Symfony AI and `mcp/sdk` during the hackathon. Eac
 ## No per-call context to pass state from input to output processors
 - Package / version: `symfony/ai-agent` 1.0.0-BETA1
 - Reproduction: an input processor redacts the `MessageBag` and needs the redaction mapping in the output processor of the same `Agent::call()`. `Input` and `Output` share only model, `MessageBag` and options. Options are forwarded to the platform (and may end up in the provider request), so they cannot carry sensitive state.
-- Workaround: `briefklar/pii-shield` keys a `WeakMap` by the `MessageBag` instance the input processor sets; `Output::getMessageBag()` returns that same instance. Works, but relies on object identity, which is not part of the documented contract.
+- Workaround: `clarifile/pii-shield` keys a `WeakMap` by the `MessageBag` instance the input processor sets; `Output::getMessageBag()` returns that same instance. Works, but relies on object identity, which is not part of the documented contract.
 - Expected: a per-call context object (or attributes bag) on `Input`/`Output` that is never sent to the platform.
 - Filed: no. On re-check an equivalent exists: `MessageBag` uses `MetadataAwareTrait`, its metadata is not part of the provider payload (the contract normalizers ignore it) and survives `with()`/`merge()`, because they clone it. We keep the `WeakMap` on purpose: bag metadata is serialized by `Serializer\MessageBagNormalizer` (message stores), and the redaction mapping holds the original personal data, which must not be persisted. Object identity also holds on upstream `main` (checked 17.11.2026): the runner works on copies and `Output` receives the bag the input processors set.
 

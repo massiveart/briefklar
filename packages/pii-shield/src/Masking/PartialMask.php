@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Masking;
+namespace Clarifile\PiiShield\Masking;
 
-use Briefklar\PiiShield\Entity;
+use Clarifile\PiiShield\Entity;
 
 /**
  * Keeps the first and last n characters, masks everything else except whitespace:

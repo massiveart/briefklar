@@ -32,7 +32,7 @@ final class LetterToolsTest extends KernelTestCase
 
     protected function setUp(): void
     {
-        $this->folder = sys_get_temp_dir().'/briefklar_mcp_letters_'.bin2hex(random_bytes(6));
+        $this->folder = sys_get_temp_dir().'/clarifile_mcp_letters_'.bin2hex(random_bytes(6));
         mkdir($this->folder);
         file_put_contents($this->folder.'/strafverfuegung.pdf', PdfFixtureFactory::textPdf(PdfFixtureFactory::letter('01-strafverfuegung')));
         file_put_contents($this->folder.'/notiz.txt', 'keine Datei für Briefe');

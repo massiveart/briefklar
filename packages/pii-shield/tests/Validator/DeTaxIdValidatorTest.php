@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Validator;
+namespace Clarifile\PiiShield\Tests\Validator;
 
-use Briefklar\PiiShield\Validator\DeTaxIdValidator;
+use Clarifile\PiiShield\Validator\DeTaxIdValidator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

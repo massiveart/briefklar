@@ -16,7 +16,7 @@ final class LetterDirectoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->root = sys_get_temp_dir().'/briefklar_mcp_'.bin2hex(random_bytes(6));
+        $this->root = sys_get_temp_dir().'/clarifile_mcp_'.bin2hex(random_bytes(6));
         $this->letters = $this->root.'/letters';
         mkdir($this->letters.'/2026', recursive: true);
         foreach (['brief.pdf', 'Foto.JPG', 'scan.tiff', '2026/nov.png', 'notes.txt'] as $file) {

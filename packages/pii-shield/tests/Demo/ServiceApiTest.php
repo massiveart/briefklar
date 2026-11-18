@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Demo;
+namespace Clarifile\PiiShield\Tests\Demo;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Demo\ServiceApi;
-use Briefklar\PiiShield\Learning\CacheCustomEntityStore;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\Tests\Dig;
-use Briefklar\PiiShield\Vault\EncryptedVault;
-use Briefklar\PiiShield\Vault\Storage\Psr6CacheStorage;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Demo\ServiceApi;
+use Clarifile\PiiShield\Learning\CacheCustomEntityStore;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\Tests\Dig;
+use Clarifile\PiiShield\Vault\EncryptedVault;
+use Clarifile\PiiShield\Vault\Storage\Psr6CacheStorage;
 use PHPUnit\Framework\TestCase;
 use Symfony\AI\Platform\ModelCatalog\FallbackModelCatalog;
 use Symfony\AI\Platform\ModelRouter\CatalogBasedModelRouter;

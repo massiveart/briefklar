@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Validator;
+namespace Clarifile\PiiShield\Validator;
 
 /**
  * IBAN according to ISO 13616 (mod 97 check). Spaces are ignored, case-insensitive.

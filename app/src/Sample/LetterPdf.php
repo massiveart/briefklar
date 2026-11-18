@@ -126,7 +126,7 @@ final readonly class LetterPdf
      */
     private function inTempDir(\Closure $render): string
     {
-        $dir = sys_get_temp_dir().'/briefklar_letter_'.bin2hex(random_bytes(6));
+        $dir = sys_get_temp_dir().'/clarifile_letter_'.bin2hex(random_bytes(6));
         mkdir($dir);
 
         try {

@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
-use Briefklar\PiiShield\Detector\AtSvnrDetector;
-use Briefklar\PiiShield\Detector\BirthDateDetector;
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Detector\EmailDetector;
-use Briefklar\PiiShield\Detector\FileNumberDetector;
-use Briefklar\PiiShield\Detector\IbanDetector;
-use Briefklar\PiiShield\Detector\LicensePlateDetector;
-use Briefklar\PiiShield\Detector\PhoneDetector;
-use Briefklar\PiiShield\Detector\PostalAddressDetector;
-use Briefklar\PiiShield\Detector\SalutationPersonDetector;
-use Briefklar\PiiShield\Detector\TaxNumberDetector;
+use Clarifile\PiiShield\Detector\AtSvnrDetector;
+use Clarifile\PiiShield\Detector\BirthDateDetector;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\EmailDetector;
+use Clarifile\PiiShield\Detector\FileNumberDetector;
+use Clarifile\PiiShield\Detector\IbanDetector;
+use Clarifile\PiiShield\Detector\LicensePlateDetector;
+use Clarifile\PiiShield\Detector\PhoneDetector;
+use Clarifile\PiiShield\Detector\PostalAddressDetector;
+use Clarifile\PiiShield\Detector\SalutationPersonDetector;
+use Clarifile\PiiShield\Detector\TaxNumberDetector;
 
 /**
  * Runs all detectors and returns a clean, non-overlapping list of entities.

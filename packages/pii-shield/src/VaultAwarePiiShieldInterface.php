@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
-use Briefklar\PiiShield\Exception\VaultException;
+use Clarifile\PiiShield\Exception\VaultException;
 
 /**
  * Unmasking across requests: redact() stores the mapping in a vault and sets RedactionResult::$vaultId,

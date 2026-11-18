@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
 
 /**
  * International (+43 ..., 0049 ...) and national (0664/...) phone numbers.

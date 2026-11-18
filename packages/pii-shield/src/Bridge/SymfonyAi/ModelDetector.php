@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Bridge\SymfonyAi;
+namespace Clarifile\PiiShield\Bridge\SymfonyAi;
 
-use Briefklar\PiiShield\Detector\AuthorityContext;
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Detector\FileNumberDetector;
-use Briefklar\PiiShield\Detector\RegexMatcher;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\DetectionFailedException;
-use Briefklar\PiiShield\Learning\CustomEntityStoreInterface;
-use Briefklar\PiiShield\Learning\CustomEntityType;
+use Clarifile\PiiShield\Detector\AuthorityContext;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\FileNumberDetector;
+use Clarifile\PiiShield\Detector\RegexMatcher;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\DetectionFailedException;
+use Clarifile\PiiShield\Learning\CustomEntityStoreInterface;
+use Clarifile\PiiShield\Learning\CustomEntityType;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\PlatformInterface;

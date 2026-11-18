@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo\Controller;
+namespace Clarifile\PiiShield\Demo\Controller;
 
-use Briefklar\PiiShield\Demo\DemoApi;
-use Briefklar\PiiShield\Demo\DemoServices;
-use Briefklar\PiiShield\Exception\DetectionFailedException;
+use Clarifile\PiiShield\Demo\DemoApi;
+use Clarifile\PiiShield\Demo\DemoServices;
+use Clarifile\PiiShield\Exception\DetectionFailedException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

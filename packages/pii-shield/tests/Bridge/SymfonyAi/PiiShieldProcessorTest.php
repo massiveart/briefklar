@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Bridge\SymfonyAi;
+namespace Clarifile\PiiShield\Tests\Bridge\SymfonyAi;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
-use Briefklar\PiiShield\Exception\UnsupportedContentException;
-use Briefklar\PiiShield\PiiShield;
-use Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Explanation;
-use Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Payment;
-use Briefklar\PiiShield\Tests\Dig;
+use Clarifile\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
+use Clarifile\PiiShield\Exception\UnsupportedContentException;
+use Clarifile\PiiShield\PiiShield;
+use Clarifile\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Explanation;
+use Clarifile\PiiShield\Tests\Bridge\SymfonyAi\Fixtures\Payment;
+use Clarifile\PiiShield\Tests\Dig;
 use PHPUnit\Framework\TestCase;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\InputProcessorInterface;

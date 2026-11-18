@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests;
+namespace Clarifile\PiiShield\Tests;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Masking\PartialMask;
-use Briefklar\PiiShield\Masking\TypeLabelMask;
-use Briefklar\PiiShield\PiiMasker;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Masking\PartialMask;
+use Clarifile\PiiShield\Masking\TypeLabelMask;
+use Clarifile\PiiShield\PiiMasker;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

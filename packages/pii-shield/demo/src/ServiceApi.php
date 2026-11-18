@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo;
+namespace Clarifile\PiiShield\Demo;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Detector\EmailDetector;
-use Briefklar\PiiShield\Detector\PhoneDetector;
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\DetectionFailedException;
-use Briefklar\PiiShield\Exception\LearningFailedException;
-use Briefklar\PiiShield\Exception\VaultException;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\PiiMasker;
-use Briefklar\PiiShield\PiiShield;
-use Briefklar\PiiShield\Vault\VaultInterface;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\EmailDetector;
+use Clarifile\PiiShield\Detector\PhoneDetector;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\DetectionFailedException;
+use Clarifile\PiiShield\Exception\LearningFailedException;
+use Clarifile\PiiShield\Exception\VaultException;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\PiiMasker;
+use Clarifile\PiiShield\PiiShield;
+use Clarifile\PiiShield\Vault\VaultInterface;
 
 /**
  * Versioned HTTP API (/v1) for apps that use pii-shield as a service. Documented in docs/openapi.yaml.

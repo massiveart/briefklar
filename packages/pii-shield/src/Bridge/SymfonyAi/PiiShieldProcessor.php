@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Bridge\SymfonyAi;
+namespace Clarifile\PiiShield\Bridge\SymfonyAi;
 
-use Briefklar\PiiShield\Exception\UnsupportedContentException;
-use Briefklar\PiiShield\PiiShieldInterface;
-use Briefklar\PiiShield\RedactionResult;
+use Clarifile\PiiShield\Exception\UnsupportedContentException;
+use Clarifile\PiiShield\PiiShieldInterface;
+use Clarifile\PiiShield\RedactionResult;
 use Symfony\AI\Agent\Input;
 use Symfony\AI\Agent\InputProcessorInterface;
 use Symfony\AI\Agent\Output;

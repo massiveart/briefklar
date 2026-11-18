@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
 final readonly class RestoreResult
 {

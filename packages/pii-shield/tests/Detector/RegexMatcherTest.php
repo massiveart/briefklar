@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Detector;
+namespace Clarifile\PiiShield\Tests\Detector;
 
-use Briefklar\PiiShield\Detector\RegexMatcher;
+use Clarifile\PiiShield\Detector\RegexMatcher;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

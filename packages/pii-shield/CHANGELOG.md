@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `briefklar/pii-shield`. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/) (0.x: the API may still change).
+All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/) (0.x: the API may still change).
 
 ## [Unreleased]
 
@@ -39,4 +39,4 @@ First release, built for the Symfony AI & MCP Hackathon 2026.
 - Linear time for long and crafted texts, guarded by a growth test.
 - PHPStan level max with strict rules, php-cs-fixer `@Symfony`, mutation testing with Infection (MSI ≥ 77 %), `composer audit` in CI.
 
-[0.1.0]: https://github.com/massiveart/briefklar/releases/tag/pii-shield-v0.1.0
+[0.1.0]: https://github.com/massiveart/clarifile/releases/tag/pii-shield-v0.1.0

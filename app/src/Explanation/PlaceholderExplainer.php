@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Explanation;
 
 use App\Extraction\ExtractedText;
-use Briefklar\PiiShield\Exception\ExceptionInterface as PiiShieldException;
-use Briefklar\PiiShield\PiiShieldInterface;
+use Clarifile\PiiShield\Exception\ExceptionInterface as PiiShieldException;
+use Clarifile\PiiShield\PiiShieldInterface;
 
 /**
  * Explains a letter and keeps the placeholders in the answer, for callers that must not see the

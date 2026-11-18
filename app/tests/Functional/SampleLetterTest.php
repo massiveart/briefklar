@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Process\ExecutableFinder;
 
 /**
- * Sample letters let a stranger try briefklar without a letter at hand (README quickstart, video).
+ * Sample letters let a stranger try Clarifile without a letter at hand (README quickstart, video).
  */
 final class SampleLetterTest extends WebTestCase
 {
@@ -32,7 +32,7 @@ final class SampleLetterTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('Content-Type', 'application/pdf');
-        self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename=briefklar-sample-01-strafverfuegung.pdf');
+        self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename=clarifile-sample-01-strafverfuegung.pdf');
         self::assertStringStartsWith('%PDF-', (string) $client->getResponse()->getContent());
     }
 

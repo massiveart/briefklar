@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "69d0657d232528bca8978e167359a7eb",
+    "content-hash": "cce3146982d0fb09b3be00931bce5f79",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -63,12 +63,12 @@
             "published-time": "2026-04-05T21:07:28+00:00"
         },
         {
-            "name": "briefklar/pii-shield",
-            "version": "dev-feat/app-mcp-server",
+            "name": "clarifile/pii-shield",
+            "version": "dev-chore/rename-to-clarifile",
             "dist": {
                 "type": "path",
                 "url": "../packages/pii-shield",
-                "reference": "ea99970850cd13ad6eb9c1074080f232a6a46505"
+                "reference": "3d716c8687d4e334ae7aa9cbea41beebc48e97e7"
             },
             "require": {
                 "ext-sodium": "*",
@@ -116,13 +116,13 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Briefklar\\PiiShield\\": "src/"
+                    "Clarifile\\PiiShield\\": "src/"
                 }
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Briefklar\\PiiShield\\Tests\\": "tests/",
-                    "Briefklar\\PiiShield\\Demo\\": "demo/src/"
+                    "Clarifile\\PiiShield\\Tests\\": "tests/",
+                    "Clarifile\\PiiShield\\Demo\\": "demo/src/"
                 }
             },
             "scripts": {
@@ -11091,7 +11091,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "briefklar/pii-shield": 20,
+        "clarifile/pii-shield": 20,
         "symfony/ai-agent": 10,
         "symfony/ai-anthropic-platform": 10,
         "symfony/ai-bundle": 10,

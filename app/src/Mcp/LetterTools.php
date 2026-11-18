@@ -16,9 +16,9 @@ use App\Extraction\ExtractionChain;
 use App\Extraction\ExtractionFailedException;
 use App\Extraction\ExtractionMethod;
 use App\Extraction\UnsupportedDocumentException;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\ExceptionInterface as PiiShieldException;
-use Briefklar\PiiShield\PiiShieldInterface;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\ExceptionInterface as PiiShieldException;
+use Clarifile\PiiShield\PiiShieldInterface;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Exception\ClientException;
@@ -29,7 +29,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Mime\MimeTypes;
 
 /**
- * The tools of the MCP server "briefklar" (config/packages/mcp.yaml, issue #64).
+ * The tools of the MCP server "clarifile" (config/packages/mcp.yaml, issue #64).
  *
  * Expected failures (letter not allowed, unreadable, provider down) become ToolCallException, which the
  * client receives as a tool result with isError instead of a protocol error. Messages never contain
@@ -163,7 +163,7 @@ final readonly class LetterTools
     #[McpTool(
         name: 'redact_text',
         title: 'Redact personal data',
-        description: 'Replaces personal data (names, addresses, social security and tax numbers, IBANs, file numbers, …) with typed placeholders such as ⟦PERSON_1⟧, the same way briefklar does before explaining a letter. Returns the redacted text and the placeholder types, never the original values. There is no restore: this server keeps no mapping.',
+        description: 'Replaces personal data (names, addresses, social security and tax numbers, IBANs, file numbers, …) with typed placeholders such as ⟦PERSON_1⟧, the same way Clarifile does before explaining a letter. Returns the redacted text and the placeholder types, never the original values. There is no restore: this server keeps no mapping.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
     )]
     public function redactText(#[Schema(description: 'Text with personal data.')] string $text): array

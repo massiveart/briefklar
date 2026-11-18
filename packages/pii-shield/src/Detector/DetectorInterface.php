@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
-use Briefklar\PiiShield\Entity;
+use Clarifile\PiiShield\Entity;
 
 interface DetectorInterface
 {

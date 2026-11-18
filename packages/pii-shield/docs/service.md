@@ -107,8 +107,8 @@ The mapping stays on the server; tools return placeholders and a `vaultId`, neve
 **Claude Code** (STDIO):
 
 ```bash
-claude mcp add pii-shield -- make -s -C /path/to/briefklar/packages/pii-shield mcp            # Docker
-claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin/console mcp:server pii_shield   # local PHP
+claude mcp add pii-shield -- make -s -C /path/to/clarifile/packages/pii-shield mcp            # Docker
+claude mcp add pii-shield -- php /path/to/clarifile/packages/pii-shield/demo/bin/console mcp:server pii_shield   # local PHP
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`, STDIO):
@@ -118,7 +118,7 @@ claude mcp add pii-shield -- php /path/to/briefklar/packages/pii-shield/demo/bin
   "mcpServers": {
     "pii-shield": {
       "command": "php",
-      "args": ["/path/to/briefklar/packages/pii-shield/demo/bin/console", "mcp:server", "pii_shield"]
+      "args": ["/path/to/clarifile/packages/pii-shield/demo/bin/console", "mcp:server", "pii_shield"]
     }
   }
 }

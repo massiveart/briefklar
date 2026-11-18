@@ -2,7 +2,7 @@
 
 > Understand official letters without handing your personal data to an LLM.
 
-**Clarifile** (formerly briefklar; the repository, namespaces and packages keep that name) explains letters from authorities (tax office, district authority, social insurance) in plain language: *who wrote this, what do they want, what do I have to do, by when*. Before any text reaches a language model, a reversible PII shield replaces names, addresses, social security numbers, IBANs and file numbers with placeholders, and restores them only in the answer you see.
+**Clarifile** (formerly briefklar) explains letters from authorities (tax office, district authority, social insurance) in plain language: *who wrote this, what do they want, what do I have to do, by when*. Before any text reaches a language model, a reversible PII shield replaces names, addresses, social security numbers, IBANs and file numbers with placeholders, and restores them only in the answer you see.
 
 Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Symfony AI and the official PHP MCP SDK.
 
@@ -11,7 +11,7 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 | Path | What | Reusable on its own |
 |---|---|---|
 | `packages/pii-shield` | Reversible PII redaction for Symfony AI (input/output processors), DACH recognizers with checksum validation, plus its own MCP server | Yes, designed as standalone package |
-| `app/` | The Clarifile web app plus the MCP server `briefklar` (`explain_letter_file`, `explain_letter`, `redact_text`) | No, it's the demo |
+| `app/` | The Clarifile web app plus the MCP server `clarifile` (`explain_letter_file`, `explain_letter`, `redact_text`) | No, it's the demo |
 | `fixtures/letters` | Synthetic letters with expected PII annotations, used for tests and the demo | |
 
 ## Quickstart (target: 5 minutes)
@@ -19,7 +19,7 @@ Built for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon) on Sym
 Needs Docker and a [Hugging Face access token](https://huggingface.co/settings/tokens) that may call Inference Providers. OCR and redaction run locally in the container; only the redacted text, with placeholders instead of names, addresses and numbers, goes to the provider.
 
 ```bash
-git clone https://github.com/massiveart/briefklar.git && cd briefklar
+git clone https://github.com/massiveart/clarifile.git && cd clarifile
 echo "HUGGINGFACE_API_KEY=hf_your_token" >> app/.env.local   # git-ignored, never committed
 docker compose up -d                                        # first start installs dependencies (about a minute)
 open http://localhost:8080
@@ -60,7 +60,7 @@ Two MCP servers, both on the official PHP MCP SDK via `symfony/mcp-bundle`, over
 
 | Server | Tools | Why |
 |---|---|---|
-| `briefklar` (`app/`) | `explain_letter_file`, `explain_letter`, `redact_text` | `explain_letter_file` reads the letter from a folder on the server, runs OCR and redaction locally and answers with placeholders such as `⟦IBAN_1⟧`. The letter never enters the client model's context. |
+| `clarifile` (`app/`) | `explain_letter_file`, `explain_letter`, `redact_text` | `explain_letter_file` reads the letter from a folder on the server, runs OCR and redaction locally and answers with placeholders such as `⟦IBAN_1⟧`. The letter never enters the client model's context. |
 | `pii_shield` (`packages/pii-shield`) | `redact_text`, `restore_text`, `mask_text`, `learn_entity_type`, `list_entity_types` | Reversible redaction as a building block for any MCP client. |
 
 Setup for Claude Code, Claude Desktop and the MCP Inspector: [app/README.md](app/README.md) and [packages/pii-shield/README.md](packages/pii-shield/README.md).
@@ -71,7 +71,7 @@ Setup for Claude Code, Claude Desktop and the MCP Inspector: [app/README.md](app
 
 ## Not legal advice
 
-briefklar explains what a letter says. It does not give legal advice, and deadlines it extracts must be verified against the original letter.
+Clarifile explains what a letter says. It does not give legal advice, and deadlines it extracts must be verified against the original letter.
 
 ## License
 

@@ -31,7 +31,7 @@ final class OcrExtractionTest extends TestCase
             }
         }
 
-        $this->tempDir = sys_get_temp_dir().'/briefklar_test_'.bin2hex(random_bytes(4));
+        $this->tempDir = sys_get_temp_dir().'/clarifile_test_'.bin2hex(random_bytes(4));
         mkdir($this->tempDir);
     }
 

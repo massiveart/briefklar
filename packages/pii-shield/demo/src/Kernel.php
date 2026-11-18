@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo;
+namespace Clarifile\PiiShield\Demo;
 
 use Symfony\AI\McpBundle\McpBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -53,7 +53,7 @@ final class Kernel extends BaseKernel
                     'version' => '1.0.0',
                     'description' => 'Reversible redaction, masking and learning of personal data.',
                     'instructions' => 'Before giving text with personal data to a model, call redact_text and work with the placeholders. Call restore_text with the vaultId to put the original values back into the final answer.',
-                    'registry' => ['tools' => ['Briefklar\\PiiShield\\Demo\\Mcp\\']],
+                    'registry' => ['tools' => ['Clarifile\\PiiShield\\Demo\\Mcp\\']],
                     'transports' => ['stdio' => true, 'http' => true],
                     'http' => [
                         'path' => '/mcp',

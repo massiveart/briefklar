@@ -58,7 +58,7 @@ jobs:
     # when the Dockerfile changes or the cache has expired.
     runs-on: ubuntu-latest
     env:
-      RUN: docker run --rm -v ${{ github.workspace }}:/srv -w /srv/app briefklar-app:ci
+      RUN: docker run --rm -v ${{ github.workspace }}:/srv -w /srv/app clarifile-app:ci
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -67,7 +67,7 @@ jobs:
         with:
           context: .
           load: true
-          tags: briefklar-app:ci
+          tags: clarifile-app:ci
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
       - run: $RUN composer install --no-interaction --prefer-dist

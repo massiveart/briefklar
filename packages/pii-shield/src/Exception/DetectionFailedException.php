@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Exception;
+namespace Clarifile\PiiShield\Exception;
 
 /**
  * The detection model did not return a usable answer. Detection fails closed: continuing without

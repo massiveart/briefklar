@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield;
+namespace Clarifile\PiiShield;
 
 /**
  * Irreversible masking for logs, debug output and previews (docs/adr/0005).

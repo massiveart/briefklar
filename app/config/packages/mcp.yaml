@@ -1,10 +1,9 @@
-# MCP server "briefklar" (docs/tasks/C-mcp-server.md, issue #64): explain_letter_file, explain_letter, redact_text.
-# The id stays "briefklar" (route, console command); clients see the product name Clarifile.
-# STDIO: bin/console mcp:server briefklar --env=prod (nothing else may write to stdout)
+# MCP server "clarifile" (docs/tasks/C-mcp-server.md, issue #64): explain_letter_file, explain_letter, redact_text.
+# STDIO: bin/console mcp:server clarifile --env=prod (nothing else may write to stdout)
 # HTTP:  /mcp on the app's port, localhost only; McpRequestGuard adds JSON-only and Origin checks.
 mcp:
     servers:
-        briefklar:
+        clarifile:
             name: Clarifile
             version: '1.0.0'
             description: 'Explains official letters in plain language; personal data is redacted before any model sees the letter.'

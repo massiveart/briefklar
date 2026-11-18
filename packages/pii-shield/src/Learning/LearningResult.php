@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
 final readonly class LearningResult
 {

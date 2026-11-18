@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
-use Briefklar\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\DetectorInterface;
 
 /**
  * Runs the patterns of all currently learned types; new types take effect on the next text.

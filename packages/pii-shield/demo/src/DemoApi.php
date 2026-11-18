@@ -2,35 +2,35 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Demo;
+namespace Clarifile\PiiShield\Demo;
 
-use Briefklar\PiiShield\Bridge\SymfonyAi\ModelDetector;
-use Briefklar\PiiShield\Detector\AtSvnrDetector;
-use Briefklar\PiiShield\Detector\BirthDateDetector;
-use Briefklar\PiiShield\Detector\DetectorInterface;
-use Briefklar\PiiShield\Detector\EmailDetector;
-use Briefklar\PiiShield\Detector\FileNumberDetector;
-use Briefklar\PiiShield\Detector\IbanDetector;
-use Briefklar\PiiShield\Detector\LicensePlateDetector;
-use Briefklar\PiiShield\Detector\PhoneDetector;
-use Briefklar\PiiShield\Detector\PostalAddressDetector;
-use Briefklar\PiiShield\Detector\SalutationPersonDetector;
-use Briefklar\PiiShield\Detector\TaxNumberDetector;
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\EntityType;
-use Briefklar\PiiShield\Exception\VaultException;
-use Briefklar\PiiShield\Learning\CustomEntityDetector;
-use Briefklar\PiiShield\Learning\CustomEntityType;
-use Briefklar\PiiShield\Learning\EntityLearner;
-use Briefklar\PiiShield\Masking\MaskingStrategyInterface;
-use Briefklar\PiiShield\Masking\PartialMask;
-use Briefklar\PiiShield\Masking\TypeLabelMask;
-use Briefklar\PiiShield\PiiMasker;
-use Briefklar\PiiShield\PiiShield;
-use Briefklar\PiiShield\Placeholder;
-use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
-use Briefklar\PiiShield\Vault\VaultInterface;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Detector\AtSvnrDetector;
+use Clarifile\PiiShield\Detector\BirthDateDetector;
+use Clarifile\PiiShield\Detector\DetectorInterface;
+use Clarifile\PiiShield\Detector\EmailDetector;
+use Clarifile\PiiShield\Detector\FileNumberDetector;
+use Clarifile\PiiShield\Detector\IbanDetector;
+use Clarifile\PiiShield\Detector\LicensePlateDetector;
+use Clarifile\PiiShield\Detector\PhoneDetector;
+use Clarifile\PiiShield\Detector\PostalAddressDetector;
+use Clarifile\PiiShield\Detector\SalutationPersonDetector;
+use Clarifile\PiiShield\Detector\TaxNumberDetector;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\EntityType;
+use Clarifile\PiiShield\Exception\VaultException;
+use Clarifile\PiiShield\Learning\CustomEntityDetector;
+use Clarifile\PiiShield\Learning\CustomEntityType;
+use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\Masking\MaskingStrategyInterface;
+use Clarifile\PiiShield\Masking\PartialMask;
+use Clarifile\PiiShield\Masking\TypeLabelMask;
+use Clarifile\PiiShield\PiiMasker;
+use Clarifile\PiiShield\PiiShield;
+use Clarifile\PiiShield\Placeholder;
+use Clarifile\PiiShield\Vault\Storage\VaultStorageInterface;
+use Clarifile\PiiShield\Vault\VaultInterface;
 
 /**
  * JSON API behind the demo page. Uses the public library API only, plus the vault storage

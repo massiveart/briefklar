@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Detector;
+namespace Clarifile\PiiShield\Detector;
 
-use Briefklar\PiiShield\Entity;
-use Briefklar\PiiShield\EntityType;
+use Clarifile\PiiShield\Entity;
+use Clarifile\PiiShield\EntityType;
 
 /**
  * AT and DE license plates, only after the keyword "Kennzeichen".

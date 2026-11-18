@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Bridge\SymfonyAi;
+namespace Clarifile\PiiShield\Bridge\SymfonyAi;
 
 /**
  * Applies a string transformation to every string inside arrays and objects (structured output DTOs).

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Learning;
+namespace Clarifile\PiiShield\Learning;
 
 /**
  * Where learned entity types live. Default: JsonFileCustomEntityStore; any PSR-6 pool via CacheCustomEntityStore.

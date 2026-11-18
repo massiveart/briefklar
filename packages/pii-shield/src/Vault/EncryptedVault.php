@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Vault;
+namespace Clarifile\PiiShield\Vault;
 
-use Briefklar\PiiShield\Exception\VaultException;
-use Briefklar\PiiShield\Vault\Storage\VaultStorageInterface;
+use Clarifile\PiiShield\Exception\VaultException;
+use Clarifile\PiiShield\Vault\Storage\VaultStorageInterface;
 
 /**
  * Encrypts mappings with XChaCha20-Poly1305 (libsodium) before they reach the storage.

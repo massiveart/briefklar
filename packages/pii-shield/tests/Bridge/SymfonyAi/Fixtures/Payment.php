@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests\Bridge\SymfonyAi\Fixtures;
+namespace Clarifile\PiiShield\Tests\Bridge\SymfonyAi\Fixtures;
 
 final readonly class Payment
 {

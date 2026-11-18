@@ -6,8 +6,8 @@ namespace App\Explanation;
 
 use App\Extraction\ExtractedText;
 use App\Payment\PaymentDetailsExtractor;
-use Briefklar\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
-use Briefklar\PiiShield\Exception\ExceptionInterface as PiiShieldException;
+use Clarifile\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
+use Clarifile\PiiShield\Exception\ExceptionInterface as PiiShieldException;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Agent\Exception\ExceptionInterface as AgentException;
 use Symfony\AI\Platform\Exception\ExceptionInterface as PlatformException;

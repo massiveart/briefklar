@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests;
+namespace Clarifile\PiiShield\Tests;
 
-use Briefklar\PiiShield\EntityExtractor;
-use Briefklar\PiiShield\PiiMasker;
-use Briefklar\PiiShield\PiiShield;
+use Clarifile\PiiShield\EntityExtractor;
+use Clarifile\PiiShield\PiiMasker;
+use Clarifile\PiiShield\PiiShield;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;

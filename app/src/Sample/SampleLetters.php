@@ -7,7 +7,7 @@ namespace App\Sample;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * The synthetic letters in /fixtures/letters, offered on the upload page for trying briefklar
+ * The synthetic letters in /fixtures/letters, offered on the upload page for trying Clarifile
  * without a letter at hand. Letters that only model-based detection can redact ("detection": "model")
  * are offered only when it is switched on, so a sample never sends a name to the provider.
  */

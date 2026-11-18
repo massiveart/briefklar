@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Briefklar\PiiShield\Tests;
+namespace Clarifile\PiiShield\Tests;
 
-use Briefklar\PiiShield\NullPiiShield;
+use Clarifile\PiiShield\NullPiiShield;
 use PHPUnit\Framework\TestCase;
 
 final class NullPiiShieldTest extends TestCase
