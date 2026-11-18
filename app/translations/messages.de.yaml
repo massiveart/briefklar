@@ -60,6 +60,17 @@ letter:
             text: Claude und andere Assistenten können Briefe über Clarifile erklären lassen. Der Brief selbst landet nie beim Assistenten, die Antwort enthält nur Platzhalter.
     upload:
         title: Behördenbriefe verstehen
+        drop:
+            title: Brief hierher ziehen
+            hint: PDF, Foto oder Scan · bis 10 MB · wird nicht gespeichert
+            choose: Datei auswählen
+            chosen: Ausgewählt
+            too_big: Die Datei ist größer als 10 MB.
+            wrong_type: Bitte ein PDF, PNG, JPEG oder TIFF wählen.
+            one_file: Bitte nur einen Brief auf einmal.
+            chip_ocr: Texterkennung lokal
+            chip_redacted: Persönliche Daten geschwärzt
+            chip_easy: Leichte Sprache
         label: Brief (PDF oder Foto)
         help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
         submit: Brief erklären

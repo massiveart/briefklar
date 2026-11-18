@@ -85,6 +85,32 @@ final class LetterUploadTest extends WebTestCase
         }
     }
 
+    #[DataProvider('pages')]
+    public function testDropzoneWrapsTheNativeInput(string $page, string $submit): void
+    {
+        $crawler = self::createClient()->request('GET', $page);
+
+        $input = $crawler->filter('.dropzone[data-controller~="dropzone"] input[type=file][name="letter_upload[letter]"]');
+        self::assertCount(1, $input);
+        self::assertSame('required', $input->attr('required'));
+        self::assertSame('application/pdf,image/png,image/jpeg,image/tiff', $input->attr('accept'));
+        // Without JavaScript the native input stays visible and usable.
+        self::assertNull($input->attr('hidden'));
+        self::assertStringNotContainsString('display', (string) $input->attr('style'));
+        self::assertStringNotContainsString('visually-hidden', (string) $input->attr('class'));
+        self::assertSelectorExists('.dropzone label[for="letter_upload_letter"]');
+        self::assertCount(1, $crawler->selectButton($submit));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function pages(): iterable
+    {
+        yield 'german' => ['/de', 'Brief erklären'];
+        yield 'english' => ['/en', 'Explain letter'];
+    }
+
     public function testEnglishUploadPageRenders(): void
     {
         $client = self::createClient();

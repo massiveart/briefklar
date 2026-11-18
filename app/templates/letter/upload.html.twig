@@ -32,22 +32,61 @@
                     'data-upload-progress-busy-label-value': 'letter.upload.submitting'|trans,
                 }}) }}
                     {{ form_errors(form) }}
-                    {{ form_row(form.letter, {row_attr: {class: 'field'}, attr: {class: 'input'}}) }}
-                    <div class="field field--checkbox">
-                        {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
-                        <div>
-                            {{ form_label(form.easyLanguage) }}
-                            {{ form_help(form.easyLanguage) }}
+                    {#
+                        The dropzone wraps the real file input: click, keyboard and screen readers use the native
+                        control, and without JavaScript the input simply stays visible (the controller hides it).
+                    #}
+                    <div class="dropzone"
+                        data-controller="dropzone"
+                        data-dropzone-max-bytes-value="{{ constant('App\\Form\\LetterUpload::MAX_BYTES') }}"
+                        data-dropzone-types-value="{{ constant('App\\Form\\LetterUpload::MIME_TYPES')|json_encode }}"
+                        data-dropzone-messages-value="{{ {
+                            too_big: 'letter.upload.drop.too_big'|trans,
+                            wrong_type: 'letter.upload.drop.wrong_type'|trans,
+                            one_file: 'letter.upload.drop.one_file'|trans,
+                            chosen: 'letter.upload.drop.chosen'|trans,
+                        }|json_encode }}"
+                        data-action="dragenter->dropzone#over dragover->dropzone#over dragleave->dropzone#leave drop->dropzone#drop">
+                        <label for="{{ form.letter.vars.id }}" class="dropzone__zone">
+                            <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+                            <strong class="dropzone__title">{{ 'letter.upload.drop.title'|trans }}</strong>
+                            <span class="dropzone__hint">{{ 'letter.upload.drop.hint'|trans }}</span>
+                            <span class="btn dropzone__choose" aria-hidden="true">{{ 'letter.upload.drop.choose'|trans }}</span>
+                        </label>
+                        {{ form_widget(form.letter, {attr: form.letter.vars.attr|merge({
+                            class: 'dropzone__input',
+                            'data-dropzone-target': 'input',
+                            'data-action': 'change->dropzone#pick',
+                        })}) }}
+                        <p class="dropzone__file" data-dropzone-target="name" aria-live="polite" hidden></p>
+                        <p class="dropzone__error" data-dropzone-target="error" role="alert" hidden></p>
+                        {{ form_errors(form.letter) }}
+
+                        <div class="field field--checkbox">
+                            {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
+                            <div>
+                                {{ form_label(form.easyLanguage) }}
+                                {{ form_help(form.easyLanguage) }}
+                            </div>
                         </div>
+                        <button type="submit" class="btn btn-primary dropzone__submit" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
+                        <ul class="chips dropzone__chips">
+                            <li class="chip">{{ 'letter.upload.drop.chip_ocr'|trans }}</li>
+                            <li class="chip">{{ 'letter.upload.drop.chip_redacted'|trans }}</li>
+                            <li class="chip">{{ 'letter.upload.drop.chip_easy'|trans }}</li>
+                        </ul>
                     </div>
-                    <div>
-                        <button type="submit" class="btn btn-primary" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
-                    </div>
+
                     {# Shown by the upload-progress controller while the request runs; announced by screen readers. #}
-                    <p class="upload-status" role="status" data-upload-progress-target="status" hidden>
-                        <span class="spinner" aria-hidden="true"></span>
-                        <span>{{ 'letter.upload.progress'|trans }}</span>
-                    </p>
+                    <div class="upload-status" role="status" data-upload-progress-target="status" hidden>
+                        <p class="upload-status__text"><span class="spinner" aria-hidden="true"></span><span>{{ 'letter.upload.progress'|trans }}</span></p>
+                        {# An indication of what happens, not real progress: the request runs in one piece. #}
+                        <ol class="upload-steps" aria-hidden="true">
+                            {% for step in ['read', 'redact', 'explain', 'restore'] %}
+                                <li data-upload-progress-target="step">{{ ('letter.landing.how.' ~ step ~ '.title')|trans }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
                 {{ form_end(form) }}
             {% endblock %}
 

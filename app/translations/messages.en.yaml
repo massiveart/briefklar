@@ -60,6 +60,17 @@ letter:
             text: Claude and other assistants can have letters explained through Clarifile. The letter itself never reaches the assistant, the answer contains placeholders only.
     upload:
         title: Understand official letters
+        drop:
+            title: Drop your letter here
+            hint: PDF, photo or scan · up to 10 MB · not stored
+            choose: Choose file
+            chosen: Selected
+            too_big: The file is larger than 10 MB.
+            wrong_type: Please choose a PDF, PNG, JPEG or TIFF.
+            one_file: Please one letter at a time.
+            chip_ocr: Local text recognition
+            chip_redacted: Personal data redacted
+            chip_easy: Easy language
         label: Letter (PDF or photo)
         help: PDF, PNG, JPEG or TIFF, up to 10 MB.
         submit: Explain letter
