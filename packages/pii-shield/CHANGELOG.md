@@ -6,6 +6,7 @@ All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https:
 
 ### Fixed
 
+- `PiiShieldBundleTest` no longer fails at random when the generated vault key contains a `%name%` sequence (handover #74): the test passes the key through an env var, as documented. The `vault.key` config info and `docs/library.md` say that a literal key must escape `%` as `%%`.
 - Model findings are checked in their context (handover #59, letter `03-anonymverfuegung`): addresses are extended by postcode and town, dates and times are dropped, words in legal citations kept, file numbers need a digit and a keyword, authority contacts (letterhead, "wenden Sie sich an") kept unless `keepAuthorityContacts: false` (bundle: `keep_authority_contacts`).
 - "wenden Sie sich an" marks an authority contact for the e-mail and phone detectors too.
 

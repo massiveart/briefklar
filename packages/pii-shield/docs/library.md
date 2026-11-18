@@ -43,7 +43,7 @@ pii_shield:
         chunk_size: 4000        # characters per model call; fits Ollama's default 4k-token context
     vault:                      # restore in a later request
         enabled: false
-        key: '%env(base64:PII_SHIELD_VAULT_KEY)%'   # 32 bytes, EncryptedVault::generateKey()
+        key: '%env(base64:PII_SHIELD_VAULT_KEY)%'   # 32 bytes, EncryptedVault::generateKey(); keep it in an env var (a literal key must escape % as %%)
         cache_pool: cache.app   # any PSR-6 pool, e.g. a Redis pool
         ttl: 3600
     learning:
