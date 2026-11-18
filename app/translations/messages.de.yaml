@@ -29,12 +29,12 @@ letter:
                 text: Namen, Adressen, IBAN und Aktenzahl werden durch Platzhalter ersetzt.
             explain:
                 title: Erklären
-                text: Die KI sieht nur den geschwärzten Text und schreibt die Erklärung.
+                text: Das Sprachmodell, das erklärt, sieht nur den geschwärzten Text.
             restore:
                 title: Zurück
                 text: Deine Daten werden wieder eingesetzt, nur für dich. Gespeichert wird nichts.
         privacy:
-            title: Was die KI zu sehen bekommt
+            title: Was das Sprachmodell zu sehen bekommt
             sub: Links ein Ausschnitt aus einem erfundenen Brief, rechts der Text, den das Sprachmodell tatsächlich erhält.
             letter: Dein Brief
             stays: bleibt hier
@@ -57,7 +57,7 @@ letter:
         mcp:
             eyebrow: Für KI-Assistenten
             title: Auch als MCP-Server
-            text: Claude und andere Assistenten können Briefe über Clarifile erklären lassen. Der Brief selbst landet nie beim Assistenten, die Antwort enthält nur Platzhalter.
+            text: Claude und andere Assistenten können Briefe über Clarifile erklären lassen. Mit explain_letter_file liest der Server den Brief selbst; er landet nie beim Assistenten, und die Antwort enthält Platzhalter statt persönlicher Daten.
     upload:
         title: Behördenbriefe verstehen
         drop:

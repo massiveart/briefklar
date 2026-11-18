@@ -53,7 +53,13 @@
                             <span class="dropzone__hint">{{ 'letter.upload.drop.hint'|trans }}</span>
                             <span class="btn dropzone__choose" aria-hidden="true">{{ 'letter.upload.drop.choose'|trans }}</span>
                         </label>
-                        {{ form_widget(form.letter, {attr: form.letter.vars.attr|merge({
+                        {# As form_row would: tie server errors to the input for screen readers. #}
+                        {% set letter_errors = form.letter.vars.errors %}
+                        {% set letter_aria = letter_errors|length > 0 ? {
+                            'aria-invalid': 'true',
+                            'aria-describedby': letter_errors|map((_, index) => form.letter.vars.id ~ '_error' ~ (index + 1))|join(' '),
+                        } : {} %}
+                        {{ form_widget(form.letter, {attr: form.letter.vars.attr|merge(letter_aria)|merge({
                             class: 'dropzone__input',
                             'data-dropzone-target': 'input',
                             'data-action': 'change->dropzone#pick',

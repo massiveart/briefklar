@@ -82,7 +82,7 @@ export default class extends Controller {
     }
 
     accept(file) {
-        if (this.typesValue.length > 0 && !this.typesValue.includes(file.type)) {
+        if (this.typesValue.length > 0 && !this.knownType(file)) {
             this.reject(this.messagesValue.wrong_type);
             return false;
         }
@@ -91,6 +91,14 @@ export default class extends Controller {
             return false;
         }
         return true;
+    }
+
+    knownType(file) {
+        if (file.type !== '') {
+            return this.typesValue.includes(file.type);
+        }
+        // Some systems report no type (e.g. .tif on Windows): go by the extension, the server checks the content.
+        return /\.(pdf|png|jpe?g|tiff?)$/i.test(file.name);
     }
 
     reject(message) {

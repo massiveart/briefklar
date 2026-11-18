@@ -29,12 +29,12 @@ letter:
                 text: Names, addresses, IBAN and file numbers are replaced with placeholders.
             explain:
                 title: Explain
-                text: The AI only sees the redacted text and writes the explanation.
+                text: The language model that explains only sees the redacted text.
             restore:
                 title: Restore
                 text: Your data is put back into the answer, for you only. Nothing is stored.
         privacy:
-            title: What the AI gets to see
+            title: What the language model gets to see
             sub: On the left an excerpt from an invented letter, on the right the text the language model actually receives.
             letter: Your letter
             stays: stays here
@@ -57,7 +57,7 @@ letter:
         mcp:
             eyebrow: For AI assistants
             title: Also an MCP server
-            text: Claude and other assistants can have letters explained through Clarifile. The letter itself never reaches the assistant, the answer contains placeholders only.
+            text: Claude and other assistants can have letters explained through Clarifile. With explain_letter_file the server reads the letter itself; it never reaches the assistant, and the answer contains placeholders instead of personal data.
     upload:
         title: Understand official letters
         drop:
@@ -67,7 +67,7 @@ letter:
             chosen: Selected
             too_big: The file is larger than 10 MB.
             wrong_type: Please choose a PDF, PNG, JPEG or TIFF.
-            one_file: Please one letter at a time.
+            one_file: Please drop one letter at a time.
             chip_ocr: Local text recognition
             chip_redacted: Personal data redacted
             chip_easy: Easy language

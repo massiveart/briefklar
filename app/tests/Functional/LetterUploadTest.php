@@ -282,6 +282,45 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('form', 'Dieses Dateiformat wird nicht unterstützt');
     }
 
+    public function testServerErrorIsLinkedToTheFileInput(): void
+    {
+        // The dropzone renders the widget on its own; screen readers still need the error tied to the input.
+        $client = self::createClient();
+        $form = $client->request('GET', '/de')->selectButton('Brief erklären')->form();
+        self::attach($form, PdfFixtureFactory::toTempFile('Nur Text, kein Brief.', '.txt'));
+        $client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        $input = $client->getCrawler()->filter('input[name="letter_upload[letter]"]');
+        self::assertSame('true', $input->attr('aria-invalid'));
+        self::assertStringContainsString('letter_upload_letter_error1', (string) $input->attr('aria-describedby'));
+        self::assertSelectorExists('#letter_upload_letter_error1');
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string, string}>
+     */
+    public static function honestCopy(): iterable
+    {
+        yield 'german' => ['/de', 'Die KI sieht', 'Was das Sprachmodell zu sehen bekommt', 'explain_letter_file', 'Bitte nur einen Brief auf einmal.'];
+        yield 'english' => ['/en', 'The AI only sees', 'What the language model gets to see', 'explain_letter_file', 'Please drop one letter at a time.'];
+    }
+
+    /**
+     * With PII_MODEL_DETECTION a local model reads the unredacted letter, and explain_letter hands the
+     * letter to the assistant: the copy only promises what holds in every configuration.
+     */
+    #[DataProvider('honestCopy')]
+    public function testCopyOnlyPromisesWhatHolds(string $page, string $tooBroad, string $privacyTitle, string $mcpTool, string $oneFile): void
+    {
+        $crawler = self::createClient()->request('GET', $page);
+
+        self::assertStringNotContainsString($tooBroad, $crawler->filter('#how-it-works')->text());
+        self::assertSelectorTextContains('#privacy h2', $privacyTitle);
+        self::assertSelectorTextContains('#mcp .mcp__text', $mcpTool);
+        self::assertStringContainsString($oneFile, (string) $crawler->filter('.dropzone')->attr('data-dropzone-messages-value'));
+    }
+
     public function testRejectsPdfWithoutReadableText(): void
     {
         $client = self::createClient();

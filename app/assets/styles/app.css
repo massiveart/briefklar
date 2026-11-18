@@ -119,6 +119,8 @@ main { display: block; }
 
 /* ── Layout helpers ───────────────────────────────────────────────────────── */
 .section { padding: clamp(40px, 7vw, 72px) 0; }
+/* The sticky header must not cover a section reached through the navigation. */
+section[id] { scroll-margin-top: 96px; }
 .section--alt { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .section__inner, .page { max-width: var(--page); margin: 0 auto; padding: 0 var(--gutter); }
 .page { padding-top: clamp(28px, 5vw, 48px); padding-bottom: clamp(40px, 7vw, 72px); }
