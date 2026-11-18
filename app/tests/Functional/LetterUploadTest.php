@@ -85,6 +85,34 @@ final class LetterUploadTest extends WebTestCase
         }
     }
 
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function piiShieldCopy(): iterable
+    {
+        yield 'german' => ['/de', 'Ein eigenes Paket'];
+        yield 'english' => ['/en', 'A package of its own'];
+    }
+
+    #[DataProvider('piiShieldCopy')]
+    public function testLandingPresentsPiiShieldAsItsOwnPackage(string $page, string $packageTitle): void
+    {
+        $crawler = self::createClient()->request('GET', $page);
+
+        self::assertSelectorTextContains('#pii-shield h2', 'PII Shield');
+        self::assertSelectorCount(3, '#pii-shield .feature');
+        self::assertSelectorTextContains('#pii-shield', $packageTitle);
+        foreach (['clarifile/pii-shield', 'InputProcessor', 'OutputProcessor', 'IBAN'] as $text) {
+            self::assertSelectorTextContains('#pii-shield', $text);
+        }
+        self::assertSame(
+            'https://github.com/massiveart/clarifile/tree/main/packages/pii-shield',
+            $crawler->filter('#pii-shield a.pii-shield__link')->attr('href'),
+        );
+        // Placed between "what you get" and the MCP section.
+        self::assertSame(['how-it-works', 'privacy', 'what-you-get', 'pii-shield', 'mcp'], $crawler->filter('main section[id]')->each(static fn ($s) => $s->attr('id')));
+    }
+
     #[DataProvider('pages')]
     public function testDropzoneWrapsTheNativeInput(string $page, string $submit): void
     {

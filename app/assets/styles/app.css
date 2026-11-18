@@ -235,6 +235,9 @@ form li { color: var(--warn-text); font-size: 14px; }
 .feature { background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
 .feature h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
 .feature p { color: var(--muted); font-size: 14.5px; margin: 0; }
+.feature--highlight { background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, var(--grad-diag) border-box; border-color: transparent; }
+.feature__key { display: block; margin-top: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--mint); }
+.pii-shield__more { margin: 18px 0 0; font-size: 14.5px; }
 .feature__icon { width: 38px; height: 38px; border-radius: 10px; background: #1A2030; color: var(--mint); display: grid; place-items: center; margin-bottom: 14px; }
 
 /* ── Landing: MCP ─────────────────────────────────────────────────────────── */

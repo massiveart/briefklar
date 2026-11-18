@@ -188,8 +188,41 @@
         </div>
     </section>
 
-    {# 5 · MCP #}
-    <section id="mcp" class="section" aria-labelledby="mcp-title">
+    {# 5 · PII Shield, the privacy layer as a package of its own #}
+    <section id="pii-shield" class="section" aria-labelledby="pii-shield-title">
+        <div class="section__inner">
+            <p class="eyebrow">{{ 'letter.landing.pii_shield.eyebrow'|trans }}</p>
+            <h2 id="pii-shield-title">{{ 'letter.landing.pii_shield.title'|trans }} <span class="grad-text">{{ 'letter.landing.pii_shield.title_end'|trans }}</span></h2>
+            <p class="sub">{{ 'letter.landing.pii_shield.sub'|trans }}</p>
+            <ul class="features">
+                <li class="feature feature--highlight">
+                    {# Lucide "package" #}
+                    <span class="feature__icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="m7.5 4.27 9 5.15"/></svg></span>
+                    <h3>{{ 'letter.landing.pii_shield.package.title'|trans }}</h3>
+                    <p>{{ 'letter.landing.pii_shield.package.text'|trans }}</p>
+                    <code class="feature__key">clarifile/pii-shield</code>
+                </li>
+                <li class="feature">
+                    {# Lucide "arrow-right-left" #}
+                    <span class="feature__icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></span>
+                    <h3>{{ 'letter.landing.pii_shield.processor.title'|trans }}</h3>
+                    <p>{{ 'letter.landing.pii_shield.processor.text'|trans }}</p>
+                    <code class="feature__key">InputProcessor · OutputProcessor</code>
+                </li>
+                <li class="feature">
+                    {# Lucide "badge-check" #}
+                    <span class="feature__icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                    <h3>{{ 'letter.landing.pii_shield.dach.title'|trans }}</h3>
+                    <p>{{ 'letter.landing.pii_shield.dach.text'|trans }}</p>
+                    <code class="feature__key">IBAN · SVNR · TAX_NUMBER</code>
+                </li>
+            </ul>
+            <p class="pii-shield__more"><a class="pii-shield__link" href="https://github.com/massiveart/clarifile/tree/main/packages/pii-shield" rel="noopener">{{ 'letter.landing.pii_shield.link'|trans }} →</a></p>
+        </div>
+    </section>
+
+    {# 6 · MCP #}
+    <section id="mcp" class="section section--alt" aria-labelledby="mcp-title">
         <div class="section__inner">
             <div class="mcp">
                 <div>
