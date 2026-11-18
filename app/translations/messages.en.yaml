@@ -55,7 +55,7 @@ letter:
                 text: For payments, a code for your banking app.
                 optional: Can be switched on in the configuration.
         pii_shield:
-            eyebrow: Under the hood
+            eyebrow: What Symfony AI unlocked
             title: "PII Shield: privacy as a processor,"
             title_end: not as an afterthought.
             sub: The privacy layer of Clarifile is a package of its own. You can use it in any Symfony AI app.
