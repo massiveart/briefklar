@@ -1,6 +1,13 @@
 app:
     name: Clarifile
     language_switch: Language
+    nav:
+        label: Page navigation
+        how_it_works: How it works
+        privacy: Privacy
+    footer:
+        made_for: Clarifile · Symfony AI & MCP Hackathon 2026 · Open source (MIT)
+        not_legal_advice: An explanation, not legal advice.
 letter:
     privacy: Your letter is processed for this request only and is not stored. Text recognition runs locally on this server.
     upload:

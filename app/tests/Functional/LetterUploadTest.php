@@ -45,6 +45,18 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorExists('header img[alt="Clarifile"]');
     }
 
+    public function testFrameHasNavigationAndFooter(): void
+    {
+        $crawler = self::createClient()->request('GET', '/de');
+
+        foreach (['#how-it-works', '#privacy', '#mcp'] as $anchor) {
+            self::assertSelectorExists(\sprintf('header a[href$="%s"]', $anchor));
+        }
+        self::assertSelectorExists('header a[href="https://github.com/massiveart/briefklar"]');
+        self::assertSelectorTextContains('.site-footer', 'keine Rechtsberatung');
+        self::assertSame('EN', trim($crawler->filter('.lang-switch > *')->first()->text()));
+    }
+
     public function testEnglishUploadPageRenders(): void
     {
         $client = self::createClient();
