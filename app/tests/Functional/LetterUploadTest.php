@@ -278,6 +278,20 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('.deadline .warning', 'nicht im Brief gefunden');
     }
 
+    public function testHidesTheLetterQuoteWhenTheModelReworded(): void
+    {
+        $client = self::createClient();
+        // Canned answer 01 quotes "Bitte überweisen Sie den Betrag …"; this letter words it differently,
+        // as if the model had rewritten the sentence (issue #78).
+        $letter = str_replace('Bitte überweisen Sie den Betrag', 'Überweisen Sie bitte den Betrag', PdfFixtureFactory::letter('01-strafverfuegung'));
+        $this->uploadText($client, $letter);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextSame('.deadline__value', 'binnen zwei Wochen ab Zustellung');
+        self::assertSelectorNotExists('.deadline__source');
+        self::assertSelectorNotExists('.deadline .warning');
+    }
+
     public function testFlagsDatesInTheTextThatAreNotInTheLetter(): void
     {
         $client = self::createClient();

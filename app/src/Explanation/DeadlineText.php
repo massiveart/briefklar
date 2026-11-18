@@ -29,6 +29,11 @@ final readonly class DeadlineText
         return new self(trim($parts[0]), '' === $source ? null : $source);
     }
 
+    public function withoutSource(): self
+    {
+        return new self($this->claim, null);
+    }
+
     /**
      * The deadline as a date if the model reported an ISO date that exists, null for a period.
      */
