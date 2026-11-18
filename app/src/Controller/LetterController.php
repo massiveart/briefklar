@@ -8,16 +8,18 @@ use App\Explanation\ExplainedLetter;
 use App\Explanation\ExplanationFailedException;
 use App\Explanation\ExplanationLanguage;
 use App\Explanation\ExplanationStyle;
+use App\Explanation\ExplanationTimeLimit;
 use App\Explanation\LetterExplainer;
+use App\Explanation\ProviderSetup;
 use App\Extraction\ExtractionChain;
 use App\Extraction\ExtractionFailedException;
 use App\Extraction\UnsupportedDocumentException;
 use App\Form\LetterUpload;
 use App\Form\LetterUploadType;
 use App\Payment\PaymentQrCode;
+use App\Sample\SampleLetters;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,24 +30,22 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class LetterController extends AbstractController
 {
-    /** Headroom on top of the model timeout for OCR of a multi-page scan and rendering. */
-    private const int EXTRACTION_HEADROOM_SECONDS = 60;
-
     public function __construct(
         private readonly ExtractionChain $extraction,
         private readonly LetterExplainer $explainer,
+        private readonly ProviderSetup $providerSetup,
         private readonly TranslatorInterface $translator,
         private readonly LoggerInterface $logger,
         private readonly PaymentQrCode $paymentQr,
-        #[Autowire('%env(int:EXPLANATION_TIMEOUT)%')]
-        private readonly int $explanationTimeout,
+        private readonly ExplanationTimeLimit $timeLimit,
+        private readonly SampleLetters $samples,
     ) {
     }
 
     #[Route('/', name: 'home', methods: ['GET'])]
     public function home(Request $request): RedirectResponse
     {
-        $locale = $request->getPreferredLanguage(ExplanationLanguage::locales()) ?? ExplanationLanguage::German->value;
+        $locale = $request->getPreferredLanguage(ExplanationLanguage::locales()) ?? ExplanationLanguage::English->value;
 
         return $this->redirectToRoute('letter_upload', ['_locale' => $locale]);
     }
@@ -63,10 +63,7 @@ final class LetterController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid() && null !== $upload->letter) {
             $file = $upload->letter;
-            // PHP's default of 30 s would cut off a local model mid-answer; the HTTP client
-            // timeout (framework.yaml) ends a hanging model call first, with a proper error.
-            // Up to two model calls: detection (PII_MODEL_DETECTION) and explanation.
-            set_time_limit(2 * $this->explanationTimeout + self::EXTRACTION_HEADROOM_SECONDS);
+            $this->timeLimit->apply();
 
             try {
                 $extracted = $this->extraction->extract($file->getPathname(), (string) $file->getMimeType());
@@ -90,7 +87,11 @@ final class LetterController extends AbstractController
             }
         }
 
-        return $this->render('letter/upload.html.twig', ['form' => $form], new Response(status: $form->isSubmitted() ? 422 : 200));
+        return $this->render('letter/upload.html.twig', [
+            'form' => $form,
+            'missing_provider_key' => $this->providerSetup->missingKey(),
+            'samples' => $this->samples->names(),
+        ], new Response(status: $form->isSubmitted() ? 422 : 200));
     }
 
     private function paymentQrSvg(ExplainedLetter $explained): ?string

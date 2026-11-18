@@ -1,11 +1,76 @@
 app:
-    name: briefklar
+    name: Clarifile
     language_switch: Sprache
+    nav:
+        label: Seitennavigation
+        how_it_works: So funktioniert's
+        privacy: Datenschutz
+    footer:
+        made_for: Clarifile · Symfony AI & MCP Hackathon 2026 · Open Source (MIT)
+        not_legal_advice: Eine Erklärung, keine Rechtsberatung.
 letter:
     privacy: Dein Brief wird nur für diese Anfrage verarbeitet und nicht gespeichert. Texterkennung läuft lokal auf diesem Server.
+    landing:
+        hero:
+            title_start: Behördenbriefe,
+            title_end: klar erklärt.
+            lead: Lade deinen Brief hoch. Wir sagen dir, was drinsteht, was du tun musst und bis wann.
+            privacy_promise: Das Sprachmodell, das deinen Brief erklärt, sieht weder Namen noch Adressen noch Kontonummern.
+        how:
+            title: In vier Schritten zur Erklärung
+            sub: Dein Brief wird nur für diese eine Anfrage verarbeitet. Was dich persönlich betrifft, bleibt auf dem Server.
+            where_local: lokal
+            where_model: Sprachmodell
+            read:
+                title: Lesen
+                text: Die Texterkennung läuft lokal auf dem Server. Dein Foto oder Scan verlässt ihn nicht.
+            redact:
+                title: Schwärzen
+                text: Namen, Adressen, IBAN und Aktenzahl werden durch Platzhalter ersetzt.
+            explain:
+                title: Erklären
+                text: Das Sprachmodell, das erklärt, sieht nur den geschwärzten Text.
+            restore:
+                title: Zurück
+                text: Deine Daten werden wieder eingesetzt, nur für dich. Gespeichert wird nichts.
+        privacy:
+            title: Was das Sprachmodell zu sehen bekommt
+            sub: Links ein Ausschnitt aus einem erfundenen Brief, rechts der Text, den das Sprachmodell tatsächlich erhält.
+            letter: Dein Brief
+            stays: bleibt hier
+            model: An das Sprachmodell
+            redacted: geschwärzt
+            note: Betrag und Frist bleiben lesbar, damit die Erklärung stimmt.
+        get:
+            eyebrow: Was du bekommst
+            title: Klarheit statt Amtsdeutsch
+            facts:
+                title: Frist, Betrag, Schritte
+                text: Was die Behörde will, was du tun musst und bis wann, in einfachen Worten.
+            checked:
+                title: Geprüfte Fristen
+                text: Jede Frist wird mit dem Originalbrief verglichen. Was nicht drinsteht, wird markiert.
+            qr:
+                title: Bezahlen per QR-Code
+                text: Bei Zahlungen ein Code für deine Banking-App.
+                optional: Lässt sich in der Konfiguration einschalten.
+        mcp:
+            eyebrow: Für KI-Assistenten
+            title: Auch als MCP-Server
+            text: Claude und andere Assistenten können Briefe über Clarifile erklären lassen. Mit explain_letter_file liest der Server den Brief selbst; er landet nie beim Assistenten, und die Antwort enthält Platzhalter statt persönlicher Daten.
     upload:
-        title: Brief verstehen
-        intro: Lade einen Brief von einer Behörde hoch. Wir erklären dir in einfachen Worten, worum es geht und was du tun musst.
+        title: Behördenbriefe verstehen
+        drop:
+            title: Brief hierher ziehen
+            hint: PDF, Foto oder Scan · bis 10 MB · wird nicht gespeichert
+            choose: Datei auswählen
+            chosen: Ausgewählt
+            too_big: Die Datei ist größer als 10 MB.
+            wrong_type: Bitte ein PDF, PNG, JPEG oder TIFF wählen.
+            one_file: Bitte nur einen Brief auf einmal.
+            chip_ocr: Texterkennung lokal
+            chip_redacted: Persönliche Daten geschwärzt
+            chip_easy: Leichte Sprache
         label: Brief (PDF oder Foto)
         help: PDF, PNG, JPEG oder TIFF, höchstens 10 MB.
         submit: Brief erklären
@@ -13,11 +78,22 @@ letter:
         progress: Wir lesen deinen Brief, entfernen persönliche Daten und lassen ihn erklären. Das kann bis zu einer Minute dauern. Bitte lade die Seite nicht neu.
         easy_language: Erklärung in Leichter Sprache
         easy_language_help: Sehr kurze Sätze, einfache Wörter, schwierige Wörter werden erklärt.
+        setup_missing: 'Noch kein Sprachmodell eingerichtet: Trage %key% in app/.env.local ein oder wähle mit AI_PLATFORM=ollama ein lokales Modell (siehe README).'
+    samples:
+        title: Kein Brief zur Hand?
+        intro: Probiere es mit einem erfundenen Beispielbrief. Lade ihn herunter und oben wieder hoch. Der Scan hat keinen Text und wird per Texterkennung gelesen.
+        text: PDF
+        scan: Scan
+        letters:
+            01-strafverfuegung: Strafverfügung wegen zu schnellen Fahrens
+            02-finanzamt-vorschreibung: Buchungsmitteilung vom Finanzamt (Einkommensteuer-Vorauszahlung)
+            03-anonymverfuegung: Anonymverfügung wegen Falschparkens
     result:
         title: Erklärung deines Briefs
         easy_language: In Leichter Sprache
         deadline: Frist
         no_deadline: Im Brief steht keine Frist.
+        deadline_source: Im Brief
         deadline_unverified: Diese Frist haben wir so nicht im Brief gefunden. Bitte prüfe sie unbedingt im Original.
         invented_placeholders: Die Erklärung nennt Platzhalter, die nicht für Angaben aus deinem Brief stehen (%placeholders%). Diese Stellen sind unzuverlässig, bitte prüfe sie im Original.
         invented_dates: Die Erklärung nennt Daten, die so nicht im Brief stehen (%dates%). Sie wurden vermutlich berechnet oder geraten. Maßgeblich ist nur, was im Original steht.

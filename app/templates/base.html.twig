@@ -3,6 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="dark">
+        <meta name="theme-color" content="#0B0D12">
         <title>{% block title %}{% endblock %} · {{ 'app.name'|trans }}</title>
         <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-mark.svg') }}">
         {% block stylesheets %}
@@ -20,20 +22,35 @@
         {% endif %}
     </head>
     <body>
-        <header class="nav">
-            <a class="nav-brand" href="{{ path('letter_upload') }}"><img src="{{ asset('images/logo.svg') }}" alt="{{ 'app.name'|trans }}" width="164" height="34"></a>
-            <nav class="lang-switch" aria-label="{{ 'app.language_switch'|trans }}">
-                {% for language in enum('App\\Explanation\\ExplanationLanguage').cases() %}
-                    {% if language.value == app.request.locale %}
-                        <span class="lang-switch__current" aria-current="true" lang="{{ language.value }}">{{ language.nativeName }}</span>
-                    {% else %}
-                        <a href="{{ path('letter_upload', {_locale: language.value}) }}" hreflang="{{ language.value }}" lang="{{ language.value }}">{{ language.nativeName }}</a>
-                    {% endif %}
-                {% endfor %}
-            </nav>
+        {% set home = path('letter_upload') %}
+        <header class="site-header">
+            <div class="site-header__inner">
+                <a class="nav-brand" href="{{ home }}"><img src="{{ asset('images/logo.svg') }}" alt="{{ 'app.name'|trans }}" width="164" height="34"></a>
+                <nav class="site-nav" aria-label="{{ 'app.nav.label'|trans }}">
+                    <a href="{{ home }}#how-it-works">{{ 'app.nav.how_it_works'|trans }}</a>
+                    <a href="{{ home }}#privacy">{{ 'app.nav.privacy'|trans }}</a>
+                    <a href="{{ home }}#mcp">MCP</a>
+                    <a href="https://github.com/massiveart/briefklar" rel="noopener">GitHub</a>
+                </nav>
+                <nav class="lang-switch" aria-label="{{ 'app.language_switch'|trans }}">
+                    {% for language in enum('App\\Explanation\\ExplanationLanguage').cases() %}
+                        {% if language.value == app.request.locale %}
+                            <span class="lang-switch__current" aria-current="true" lang="{{ language.value }}" title="{{ language.nativeName }}">{{ language.value|upper }}</span>
+                        {% else %}
+                            <a href="{{ path('letter_upload', {_locale: language.value}) }}" hreflang="{{ language.value }}" lang="{{ language.value }}" title="{{ language.nativeName }}">{{ language.value|upper }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </nav>
+            </div>
         </header>
         <main>
             {% block body %}{% endblock %}
         </main>
+        <footer class="site-footer">
+            <div class="site-footer__inner">
+                <span>{{ 'app.footer.made_for'|trans }}</span>
+                <span>{{ 'app.footer.not_legal_advice'|trans }}</span>
+            </div>
+        </footer>
     </body>
 </html>

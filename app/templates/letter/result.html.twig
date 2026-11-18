@@ -5,6 +5,7 @@
 {% block title %}{{ 'letter.result.title'|trans }}{% endblock %}
 
 {% block body %}
+<article class="page page--narrow result">
     <p class="sender">{{ e.sender }}</p>
     {% if result.style.value == 'easy_language' %}
         <p class="style-note"><span class="tag tag-neutral">{{ 'letter.result.easy_language'|trans }}</span></p>
@@ -34,7 +35,12 @@
         {% if e.deadline is null %}
             <p>{{ 'letter.result.no_deadline'|trans }}</p>
         {% else %}
-            <p class="deadline__value">{{ e.deadline }}</p>
+            {% set deadline = result.deadline %}
+            {# A date the model reported as ISO is shown the way letters write dates. #}
+            <p class="deadline__value">{{ deadline.date ? deadline.date|date(app.request.locale == 'de' ? 'd.m.Y' : 'j F Y') : deadline.claim }}</p>
+            {% if deadline.source %}
+                <p class="deadline__source"><span class="deadline__source-label">{{ 'letter.result.deadline_source'|trans }}:</span> <q>{{ deadline.source }}</q></p>
+            {% endif %}
             {% if not result.deadlineStatedInLetter %}
                 <p class="warning" role="note">
                     {# Lucide "triangle-alert" #}
@@ -121,4 +127,5 @@
     </aside>
 
     <p class="result-again"><a class="btn btn-primary" href="{{ path('letter_upload') }}">{{ 'letter.result.again'|trans }}</a></p>
+</article>
 {% endblock %}

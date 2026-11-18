@@ -2,40 +2,209 @@
 
 {% block title %}{{ 'letter.upload.title'|trans }}{% endblock %}
 
+{% set warning_icon %}
+    {# Lucide "triangle-alert" #}
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+{% endset %}
+
 {% block body %}
-    <h1>{{ 'letter.upload.title'|trans }}</h1>
-    <p class="lead prose">{{ 'letter.upload.intro'|trans }}</p>
+    {# 1 · Hero with the upload #}
+    <section class="section hero" aria-labelledby="hero-title">
+        <div class="section__inner">
+            <h1 id="hero-title">{{ 'letter.landing.hero.title_start'|trans }} <span class="grad-text">{{ 'letter.landing.hero.title_end'|trans }}</span></h1>
+            <p class="lead">{{ 'letter.landing.hero.lead'|trans }} {{ 'letter.landing.hero.privacy_promise'|trans }}</p>
 
-    {# Turbo Drive expects a redirect after POST; we do not store letters, so there is nothing to redirect to. #}
-    {{ form_start(form, {attr: {
-        'data-turbo': 'false',
-        class: 'upload-form card elev-sm',
-        'data-controller': 'upload-progress',
-        'data-action': 'submit->upload-progress#start',
-        'data-upload-progress-busy-label-value': 'letter.upload.submitting'|trans,
-    }}) }}
-        {{ form_errors(form) }}
-        {{ form_row(form.letter, {row_attr: {class: 'field'}, attr: {class: 'input'}}) }}
-        <div class="field field--checkbox">
-            {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
-            <div>
-                {{ form_label(form.easyLanguage) }}
-                {{ form_help(form.easyLanguage) }}
+            {% if missing_provider_key %}
+                {# Operator hint for a fresh setup: without a key every explanation would fail with a generic error. #}
+                <p class="warning setup-note" role="note">
+                    {{ warning_icon }}
+                    <span>{{ 'letter.upload.setup_missing'|trans({'%key%': missing_provider_key}) }}</span>
+                </p>
+            {% endif %}
+
+            {% block upload_form %}
+                {# Turbo Drive expects a redirect after POST; we do not store letters, so there is nothing to redirect to. #}
+                {{ form_start(form, {attr: {
+                    'data-turbo': 'false',
+                    class: 'upload-form',
+                    'data-controller': 'upload-progress',
+                    'data-action': 'submit->upload-progress#start',
+                    'data-upload-progress-busy-label-value': 'letter.upload.submitting'|trans,
+                }}) }}
+                    {{ form_errors(form) }}
+                    {#
+                        The dropzone wraps the real file input: click, keyboard and screen readers use the native
+                        control, and without JavaScript the input simply stays visible (the controller hides it).
+                    #}
+                    <div class="dropzone"
+                        data-controller="dropzone"
+                        data-dropzone-max-bytes-value="{{ constant('App\\Form\\LetterUpload::MAX_BYTES') }}"
+                        data-dropzone-types-value="{{ constant('App\\Form\\LetterUpload::MIME_TYPES')|json_encode }}"
+                        data-dropzone-messages-value="{{ {
+                            too_big: 'letter.upload.drop.too_big'|trans,
+                            wrong_type: 'letter.upload.drop.wrong_type'|trans,
+                            one_file: 'letter.upload.drop.one_file'|trans,
+                            chosen: 'letter.upload.drop.chosen'|trans,
+                        }|json_encode }}"
+                        data-action="dragenter->dropzone#over dragover->dropzone#over dragleave->dropzone#leave drop->dropzone#drop">
+                        <label for="{{ form.letter.vars.id }}" class="dropzone__zone">
+                            <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+                            <strong class="dropzone__title">{{ 'letter.upload.drop.title'|trans }}</strong>
+                            <span class="dropzone__hint">{{ 'letter.upload.drop.hint'|trans }}</span>
+                            <span class="btn dropzone__choose" aria-hidden="true">{{ 'letter.upload.drop.choose'|trans }}</span>
+                        </label>
+                        {# As form_row would: tie server errors to the input for screen readers. #}
+                        {% set letter_errors = form.letter.vars.errors %}
+                        {% set letter_aria = letter_errors|length > 0 ? {
+                            'aria-invalid': 'true',
+                            'aria-describedby': letter_errors|map((_, index) => form.letter.vars.id ~ '_error' ~ (index + 1))|join(' '),
+                        } : {} %}
+                        {{ form_widget(form.letter, {attr: form.letter.vars.attr|merge(letter_aria)|merge({
+                            class: 'dropzone__input',
+                            'data-dropzone-target': 'input',
+                            'data-action': 'change->dropzone#pick',
+                        })}) }}
+                        <p class="dropzone__file" data-dropzone-target="name" aria-live="polite" hidden></p>
+                        <p class="dropzone__error" data-dropzone-target="error" role="alert" hidden></p>
+                        {{ form_errors(form.letter) }}
+
+                        <div class="field field--checkbox">
+                            {{ form_widget(form.easyLanguage, {attr: {class: 'checkbox'}}) }}
+                            <div>
+                                {{ form_label(form.easyLanguage) }}
+                                {{ form_help(form.easyLanguage) }}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary dropzone__submit" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
+                        <ul class="chips dropzone__chips">
+                            <li class="chip">{{ 'letter.upload.drop.chip_ocr'|trans }}</li>
+                            <li class="chip">{{ 'letter.upload.drop.chip_redacted'|trans }}</li>
+                            <li class="chip">{{ 'letter.upload.drop.chip_easy'|trans }}</li>
+                        </ul>
+                    </div>
+
+                    {# Shown by the upload-progress controller while the request runs; announced by screen readers. #}
+                    <div class="upload-status" role="status" data-upload-progress-target="status" hidden>
+                        <p class="upload-status__text"><span class="spinner" aria-hidden="true"></span><span>{{ 'letter.upload.progress'|trans }}</span></p>
+                        {# An indication of what happens, not real progress: the request runs in one piece. #}
+                        <ol class="upload-steps" aria-hidden="true">
+                            {% for step in ['read', 'redact', 'explain', 'restore'] %}
+                                <li data-upload-progress-target="step">{{ ('letter.landing.how.' ~ step ~ '.title')|trans }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                {{ form_end(form) }}
+            {% endblock %}
+
+            {% if samples is not empty %}
+                <div class="samples">
+                    <p id="samples-title">{{ 'letter.samples.title'|trans }} {{ 'letter.samples.intro'|trans }}</p>
+                    <ul aria-labelledby="samples-title">
+                        {% for name in samples %}
+                            <li>
+                                <span class="sample-name">{{ ('letter.samples.letters.' ~ name)|trans }}</span>
+                                <span class="sample-links">
+                                    <a href="{{ path('sample_letter', {kind: 'text', name: name}) }}" download data-turbo="false">{{ 'letter.samples.text'|trans }}</a>
+                                    <a href="{{ path('sample_letter', {kind: 'scan', name: name}) }}" download data-turbo="false">{{ 'letter.samples.scan'|trans }}</a>
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    {# 2 · How it works #}
+    <section id="how-it-works" class="section section--alt" aria-labelledby="how-title">
+        <div class="section__inner">
+            <p class="eyebrow">{{ 'app.nav.how_it_works'|trans }}</p>
+            <h2 id="how-title">{{ 'letter.landing.how.title'|trans }}</h2>
+            <p class="sub">{{ 'letter.landing.how.sub'|trans }}</p>
+            <ol class="steps">
+                {% for step in ['read', 'redact', 'explain', 'restore'] %}
+                    <li class="step">
+                        <span class="step__n" aria-hidden="true">{{ loop.index }}</span>
+                        <h3>{{ ('letter.landing.how.' ~ step ~ '.title')|trans }}</h3>
+                        <p>{{ ('letter.landing.how.' ~ step ~ '.text')|trans }}</p>
+                        {% if step == 'explain' %}
+                            <span class="where where--model">{{ 'letter.landing.how.where_model'|trans }}</span>
+                        {% else %}
+                            <span class="where where--local">{{ 'letter.landing.how.where_local'|trans }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </section>
+
+    {# 3 · What the model sees (static, synthetic values of fixture 01) #}
+    <section id="privacy" class="section" aria-labelledby="privacy-title">
+        <div class="section__inner">
+            <p class="eyebrow">{{ 'app.nav.privacy'|trans }}</p>
+            <h2 id="privacy-title">{{ 'letter.landing.privacy.title'|trans }}</h2>
+            <p class="sub">{{ 'letter.landing.privacy.sub'|trans }}</p>
+            <div class="compare">
+                <figure class="pane">
+                    <figcaption><span>{{ 'letter.landing.privacy.letter'|trans }}</span><span>{{ 'letter.landing.privacy.stays'|trans }}</span></figcaption>
+                    <p lang="de">Sehr geehrter Herr <span class="tok tok--raw">Max Muster</span>,<br>bitte überweisen Sie 110,00 Euro auf das Konto <span class="tok tok--raw">AT61 1904 3002 3457 3201</span>, Verwendungszweck <span class="tok tok--raw">BHMS-VK-2026/48213</span>.</p>
+                </figure>
+                <figure class="pane pane--model">
+                    <figcaption><span>{{ 'letter.landing.privacy.model'|trans }}</span><span>{{ 'letter.landing.privacy.redacted'|trans }}</span></figcaption>
+                    <p lang="de">Sehr geehrter Herr <span class="tok">⟦PERSON_1⟧</span>,<br>bitte überweisen Sie 110,00 Euro auf das Konto <span class="tok">⟦IBAN_1⟧</span>, Verwendungszweck <span class="tok">⟦FILE_NUMBER_1⟧</span>.</p>
+                </figure>
             </div>
+            <p class="compare__note">{{ 'letter.landing.privacy.note'|trans }}</p>
         </div>
-        <div>
-            <button type="submit" class="btn btn-primary" data-upload-progress-target="submit">{{ 'letter.upload.submit'|trans }}</button>
-        </div>
-        {# Shown by the upload-progress controller while the request runs; announced by screen readers. #}
-        <p class="upload-status" role="status" data-upload-progress-target="status" hidden>
-            <span class="spinner" aria-hidden="true"></span>
-            <span>{{ 'letter.upload.progress'|trans }}</span>
-        </p>
-    {{ form_end(form) }}
+    </section>
 
-    <p class="privacy">
-        {# Lucide "lock" #}
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>{{ 'letter.privacy'|trans }}</span>
-    </p>
+    {# 4 · What you get #}
+    <section id="what-you-get" class="section section--alt" aria-labelledby="get-title">
+        <div class="section__inner">
+            <p class="eyebrow">{{ 'letter.landing.get.eyebrow'|trans }}</p>
+            <h2 id="get-title">{{ 'letter.landing.get.title'|trans }}</h2>
+            <ul class="features">
+                <li class="feature">
+                    <span class="feature__icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <h3>{{ 'letter.landing.get.facts.title'|trans }}</h3>
+                    <p>{{ 'letter.landing.get.facts.text'|trans }}</p>
+                </li>
+                <li class="feature">
+                    <span class="feature__icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></span>
+                    <h3>{{ 'letter.landing.get.checked.title'|trans }}</h3>
+                    <p>{{ 'letter.landing.get.checked.text'|trans }}</p>
+                </li>
+                <li class="feature">
+                    <span class="feature__icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20h.01"/></svg></span>
+                    <h3>{{ 'letter.landing.get.qr.title'|trans }} <span class="tag">optional</span></h3>
+                    <p>{{ 'letter.landing.get.qr.text'|trans }} {{ 'letter.landing.get.qr.optional'|trans }}</p>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    {# 5 · MCP #}
+    <section id="mcp" class="section" aria-labelledby="mcp-title">
+        <div class="section__inner">
+            <div class="mcp">
+                <div>
+                    <p class="eyebrow">{{ 'letter.landing.mcp.eyebrow'|trans }}</p>
+                    <h2 id="mcp-title">{{ 'letter.landing.mcp.title'|trans }}</h2>
+                    <p class="mcp__text">{{ 'letter.landing.mcp.text'|trans }}</p>
+                </div>
+                <pre class="code"><code><span class="code__comment"># Claude Code</span>
+claude mcp add --transport http \
+  clarifile http://localhost:8080/mcp
+
+<span class="code__comment"># Tools</span>
+explain_letter_file · explain_letter
+redact_text</code></pre>
+            </div>
+            <p class="privacy">
+                {# Lucide "lock" #}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>{{ 'letter.privacy'|trans }}</span>
+            </p>
+        </div>
+    </section>
 {% endblock %}
