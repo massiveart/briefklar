@@ -13,8 +13,8 @@ import { Controller } from '@hotwired/stimulus';
 const STEP_SECONDS = 8;
 
 export default class extends Controller {
-    static targets = ['submit', 'status', 'step'];
-    static values = { busyLabel: String };
+    static targets = ['submit', 'status', 'step', 'announcement'];
+    static values = { busyLabel: String, stepLabel: String };
 
     connect() {
         this.idleLabel = this.submitTarget.textContent;
@@ -63,6 +63,9 @@ export default class extends Controller {
         window.clearInterval(this.timer);
         this.timer = null;
         this.stepTargets.forEach((step) => step.classList.remove('is-current', 'is-done'));
+        if (this.hasAnnouncementTarget) {
+            this.announcementTarget.textContent = '';
+        }
     }
 
     markStep(current) {
@@ -70,5 +73,12 @@ export default class extends Controller {
             step.classList.toggle('is-done', index < current);
             step.classList.toggle('is-current', index === current);
         });
+        // The status region is polite and not atomic: only this changed text is read out.
+        if (this.hasAnnouncementTarget && this.stepLabelValue !== '') {
+            this.announcementTarget.textContent = this.stepLabelValue
+                .replace('{step}', String(current + 1))
+                .replace('{total}', String(this.stepTargets.length))
+                .replace('{name}', this.stepTargets[current].textContent.trim());
+        }
     }
 }

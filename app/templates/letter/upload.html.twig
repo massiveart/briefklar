@@ -30,6 +30,7 @@
                     'data-controller': 'upload-progress',
                     'data-action': 'submit->upload-progress#start',
                     'data-upload-progress-busy-label-value': 'letter.upload.submitting'|trans,
+                    'data-upload-progress-step-label-value': 'letter.upload.progress_step'|trans,
                 }}) }}
                     {{ form_errors(form) }}
                     {#
@@ -89,6 +90,8 @@
                     {# Shown by the upload-progress controller while the request runs; announced by screen readers. #}
                     <div class="upload-status" role="status" data-upload-progress-target="status" hidden>
                         <p class="upload-status__text"><span class="spinner" aria-hidden="true"></span><span>{{ 'letter.upload.progress'|trans }}</span></p>
+                        {# The current step for screen readers; the pills below are hidden from them. #}
+                        <span class="visually-hidden" data-upload-progress-target="announcement"></span>
                         {# An indication of what happens, not real progress: the request runs in one piece. #}
                         <ol class="upload-steps" aria-hidden="true">
                             {% for step in ['read', 'redact', 'explain', 'restore'] %}
