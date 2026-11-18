@@ -37,4 +37,27 @@ final class DeadlineCheckTest extends TestCase
     {
         self::assertSame($expected, (new DeadlineCheck())->isStatedInLetter($deadline, self::LETTER));
     }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function sources(): iterable
+    {
+        yield 'verbatim' => ['binnen zwei Wochen ab Zustellung – Bitte überweisen Sie den Betrag binnen zwei Wochen ab Zustellung.', true];
+        yield 'part of a sentence, own full stop' => ['binnen zwei Wochen ab Zustellung – Bitte überweisen Sie den Betrag.', true];
+        yield 'in quotes' => ['binnen zwei Wochen ab Zustellung – „Bitte überweisen Sie den Betrag binnen zwei Wochen ab Zustellung.“', true];
+        yield 'other case and line break' => ["2027-01-05 – die Unterlagen sind bis 5.1.2027\nvorzulegen", true];
+        yield 'shortened with ellipsis' => ['binnen zwei Wochen ab Zustellung – Bitte überweisen Sie … ab Zustellung.', true];
+        yield 'shortened with three dots' => ['binnen zwei Wochen ab Zustellung – Bitte überweisen Sie ...', true];
+        yield 'reworded into the du-form' => ['binnen zwei Wochen ab Zustellung – Bitte überweise den Betrag binnen zwei Wochen ab Zustellung.', false];
+        yield 'ellipsis parts in the wrong order' => ['binnen zwei Wochen ab Zustellung – ab Zustellung … Bitte überweisen Sie', false];
+        yield 'only an ellipsis' => ['binnen zwei Wochen ab Zustellung – …', false];
+        yield 'no source' => ['binnen zwei Wochen ab Zustellung', false];
+    }
+
+    #[DataProvider('sources')]
+    public function testSourceMustBeQuotedFromLetter(string $deadline, bool $expected): void
+    {
+        self::assertSame($expected, (new DeadlineCheck())->isSourceQuotedFromLetter($deadline, self::LETTER));
+    }
 }

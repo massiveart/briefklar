@@ -58,6 +58,7 @@ final readonly class PlaceholderExplainer
             // Our own placeholders are expected here; only the others were made up by the model.
             array_values(array_diff($explained->inventedPlaceholders, array_keys($redaction->vault))),
             $explained->inventedDates,
+            deadlineSourceQuoted: $explained->deadlineSourceQuoted,
         );
     }
 }

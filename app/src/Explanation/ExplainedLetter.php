@@ -16,6 +16,7 @@ final readonly class ExplainedLetter
      * @param list<string>        $inventedPlaceholders placeholders in the answer that were not in the letter (pii-shield could not restore them)
      * @param list<string>        $inventedDates        dates in the free text that are not in the letter (ProseDateCheck), as the model wrote them
      * @param PaymentDetails|null $payment              the transfer the letter asks for, read from the letter text (PAYMENT_QR), null if off or uncertain
+     * @param bool                $deadlineSourceQuoted whether the source sentence of the deadline is a quote from the letter (DeadlineCheck)
      */
     public function __construct(
         public LetterExplanation $explanation,
@@ -26,12 +27,19 @@ final readonly class ExplainedLetter
         public array $inventedPlaceholders = [],
         public array $inventedDates = [],
         public ?PaymentDetails $payment = null,
+        public bool $deadlineSourceQuoted = false,
     ) {
     }
 
     public function deadline(): ?DeadlineText
     {
-        return null === $this->explanation->deadline ? null : DeadlineText::parse($this->explanation->deadline);
+        if (null === $this->explanation->deadline) {
+            return null;
+        }
+        $deadline = DeadlineText::parse($this->explanation->deadline);
+
+        // A reworded sentence must not be shown as "In the letter" (issue #78).
+        return $this->deadlineSourceQuoted ? $deadline : $deadline->withoutSource();
     }
 
     public function actionAdvice(): ActionAdvice

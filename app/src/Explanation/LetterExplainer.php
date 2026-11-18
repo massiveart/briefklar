@@ -88,6 +88,7 @@ final readonly class LetterExplainer
             $inventedPlaceholders,
             $this->proseDateCheck->datesNotInLetter($explanation, $letter->text),
             $payment,
+            null !== $explanation->deadline && $this->deadlineCheck->isSourceQuotedFromLetter($explanation->deadline, $letter->text),
         );
     }
 }
