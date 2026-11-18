@@ -29,6 +29,11 @@ final readonly class ExplainedLetter
     ) {
     }
 
+    public function deadline(): ?DeadlineText
+    {
+        return null === $this->explanation->deadline ? null : DeadlineText::parse($this->explanation->deadline);
+    }
+
     public function actionAdvice(): ActionAdvice
     {
         return ActionAdvice::of($this->explanation);

@@ -34,7 +34,12 @@
         {% if e.deadline is null %}
             <p>{{ 'letter.result.no_deadline'|trans }}</p>
         {% else %}
-            <p class="deadline__value">{{ e.deadline }}</p>
+            {% set deadline = result.deadline %}
+            {# A date the model reported as ISO is shown the way letters write dates. #}
+            <p class="deadline__value">{{ deadline.date ? deadline.date|date(app.request.locale == 'de' ? 'd.m.Y' : 'j F Y') : deadline.claim }}</p>
+            {% if deadline.source %}
+                <p class="deadline__source"><span class="deadline__source-label">{{ 'letter.result.deadline_source'|trans }}:</span> <q>{{ deadline.source }}</q></p>
+            {% endif %}
             {% if not result.deadlineStatedInLetter %}
                 <p class="warning" role="note">
                     {# Lucide "triangle-alert" #}

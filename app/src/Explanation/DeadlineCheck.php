@@ -14,8 +14,7 @@ final readonly class DeadlineCheck
     public function isStatedInLetter(string $deadline, string $letter): bool
     {
         // The model reports "<deadline> – <source sentence>"; only the deadline part is checked.
-        $parts = preg_split('/\s[–-]\s/u', $deadline, 2);
-        $claim = trim(false === $parts ? $deadline : $parts[0]);
+        $claim = DeadlineText::parse($deadline)->claim;
         if ('' === $claim) {
             return false;
         }
