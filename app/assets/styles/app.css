@@ -55,7 +55,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { margin: 0 0 .5em; line-height: 1.1; letter-spacing: -0.025em; font-weight: 760; }
+h1, h2, h3 { margin: 0 0 .5em; line-height: 1.1; letter-spacing: -0.025em; font-weight: 760; overflow-wrap: break-word; hyphens: auto; }
 h1 { font-size: clamp(32px, 6vw, 48px); letter-spacing: -0.035em; line-height: 1.04; }
 h2 { font-size: clamp(22px, 3.4vw, 28px); }
 h3 { font-size: 17px; letter-spacing: -0.01em; }
@@ -276,3 +276,55 @@ form li { color: var(--warn-text); font-size: 14px; }
 .upload-steps li::before { content: counter(step) " · "; }
 .upload-steps li.is-done { color: var(--mint); border-color: rgba(124, 245, 196, .3); }
 .upload-steps li.is-current { color: var(--bg); background: var(--grad); border-color: transparent; }
+
+/* ── Result page ──────────────────────────────────────────────────────────── */
+.result h1 { font-size: clamp(28px, 5vw, 40px); margin-bottom: 20px; }
+.sender { margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }
+.style-note { margin: 0 0 8px; }
+.result > .warning { margin: 0 0 16px; }
+.result { overflow-wrap: break-word; }
+
+.deadline {
+    position: relative; margin: 8px 0 18px; padding: 20px 22px; border-radius: var(--radius-lg);
+    background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, var(--grad) border-box;
+    border: 1.5px solid transparent;
+}
+.deadline h2 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-2); }
+.deadline p { margin: 0; }
+.deadline__value { font-size: clamp(20px, 3.4vw, 26px); font-weight: 760; letter-spacing: -0.02em; line-height: 1.25; }
+.deadline .deadline__source { margin-top: 10px; font-size: 14px; color: var(--muted); }
+.deadline__source-label { font-weight: 700; color: var(--muted-2); }
+.deadline .warning { margin-top: 12px; }
+.deadline--unverified { background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, linear-gradient(90deg, #FFC466, #FF9C9C) border-box; border-style: dashed; }
+.deadline--none { background: var(--surface-2); border: 1px solid var(--border); }
+.deadline--none p { color: var(--muted); }
+
+.amount { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin: 0 0 8px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.amount__label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-2); }
+.amount__value { font-size: 24px; font-weight: 760; }
+
+.result-section { margin: 28px 0 0; }
+.result-section h2 { font-size: 20px; margin-bottom: 10px; }
+.result-section p { color: #C9CFDB; }
+
+.actions { list-style: none; margin: 0; padding: 0; counter-reset: action; display: grid; gap: 10px; }
+.actions li { counter-increment: action; display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+.actions li::before { content: counter(action); flex: 0 0 26px; height: 26px; border-radius: 999px; background: var(--grad-diag); color: var(--bg); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+
+.payment__body { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-bottom: 14px; }
+/* Black on white with a quiet zone, whatever the theme: scanners need the contrast. */
+.payment-qr { flex: 0 0 auto; width: 200px; max-width: 100%; padding: 10px; background: #fff; border-radius: var(--radius); }
+.payment-qr svg { display: block; width: 100%; height: auto; }
+.payment__details { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 15px; flex: 1 1 220px; }
+.payment__details dt { color: var(--muted-2); }
+.payment__details dd { margin: 0; overflow-wrap: anywhere; }
+.payment__iban { font-family: var(--mono); }
+
+.questions { margin: 0; padding-left: 20px; color: #C9CFDB; }
+.questions li { margin-bottom: 6px; }
+.references { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.disclaimer { margin: 32px 0 0; padding: 16px 18px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 14px; }
+.disclaimer p { margin: 0 0 6px; }
+.disclaimer p:last-child { margin: 0; }
+.result-again { margin: 28px 0 0; }
