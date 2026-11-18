@@ -1,5 +1,5 @@
 app:
-    name: briefklar
+    name: Clarifile
     language_switch: Sprache
 letter:
     privacy: Dein Brief wird nur für diese Anfrage verarbeitet und nicht gespeichert. Texterkennung läuft lokal auf diesem Server.

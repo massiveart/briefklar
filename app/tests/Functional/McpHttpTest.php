@@ -19,7 +19,7 @@ final class McpHttpTest extends WebTestCase
         $client->request('POST', 'http://localhost/mcp', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json, text/event-stream'], content: self::INITIALIZE);
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('"name":"briefklar"', $client->getInternalResponse()->getContent());
+        self::assertStringContainsString('"name":"Clarifile"', $client->getInternalResponse()->getContent());
     }
 
     public function testMediaTypeIsCaseInsensitive(): void

@@ -37,6 +37,14 @@ final class LetterUploadTest extends WebTestCase
         self::assertResponseRedirects($expected);
     }
 
+    public function testShowsTheClarifileBrand(): void
+    {
+        self::createClient()->request('GET', '/en');
+
+        self::assertSelectorTextContains('title', 'Clarifile');
+        self::assertSelectorExists('header img[alt="Clarifile"]');
+    }
+
     public function testEnglishUploadPageRenders(): void
     {
         $client = self::createClient();

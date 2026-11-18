@@ -1,5 +1,5 @@
 app:
-    name: briefklar
+    name: Clarifile
     language_switch: Language
 letter:
     privacy: Your letter is processed for this request only and is not stored. Text recognition runs locally on this server.
