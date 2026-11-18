@@ -10,6 +10,8 @@ use Clarifile\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
 use Clarifile\PiiShield\Learning\EntityLearner;
 use Clarifile\PiiShield\PiiMaskerInterface;
 use Clarifile\PiiShield\PiiShieldInterface;
+use Clarifile\PiiShield\Tests\Bridge\Symfony\Fixtures\InMemoryCustomEntityStore;
+use Clarifile\PiiShield\Tests\Bridge\Symfony\Fixtures\InMemoryVaultStorage;
 use Clarifile\PiiShield\Tests\Bridge\Symfony\Fixtures\TestKernel;
 use Clarifile\PiiShield\Vault\EncryptedVault;
 use Clarifile\PiiShield\VaultAwarePiiShieldInterface;
@@ -105,6 +107,35 @@ final class PiiShieldBundleTest extends TestCase
         self::assertFileExists($this->kernel?->getProjectDir().'/var/pii_shield/learned_types.json');
     }
 
+    public function testVaultUsesTheConfiguredStorageService(): void
+    {
+        $_SERVER[self::VAULT_KEY_ENV] = base64_encode(EncryptedVault::generateKey());
+        $container = $this->container(['vault' => ['key' => '%env(base64:'.self::VAULT_KEY_ENV.')%', 'storage' => 'app.vault_storage']]);
+        $shield = self::service($container, VaultAwarePiiShieldInterface::class);
+
+        $vaultId = $shield->redact('SVNR 4568 150392')->vaultId;
+
+        self::assertNotNull($vaultId);
+        $storage = $container->get('app.vault_storage');
+        self::assertInstanceOf(InMemoryVaultStorage::class, $storage);
+        self::assertArrayHasKey($vaultId, $storage->payloads);
+        self::assertStringNotContainsString('4568 150392', $storage->payloads[$vaultId]);
+        self::assertSame('4568 150392', $shield->restoreFromVault('⟦SVNR_1⟧', $vaultId)->text);
+    }
+
+    public function testLearnedTypesUseTheConfiguredStoreService(): void
+    {
+        $container = $this->container(['learning' => ['store' => 'app.entity_store']]);
+
+        self::service($container, EntityLearner::class)->learn('INSURANCE_NUMBER', 'Polizzennummer', ['VN-2026-000417', 'VN-2025-998812']);
+
+        $store = $container->get('app.entity_store');
+        self::assertInstanceOf(InMemoryCustomEntityStore::class, $store);
+        self::assertNotNull($store->get('INSURANCE_NUMBER'));
+        self::assertSame('Polizze ⟦INSURANCE_NUMBER_1⟧', self::service($container, PiiShieldInterface::class)->redact('Polizze VN-2024-123456')->redactedText);
+        self::assertFileDoesNotExist($this->kernel?->getProjectDir().'/var/pii_shield/learned_types.json');
+    }
+
     public function testLearningCanBeDisabled(): void
     {
         $container = $this->container(['learning' => false]);
@@ -175,6 +206,8 @@ final class PiiShieldBundleTest extends TestCase
         yield 'model without platform' => [['model' => ['enabled' => true, 'model' => 'qwen3:8b']], 'platform'];
         yield 'model without model' => [['model' => ['platform' => 'ai.platform.ollama']], 'model'];
         yield 'vault without key' => [['vault' => ['enabled' => true]], 'key'];
+        yield 'vault with storage and cache_pool' => [['vault' => ['key' => 'k', 'storage' => 'app.vault_storage', 'cache_pool' => 'cache.app']], 'storage'];
+        yield 'learning with store and cache_pool' => [['learning' => ['store' => 'app.entity_store', 'cache_pool' => 'cache.app']], 'store'];
     }
 
     /**

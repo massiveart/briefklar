@@ -30,6 +30,7 @@ use Clarifile\PiiShield\PiiShield;
 use Clarifile\PiiShield\PiiShieldInterface;
 use Clarifile\PiiShield\Vault\EncryptedVault;
 use Clarifile\PiiShield\Vault\Storage\Psr6CacheStorage;
+use Clarifile\PiiShield\Vault\Storage\VaultStorageInterface;
 use Clarifile\PiiShield\Vault\VaultInterface;
 use Clarifile\PiiShield\VaultAwarePiiShieldInterface;
 use Symfony\AI\Agent\InputProcessorInterface;
@@ -120,12 +121,17 @@ final class PiiShieldBundle extends AbstractBundle
                     ->canBeEnabled()
                     ->children()
                         ->scalarNode('key')->info('32 raw bytes, e.g. "%env(base64:PII_SHIELD_VAULT_KEY)%" (create with EncryptedVault::generateKey()). Required when enabled. Keep the key in an env var: a literal key is parsed for %parameters% and must escape % as %%.')->defaultNull()->end()
-                        ->scalarNode('cache_pool')->info('PSR-6 pool service id.')->defaultValue('cache.app')->end()
+                        ->scalarNode('cache_pool')->info('PSR-6 pool service id; default "cache.app".')->defaultNull()->end()
+                        ->scalarNode('storage')->info('Service id of your own VaultStorageInterface (database, S3, ...) instead of a PSR-6 pool. Payloads arrive encrypted.')->defaultNull()->end()
                         ->integerNode('ttl')->min(1)->defaultValue(PiiShield::DEFAULT_VAULT_TTL)->end()
                     ->end()
                     ->validate()
                         ->ifTrue(static fn (array $v): bool => true === $v['enabled'] && (null === $v['key'] || '' === $v['key']))
                         ->thenInvalid('Set "key" (32 raw bytes) to enable the vault.')
+                    ->end()
+                    ->validate()
+                        ->ifTrue(static fn (array $v): bool => null !== $v['storage'] && null !== $v['cache_pool'])
+                        ->thenInvalid('Set either "storage" or "cache_pool" for the vault, not both.')
                     ->end()
                 ->end()
                 ->arrayNode('learning')
@@ -134,6 +140,11 @@ final class PiiShieldBundle extends AbstractBundle
                     ->children()
                         ->scalarNode('path')->defaultValue('%kernel.project_dir%/var/pii_shield/learned_types.json')->end()
                         ->scalarNode('cache_pool')->info('Store in this PSR-6 pool instead of the JSON file.')->defaultNull()->end()
+                        ->scalarNode('store')->info('Service id of your own CustomEntityStoreInterface instead of the JSON file.')->defaultNull()->end()
+                    ->end()
+                    ->validate()
+                        ->ifTrue(static fn (array $l): bool => null !== $l['store'] && null !== $l['cache_pool'])
+                        ->thenInvalid('Set either "store" or "cache_pool" for learning, not both.')
                     ->end()
                 ->end()
                 ->arrayNode('agent_processor')
@@ -151,7 +162,7 @@ final class PiiShieldBundle extends AbstractBundle
      */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{types: list<string>, keep_authority_contacts: bool, allowlist: list<string>, model: array{enabled: bool, platform?: string, model?: string, location?: string, acknowledge_external_transfer?: bool, options?: array<string, mixed>, chunk_size?: int}, vault: array{enabled: bool, key?: string, cache_pool?: string, ttl?: int}, learning: array{enabled: bool, path: string, cache_pool: string|null}, agent_processor: array{enabled: bool, agents: list<string>}} $config */
+        /** @var array{types: list<string>, keep_authority_contacts: bool, allowlist: list<string>, model: array{enabled: bool, platform?: string, model?: string, location?: string, acknowledge_external_transfer?: bool, options?: array<string, mixed>, chunk_size?: int}, vault: array{enabled: bool, key?: string, cache_pool?: string|null, storage?: string|null, ttl?: int}, learning: array{enabled: bool, path: string, cache_pool: string|null, store?: string|null}, agent_processor: array{enabled: bool, agents: list<string>}} $config */
         $services = $container->services();
 
         foreach ($config['types'] as $type) {
@@ -168,9 +179,11 @@ final class PiiShieldBundle extends AbstractBundle
         $learnedStore = null;
         if ($config['learning']['enabled']) {
             $learnedStore = service('pii_shield.learned_types');
-            null !== $config['learning']['cache_pool']
-                ? $services->set('pii_shield.learned_types', CacheCustomEntityStore::class)->args([service($config['learning']['cache_pool'])])
-                : $services->set('pii_shield.learned_types', JsonFileCustomEntityStore::class)->args([$config['learning']['path']]);
+            match (true) {
+                null !== ($config['learning']['store'] ?? null) => $services->alias('pii_shield.learned_types', $config['learning']['store']),
+                null !== $config['learning']['cache_pool'] => $services->set('pii_shield.learned_types', CacheCustomEntityStore::class)->args([service($config['learning']['cache_pool'])]),
+                default => $services->set('pii_shield.learned_types', JsonFileCustomEntityStore::class)->args([$config['learning']['path']]),
+            };
             $services->alias(CustomEntityStoreInterface::class, 'pii_shield.learned_types');
             $services->set('pii_shield.learner', EntityLearner::class)->args([$learnedStore]);
             $services->alias(EntityLearner::class, 'pii_shield.learner')->public();
@@ -194,7 +207,10 @@ final class PiiShieldBundle extends AbstractBundle
 
         $vault = null;
         if ($config['vault']['enabled']) {
-            $services->set('pii_shield.vault.storage', Psr6CacheStorage::class)->args([service($config['vault']['cache_pool'] ?? 'cache.app')]);
+            null !== ($config['vault']['storage'] ?? null)
+                ? $services->alias('pii_shield.vault.storage', $config['vault']['storage'])
+                : $services->set('pii_shield.vault.storage', Psr6CacheStorage::class)->args([service($config['vault']['cache_pool'] ?? 'cache.app')]);
+            $services->alias(VaultStorageInterface::class, 'pii_shield.vault.storage');
             $services->set('pii_shield.vault', EncryptedVault::class)
                 ->args([service('pii_shield.vault.storage'), $config['vault']['key'] ?? '']);
             $services->alias(VaultInterface::class, 'pii_shield.vault');

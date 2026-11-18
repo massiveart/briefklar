@@ -45,11 +45,13 @@ pii_shield:
         enabled: false
         key: '%env(base64:PII_SHIELD_VAULT_KEY)%'   # 32 bytes, EncryptedVault::generateKey(); keep it in an env var (a literal key must escape % as %%)
         cache_pool: cache.app   # any PSR-6 pool, e.g. a Redis pool
+        storage: null           # or the service id of your own VaultStorageInterface (not together with cache_pool)
         ttl: 3600
     learning:
         enabled: true
         path: '%kernel.project_dir%/var/pii_shield/learned_types.json'
         cache_pool: null        # use a PSR-6 pool instead of the file
+        store: null             # or the service id of your own CustomEntityStoreInterface (not together with cache_pool)
     agent_processor:            # redact input / restore output of Symfony AI agents
         enabled: true
         agents: []              # agent names; empty = all agents
@@ -110,6 +112,8 @@ $shield->forget($vaultId); // delete immediately when done
 | `EncryptedVault` + `VaultStorageInterface` | anything persistent; `Psr6CacheStorage` ships, implement the interface for other backends |
 
 `fetch` of a tampered entry, an entry encrypted with another key or an entry copied to another id throws `VaultException`.
+
+**Your own backend in the bundle:** implement `VaultStorageInterface` (`put`, `get`, `remove`; payloads arrive encrypted) and set `vault.storage` to its service id. The same works for learned entity types: implement `CustomEntityStoreInterface` and set `learning.store`. Without these options the bundle uses a PSR-6 pool (vault) or the JSON file (learning). Neither built-in learning store locks: two `learn()` calls at the same moment can overwrite each other, so learn from one process at a time, or lock in your own store.
 
 ### Irreversible masking (logs, previews)
 
