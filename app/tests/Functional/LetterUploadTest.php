@@ -57,6 +57,34 @@ final class LetterUploadTest extends WebTestCase
         self::assertSame('EN', trim($crawler->filter('.lang-switch > *')->first()->text()));
     }
 
+    /**
+     * @return iterable<string, array{string, string, string, string}>
+     */
+    public static function landingCopy(): iterable
+    {
+        yield 'german' => ['/de', 'Das Sprachmodell, das deinen Brief erklärt, sieht weder Namen noch Adressen noch Kontonummern.', 'Klarheit statt Amtsdeutsch', 'Lässt sich in der Konfiguration einschalten.'];
+        yield 'english' => ['/en', 'The language model that explains your letter never sees names, addresses or account numbers.', 'Clarity instead of officialese', 'Can be switched on in the configuration.'];
+    }
+
+    #[DataProvider('landingCopy')]
+    public function testLandingExplainsTheFlow(string $page, string $privacyPromise, string $whatYouGet, string $qrOptional): void
+    {
+        self::createClient()->request('GET', $page);
+
+        self::assertSelectorTextContains('.hero', $privacyPromise);
+        self::assertSelectorCount(4, '#how-it-works .step');
+        self::assertSelectorCount(1, '#how-it-works .where--model');
+        self::assertSelectorTextContains('#privacy', 'Max Muster');
+        self::assertSelectorTextContains('#privacy', '⟦PERSON_1⟧');
+        self::assertSelectorTextContains('#privacy', '⟦IBAN_1⟧');
+        self::assertSelectorTextContains('#what-you-get h2', $whatYouGet);
+        self::assertSelectorTextContains('#what-you-get .tag', 'optional');
+        self::assertSelectorTextContains('#what-you-get', $qrOptional);
+        foreach (['explain_letter_file', 'explain_letter', 'redact_text', 'claude mcp add'] as $text) {
+            self::assertSelectorTextContains('#mcp', $text);
+        }
+    }
+
     public function testEnglishUploadPageRenders(): void
     {
         $client = self::createClient();
@@ -64,7 +92,7 @@ final class LetterUploadTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('html[lang=en]');
-        self::assertSelectorTextContains('h1', 'Understand a letter');
+        self::assertSelectorTextContains('h1', 'Official letters, clearly explained.');
         self::assertSelectorExists('a[hreflang=de][href="/de"]');
     }
 
@@ -96,7 +124,7 @@ final class LetterUploadTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('html[lang=de]');
-        self::assertSelectorTextContains('h1', 'Brief verstehen');
+        self::assertSelectorTextContains('h1', 'Behördenbriefe, klar erklärt.');
         self::assertSelectorExists('input[type=file][name="letter_upload[letter]"]');
         self::assertSelectorExists('a[hreflang=en][href="/en"]');
     }
