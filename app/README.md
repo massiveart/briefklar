@@ -35,8 +35,8 @@ Everything runs locally, nothing is sent anywhere and nothing is stored (see `..
 
 | Priority | Extractor | Input | How |
 |---|---|---|---|
-| 30 | `Pdf\PdfTextLayerExtractor` | PDF | `smalot/pdfparser`; skipped if the text layer has fewer than 50 letters (scans) |
-| 20 | `Ocr\ScannedPdfOcrExtractor` | PDF | `pdftoppm` (300 dpi, max. 10 pages) into a private temp dir, Tesseract per page, temp dir removed in `finally` |
+| 30 | `Pdf\PdfTextLayerExtractor` | PDF | `smalot/pdfparser`, each stream decoded to at most 256 KB and at most 100 streams (decompression bombs); skipped if the text layer has fewer than 50 letters (scans) |
+| 20 | `Ocr\ScannedPdfOcrExtractor` | PDF | `pdftoppm` (longest side 3508 px, i.e. A4 at 300 dpi, whatever the page size; max. 10 pages) into a private temp dir, Tesseract per page, temp dir removed in `finally`; dirs left by a fatal error are removed after an hour |
 | 10 | `Ocr\ImageOcrExtractor` | PNG, JPEG, TIFF | Tesseract (`deu`) |
 
 The MIME type is detected from the file content, not taken from the client. `OcrTextCorrector` fixes known Tesseract misreads that matter downstream (`$ 49 VStG`, `8 20 Abs. 2`, `(3 49 VStG)` -> `§ ...`). OCR output differs between Tesseract builds and CPUs (ARM container vs. x86 CI), so every observed variant is a test case. Binaries are configurable via `TESSERACT_BINARY` and `PDFTOPPM_BINARY`.
@@ -57,7 +57,7 @@ Provider and model come from env, no code change needed:
 | `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-5-5` |
 | `ollama` | none; Ollama on the host (`brew install ollama`, `ollama pull qwen3:8b`), `OLLAMA_ENDPOINT=http://host.docker.internal:11434`. Or `docker compose --profile local up -d` (CPU only, slow on a Mac) | `qwen3:8b` |
 
-A local model needs 30–50 s per letter on a laptop, without sending anything in between. `EXPLANATION_TIMEOUT` (default 120 s) is the idle and total timeout of the model request (`config/packages/framework.yaml`); `LetterController` raises PHP's time limit to that plus 60 s for OCR, so a slow model is not cut off at PHP's default 30 s. A model that takes longer ends with the friendly error message.
+A local model needs 30–50 s per letter on a laptop, without sending anything in between. `EXPLANATION_TIMEOUT` (default 120 s) is the idle and total timeout of the model request (`config/packages/framework.yaml`); `LetterController` raises PHP's time limit to that plus 60 s for OCR, so a slow model is not cut off at PHP's default 30 s. On the command line (STDIO MCP server) the limit is left alone. A model that takes longer ends with the friendly error message.
 
 ### Evaluating prompts against a real model
 
