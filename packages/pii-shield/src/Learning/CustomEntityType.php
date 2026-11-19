@@ -61,12 +61,12 @@ final readonly class CustomEntityType
         }
         self::assertSafePattern($pattern, $examples);
         // Examples are personal data: messages name their position, never the value (they reach HTTP and MCP clients).
-        foreach (array_values($examples) as $i => $example) {
+        foreach ($examples as $i => $example) {
             if (1 !== preg_match('~^(?:'.$pattern.')$~u', $example)) {
                 throw new LearningFailedException(\sprintf('The pattern %s does not match example %d.', $pattern, $i + 1));
             }
         }
-        foreach (array_values($counterExamples) as $i => $counter) {
+        foreach ($counterExamples as $i => $counter) {
             if (1 === preg_match('~^(?:'.$pattern.')$~u', $counter)) {
                 throw new LearningFailedException(\sprintf('The pattern %s also matches counter-example %d.', $pattern, $i + 1));
             }
