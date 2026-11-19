@@ -13,7 +13,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * The HTTP client timeout (EXPLANATION_TIMEOUT, framework.yaml) ends a hanging model call first,
  * with a proper error. So the limit is one EXPLANATION_TIMEOUT per model call: the explanation, plus
  * one detection call per redaction pass when PII_MODEL_DETECTION is on, plus headroom for OCR of a
- * multi-page scan. On the command line PHP has no limit anyway.
+ * multi-page scan.
+ *
+ * Only for web requests: on the command line PHP has no limit by default, and the STDIO MCP server is a
+ * long-running command line process that a limit armed by one tool call would end (issue #84).
  */
 final readonly class ExplanationTimeLimit
 {
@@ -24,6 +27,7 @@ final readonly class ExplanationTimeLimit
         private int $explanationTimeout,
         #[Autowire('%env(bool:PII_MODEL_DETECTION)%')]
         private bool $modelDetection,
+        private string $sapi = \PHP_SAPI,
     ) {
     }
 
@@ -42,6 +46,9 @@ final readonly class ExplanationTimeLimit
      */
     public function apply(int $redactionPasses = 1): void
     {
+        if ('cli' === $this->sapi) {
+            return;
+        }
         set_time_limit($this->seconds($redactionPasses));
     }
 }
