@@ -70,13 +70,14 @@ final class ModelDetector implements DetectorInterface
 
     /**
      * @param string                          $model        model name as the platform knows it, e.g. "llama3.1:8b"
+     * @param ModelLocation                   $location     where the model runs; no default, because detection sends unredacted text there
      * @param array<string, mixed>            $options      passed to the platform as is (e.g. ['temperature' => 0] where the model accepts it)
      * @param CustomEntityStoreInterface|null $learnedTypes learned types, taught to the model with their examples
      */
     public function __construct(
         private readonly PlatformInterface $platform,
         string $model,
-        private readonly ModelLocation $location = ModelLocation::Local,
+        private readonly ModelLocation $location,
         bool $acknowledgeExternalTransfer = false,
         private readonly array $options = [],
         private readonly ?CustomEntityStoreInterface $learnedTypes = null,

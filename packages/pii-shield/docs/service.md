@@ -102,7 +102,7 @@ with the same file.
 ## MCP
 
 The same operations as MCP tools: `redact_text`, `restore_text`, `mask_text`, `learn_entity_type`, `list_entity_types`.
-The mapping stays on the server; tools return placeholders and a `vaultId`, never the original values.
+The mapping stays on the server: `redact_text` returns placeholders and a `vaultId`. `restore_text` returns the original values to the MCP client, and in an agent the client is the model. Call it only where the model may see the data (a local model), or restore outside the model with `POST /v1/restore`.
 
 **Claude Code** (STDIO):
 
@@ -163,7 +163,7 @@ Environment variables (or `demo/.env.local`, template `demo/.env.dist`):
 
 ## Security
 
-- The placeholder mapping never leaves the service; it is stored encrypted with a TTL (900 s).
+- The placeholder mapping is stored encrypted with a TTL (900 s); only `restore` (HTTP and MCP) returns original values, to whoever holds the `vaultId`.
 - The model is server configuration only; requests cannot point detection at other URLs.
 - JSON only, foreign browser origins rejected, unknown `Host` headers rejected (DNS rebinding).
 - Errors from model detection are generic; details stay in the server.

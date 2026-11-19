@@ -9,9 +9,12 @@ use Clarifile\PiiShield\EntityType;
 use Clarifile\PiiShield\Validator\AtSvnrValidator;
 use Clarifile\PiiShield\Validator\ValidatorInterface;
 
+/**
+ * Austrian social security number: "4568 150392", "4568-150392", "4568150392", also split across a line break (OCR).
+ */
 final class AtSvnrDetector implements DetectorInterface
 {
-    private const string PATTERN = '/(?<!\d)\d{4} ?\d{6}(?!\d)/u';
+    private const string PATTERN = '/(?<!\d)\d{4}(?:[ -]|[ \t]*\n[ \t]*)?\d{6}(?!\d)/u';
 
     public function __construct(
         private readonly ValidatorInterface $validator = new AtSvnrValidator(),

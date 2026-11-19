@@ -9,13 +9,14 @@ namespace Clarifile\PiiShield;
  *
  * Parsing is tolerant to what models do to placeholders: case changes, inner whitespace,
  * space instead of underscore, markdown-escaped underscores and ASCII "[[...]]" brackets.
+ * Type names may contain digits (learned types such as "VN2_NUMBER"); the last number is the counter.
  */
 final class Placeholder
 {
     private const string OPEN = '⟦';
     private const string CLOSE = '⟧';
 
-    private const string TOLERANT_PATTERN = '/(?:⟦|\[\[)\s*(?<type>[A-Za-z]+(?:(?:\\\\?_|\s+)[A-Za-z]+)*)(?:\\\\?_|\s+)(?<number>\d+)\s*(?:⟧|\]\])/u';
+    private const string TOLERANT_PATTERN = '/(?:⟦|\[\[)\s*(?<type>[A-Za-z][A-Za-z0-9]*(?:(?:\\\\?_|\s+)[A-Za-z0-9]+)*)(?:\\\\?_|\s+)(?<number>\d+)\s*(?:⟧|\]\])/u';
 
     public static function format(EntityType $type, int $number, ?string $label = null): string
     {

@@ -23,6 +23,9 @@ use Clarifile\PiiShield\Detector\TaxNumberDetector;
  * - Propagation: every further whole-word occurrence of a detected value is an entity too,
  *   even where no detector would have found it on its own (e.g. a file number repeated without keyword).
  * - Surnames of confidently detected full names are propagated as well.
+ * - Line endings and spaces: detectors see "\r\n" as " \n", a lone "\r" as "\n" and no-break or thin
+ *   spaces as " ". The replacement keeps the number of code points, so offsets and values refer to the
+ *   original text and restore gives back the original characters.
  */
 final class EntityExtractor
 {
@@ -80,17 +83,50 @@ final class EntityExtractor
      */
     public function extract(string $text): array
     {
+        $normalized = self::normalize($text);
         $detected = [];
         foreach ($this->detectors as $detector) {
-            foreach ($detector->detect($text) as $entity) {
+            foreach ($detector->detect($normalized) as $entity) {
                 $detected[] = $entity;
             }
         }
 
         // Filter before propagation (an allowed value must not seed surnames) and after it.
         $entities = self::resolveOverlaps($this->withoutAllowed($detected));
+        $entities = self::resolveOverlaps($this->withoutAllowed([...$entities, ...self::propagate($normalized, $entities)]));
 
-        return self::resolveOverlaps($this->withoutAllowed([...$entities, ...self::propagate($text, $entities)]));
+        return $normalized === $text ? $entities : self::withOriginalValues($text, $entities);
+    }
+
+    /**
+     * Replaces characters that break line- and space-based patterns, one code point for one.
+     */
+    private static function normalize(string $text): string
+    {
+        return strtr($text, [
+            "\r\n" => " \n",
+            "\r" => "\n",
+            "\u{00A0}" => ' ', // no-break space
+            "\u{2007}" => ' ', // figure space
+            "\u{2009}" => ' ', // thin space
+            "\u{202F}" => ' ', // narrow no-break space
+        ]);
+    }
+
+    /**
+     * @param list<Entity> $entities found in the normalized text, sorted by offset
+     *
+     * @return list<Entity> the same spans with the characters of the original text
+     */
+    private static function withOriginalValues(string $text, array $entities): array
+    {
+        $chars = mb_str_split($text);
+
+        return array_map(static function (Entity $e) use ($chars): Entity {
+            $value = implode('', \array_slice($chars, $e->offset, $e->length()));
+
+            return $value === $e->value ? $e : new Entity($e->type, $value, $e->offset, $e->confidence, $e->detector, $e->label);
+        }, $entities);
     }
 
     /**

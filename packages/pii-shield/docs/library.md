@@ -37,7 +37,7 @@ pii_shield:
         enabled: false
         platform: ai.platform.ollama   # service id of a Symfony AI platform (symfony/ai-bundle)
         model: qwen3:4b-instruct
-        location: local         # local | on_premise | external
+        location: ~             # local | on_premise | external; required when enabled, no default
         acknowledge_external_transfer: false   # required for external
         options: { think: false }
         chunk_size: 4000        # characters per model call; fits Ollama's default 4k-token context
@@ -179,6 +179,7 @@ $result->getMetadata()->get(PiiShieldProcessor::METADATA_KEY)['unknown_placehold
 - **Output:** `TextResult` and `ObjectResult` are restored, structured output DTOs deeply (readonly properties included, dates and enums untouched).
 - **Not yet:** streamed results are passed through unrestored. Tools receive placeholders as arguments.
 - **Tool results are not redacted.** Input processors run once per `Agent::call()`. The tool loop in `symfony/ai-agent` (`Execution\Runner`) appends tool results and calls the platform again without them, so personal data a tool returns reaches the provider. Don't give a shielded agent tools that return personal data. Covering every round would need the platform events (`InvocationEvent` to redact the input, `ResultConvertedEvent` to restore the result); that is not implemented.
+- **Profiler:** with the Symfony profiler on, `TraceableAgent` records the input of `Agent::call()` before the processors run and `TraceableToolbox` records tool results, so the profile in `var/cache/<env>/profiler` holds the unredacted text. Redaction protects what goes to the provider, not your own debug data: use synthetic letters in `dev`, or keep the profiler off where real data is processed.
 - Tested against `symfony/ai-agent` / `symfony/ai-platform` **1.0.0-BETA1** (pinned, see ADR 0004), including a test that inspects the exact payload sent to a mocked platform.
 
 ## Detectors
@@ -210,10 +211,15 @@ Validators (`AtSvnrValidator`, `IbanValidator`, `DeTaxIdValidator`) can be used 
 
 - Inline salutations take up to two capitalised words, so `Herr Muster Bescheid` redacts `Muster Bescheid`. Over-redaction is preferred to leaking half a name. Surnames are only propagated from the (reliable) address block.
 - Names without salutation and single-line addresses need model-based detection (`ModelDetector`).
+- Values split by a line break are found for IBAN and Austrian SVNR (OCR wraps them); other numbers must stay on one line.
+- Authority contacts are judged per sentence: a phone number or e-mail is kept when its sentence says "uns", "wir", names an authority or the filing ("einzubringen"). A recipient's number in such a sentence ("Ihren Einspruch haben wir unter 0664 ... notiert") is kept too; disable with `keep_authority_contacts: false` where that matters.
+- Text that already contains a placeholder (`⟦PERSON_1⟧`) before redaction is restored like one, to the value that got this placeholder.
+
+Line endings (`\r\n`, `\r`) and no-break or thin spaces don't hide values: detection sees them as `\n` and a plain space, redaction and restore keep the original characters.
 
 ## Restore
 
-`restore()` tolerates what models do to placeholders: case changes, inner whitespace, space instead of underscore, markdown-escaped underscores (`⟦PERSON\_1⟧`) and ASCII brackets (`[[PERSON_1]]`). Placeholders not in the vault are left as they are and reported in `unknownPlaceholders`; vault entries not used in the text are listed in `unusedPlaceholders`.
+`restore()` tolerates what models do to placeholders (type names may contain digits, e.g. learned `VN2_NUMBER`): case changes, inner whitespace, space instead of underscore, markdown-escaped underscores (`⟦PERSON\_1⟧`) and ASCII brackets (`[[PERSON_1]]`). Placeholders not in the vault are left as they are and reported in `unknownPlaceholders`; vault entries not used in the text are listed in `unusedPlaceholders`.
 
 
 ## Learn new entity types

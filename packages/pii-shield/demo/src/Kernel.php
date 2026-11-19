@@ -52,7 +52,7 @@ final class Kernel extends BaseKernel
                     'name' => 'pii-shield',
                     'version' => '1.0.0',
                     'description' => 'Reversible redaction, masking and learning of personal data.',
-                    'instructions' => 'Before giving text with personal data to a model, call redact_text and work with the placeholders. Call restore_text with the vaultId to put the original values back into the final answer.',
+                    'instructions' => 'Before giving text with personal data to a model, call redact_text and work with the placeholders. restore_text returns the original values to you, the calling model: call it only if you run locally or the user asked for the restored text; otherwise give the user the answer with placeholders and the vaultId to restore it themselves.',
                     'registry' => ['tools' => ['Clarifile\\PiiShield\\Demo\\Mcp\\']],
                     'transports' => ['stdio' => true, 'http' => true],
                     'http' => [

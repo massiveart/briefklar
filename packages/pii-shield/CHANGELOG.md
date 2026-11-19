@@ -11,12 +11,19 @@ All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https:
 
 ### Fixed
 
+- Line endings and spaces no longer hide values: `\r\n`, a lone `\r`, no-break, figure, thin and narrow no-break spaces are normalized for detection (one code point for one, so offsets, vault values and restore keep the original characters). CRLF address blocks and `AT61\u{00A0}1904 ...` were missed before.
+- IBAN and SVNR split by a line break are detected; SVNR with a hyphen (`4568-150392`) too.
+- Authority contacts are judged per sentence instead of per line: in a one-line paragraph, "Sie haben Einspruch erhoben. Ihre Telefonnummer ..." kept the recipient's number. Abbreviations (`Abt.`, `Tel.`, ...) and initials don't end a sentence.
+- Birth dates after "geb. am"; names and streets with capitals beyond `A-ZÄÖÜ` (`Čermáková`, `Željko Šarić`).
+- Learned types with digits in their name (`VN2_NUMBER`) are restored; the placeholder parser accepted letters only.
+- Docs: `restore_text` returns original values to the MCP client (docs said never); the demo's MCP instructions say so. New note on the Symfony profiler, which records the unredacted agent input.
 - `PiiShieldBundleTest` no longer fails at random when the generated vault key contains a `%name%` sequence (handover #74): the test passes the key through an env var, as documented. The `vault.key` config info and `docs/library.md` say that a literal key must escape `%` as `%%`.
 - Model findings are checked in their context (handover #59, letter `03-anonymverfuegung`): addresses are extended by postcode and town, dates and times are dropped, words in legal citations kept, file numbers need a digit and a keyword, authority contacts (letterhead, "wenden Sie sich an") kept unless `keepAuthorityContacts: false` (bundle: `keep_authority_contacts`).
 - "wenden Sie sich an" marks an authority contact for the e-mail and phone detectors too.
 
 ### Changed
 
+- **BC break:** model detection needs an explicit location. Bundle: `model.location` is required when `model` is enabled (was `local` by default, so an external provider could run without `acknowledge_external_transfer`). `ModelDetector`: the `$location` argument has no default.
 - `ModelDetector` asks once more for a chunk whose answer is unusable (small models sometimes repeat their findings until the answer is cut off; answers vary under concurrent load). Unusable twice still fails closed.
 - Demo: answers of self-hosted models are capped at 1,024 tokens in fast mode (`num_predict` / `max_tokens`).
 

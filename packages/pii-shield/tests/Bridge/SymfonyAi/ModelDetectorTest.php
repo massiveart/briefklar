@@ -137,7 +137,7 @@ final class ModelDetectorTest extends TestCase
         $store->save(new CustomEntityType('PET_NAME', 'Name eines Haustiers', ['Bello', 'Minka'], ['Hund']));
         $this->client = new MockModelClient(static fn (): string => '{"entities":[{"type":"PET_NAME","value":"Rex"}]}');
         $platform = new Platform([new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
-        $detector = new ModelDetector($platform, 'test-model', learnedTypes: $store);
+        $detector = new ModelDetector($platform, 'test-model', ModelLocation::Local, learnedTypes: $store);
 
         $entities = $detector->detect('Unser Hund Rex bellt.');
 
@@ -241,7 +241,7 @@ final class ModelDetectorTest extends TestCase
         $this->client = new MockModelClient(static fn (): string => '{"entities":[{"type":"EMAIL","value":"parken@musterhausen.example"}]}');
         $platform = new Platform([new Provider('mock', [$this->client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
 
-        $entities = (new ModelDetector($platform, 'test-model', keepAuthorityContacts: false))->detect('Bei Fragen wenden Sie sich an parken@musterhausen.example.');
+        $entities = (new ModelDetector($platform, 'test-model', ModelLocation::Local, keepAuthorityContacts: false))->detect('Bei Fragen wenden Sie sich an parken@musterhausen.example.');
 
         self::assertCount(1, $entities);
     }
@@ -410,7 +410,7 @@ final class ModelDetectorTest extends TestCase
             new CatalogBasedModelRouter(),
         );
 
-        return new ModelDetector($platform, 'test-model', chunkSize: $chunkSize);
+        return new ModelDetector($platform, 'test-model', ModelLocation::Local, chunkSize: $chunkSize);
     }
 
     private function detector(string $response, string $model = 'test-model', ModelLocation $location = ModelLocation::Local, bool $acknowledgeExternal = false): ModelDetector

@@ -184,7 +184,7 @@ final class PiiShieldBundleTest extends TestCase
 
     public function testModelDetectorIsWiredToTheConfiguredPlatform(): void
     {
-        $builder = $this->load(['model' => ['platform' => 'ai.platform.ollama', 'model' => 'qwen3:4b-instruct', 'options' => ['think' => false]]]);
+        $builder = $this->load(['model' => ['platform' => 'ai.platform.ollama', 'location' => 'local', 'model' => 'qwen3:4b-instruct', 'options' => ['think' => false]]]);
 
         $definition = $builder->getDefinition('pii_shield.detector.model');
         self::assertSame(ModelDetector::DEFAULT_CHUNK_SIZE, $definition->getArgument(6));
@@ -198,7 +198,7 @@ final class PiiShieldBundleTest extends TestCase
 
     public function testChunkSizeIsConfigurable(): void
     {
-        $builder = $this->load(['model' => ['platform' => 'ai.platform.ollama', 'model' => 'qwen3:8b', 'chunk_size' => 2_000]]);
+        $builder = $this->load(['model' => ['platform' => 'ai.platform.ollama', 'location' => 'local', 'model' => 'qwen3:8b', 'chunk_size' => 2_000]]);
 
         self::assertSame(2_000, $builder->getDefinition('pii_shield.detector.model')->getArgument(6));
     }
@@ -225,8 +225,9 @@ final class PiiShieldBundleTest extends TestCase
      */
     public static function enabledOptionsWithoutRequiredValues(): iterable
     {
-        yield 'model without platform' => [['model' => ['enabled' => true, 'model' => 'qwen3:8b']], 'platform'];
-        yield 'model without model' => [['model' => ['platform' => 'ai.platform.ollama']], 'model'];
+        yield 'model without platform' => [['model' => ['enabled' => true, 'model' => 'qwen3:8b', 'location' => 'local']], 'platform'];
+        yield 'model without model' => [['model' => ['platform' => 'ai.platform.ollama', 'location' => 'local']], 'model'];
+        yield 'model without location' => [['model' => ['platform' => 'ai.platform.ollama', 'model' => 'qwen3:8b']], 'location'];
         yield 'vault without key' => [['vault' => ['enabled' => true]], 'key'];
         yield 'vault with storage and cache_pool' => [['vault' => ['key' => 'k', 'storage' => 'app.vault_storage', 'cache_pool' => 'cache.app']], 'storage'];
         yield 'learning with store and cache_pool' => [['learning' => ['store' => 'app.entity_store', 'cache_pool' => 'cache.app']], 'store'];
