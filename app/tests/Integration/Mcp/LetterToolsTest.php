@@ -151,6 +151,22 @@ final class LetterToolsTest extends KernelTestCase
         self::assertSame([], self::getContainer()->get(ScriptedPlatform::class)->requests());
     }
 
+    public function testDecompressionBombComesBackAsToolError(): void
+    {
+        // Issue #84: over STDIO a fatal "memory exhausted" would end the whole server.
+        file_put_contents($this->folder.'/bombe.pdf', PdfFixtureFactory::decompressionBomb(300));
+
+        try {
+            $this->tools()->explainLetterFile('bombe.pdf');
+            self::fail('Expected a ToolCallException.');
+        } catch (ToolCallException $e) {
+            self::assertStringNotContainsString($this->folder, $e->getMessage());
+        } finally {
+            set_time_limit(0);
+        }
+        self::assertSame([], self::getContainer()->get(ScriptedPlatform::class)->requests());
+    }
+
     public function testNothingIsSentWhenRedactionFails(): void
     {
         $this->expectException(ToolCallException::class);
