@@ -53,7 +53,7 @@ final class PatternLearner
         if (!self::isSpecific($groups)) {
             throw new LearningFailedException('Plain words cannot be learned as a pattern; they would match ordinary text. Use model-based detection for names and words.', self::PLAIN_WORDS);
         }
-        foreach (array_values($counterExamples) as $i => $counter) {
+        foreach ($counterExamples as $i => $counter) {
             if (1 === preg_match('~^(?:'.$pattern.')$~u', trim($counter))) {
                 throw new LearningFailedException(\sprintf('The learned pattern %s also matches counter-example %d. Add more examples or enter a pattern by hand.', $pattern, $i + 1));
             }
