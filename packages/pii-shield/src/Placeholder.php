@@ -30,7 +30,7 @@ final class Placeholder
      */
     public static function replaceAll(string $text, callable $replace): string
     {
-        return (string) preg_replace_callback(
+        $result = preg_replace_callback(
             self::TOLERANT_PATTERN,
             static function (array $match) use ($replace): string {
                 $type = strtoupper((string) preg_replace('/(?:\\\\?_|\s+)/', '_', $match['type']));
@@ -39,5 +39,8 @@ final class Placeholder
             },
             $text,
         );
+
+        // Fail loudly: "(string) null" would silently turn the whole answer into an empty string.
+        return $result ?? throw new \RuntimeException(\sprintf('Placeholders could not be parsed: %s', preg_last_error_msg()));
     }
 }

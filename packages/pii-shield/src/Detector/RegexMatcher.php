@@ -42,26 +42,4 @@ final class RegexMatcher
 
         return $result;
     }
-
-    /**
-     * The line (between newlines) around a byte offset. Costs the line's length, not the offset.
-     */
-    public static function lineAround(string $text, int $byteOffset): string
-    {
-        $start = self::lineStart($text, $byteOffset);
-        $end = strpos($text, "\n", $byteOffset);
-        $end = false === $end ? \strlen($text) : $end;
-
-        return substr($text, $start, $end - $start);
-    }
-
-    /**
-     * Byte offset where the line around a byte offset starts.
-     */
-    public static function lineStart(string $text, int $byteOffset): int
-    {
-        $start = 0 === $byteOffset ? false : strrpos($text, "\n", $byteOffset - \strlen($text) - 1);
-
-        return false === $start ? 0 : $start + 1;
-    }
 }

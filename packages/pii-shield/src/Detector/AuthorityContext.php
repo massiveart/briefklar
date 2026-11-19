@@ -14,26 +14,33 @@ namespace Clarifile\PiiShield\Detector;
  * OCR and copied text put whole paragraphs on one line, and "Sie haben Einspruch erhoben.
  * Ihre Nummer ist ..." must not keep the recipient's number.
  *
- * Never authority context: a sentence in first person singular (the writer is a person, "ich erhebe
- * Einspruch, erreichbar unter ..."), a sentence about the recipient's contact ("Ihre Telefonnummer"),
- * and mobile numbers (authorities publish landlines; see isMobileNumber()).
+ * Never authority context: a sentence about the recipient's contact ("Ihre Telefonnummer") and mobile
+ * numbers (authorities publish landlines; see isMobileNumber()). First person singular is no signal:
+ * case workers write "stehe ich Ihnen unter ... zur Verfügung".
  *
  * @internal
  */
 final class AuthorityContext
 {
     private const string KEYWORDS = '/\b(?:uns|wir|unser\w*|einzubringen|Einspruch|Beschwerde|Bezirkshauptmannschaft|Finanzamt\w*|Magistrat\w*|Behörde\w*|Gericht\w*|Amt)\b/iu';
-    private const string PERSONAL = '/\\b(?i:ich|mich|mir|mein\\w*)\\b|\\bIhre[mnrs]?\\s+(?:Telefon\\w*|Handy\\w*|Mobil\\w*|E-Mail\\w*|Mail\\w*|Kontakt\\w*)/u';
-    /** Mobile prefixes: AT 0650-0699, DE 015x-017x, CH 075x-079x (after the country code: 6.., 1[5-7].., 7[5-9]..). */
-    private const string MOBILE = '/^(?:(?:\\+|00)43|0)6[5-9]|^(?:(?:\\+|00)49|0)1[5-7]|^(?:(?:\\+|00)41|0)7[5-9]/';
+    /** The recipient's own contact: "Ihre Telefonnummer", "Ihrer Rufnummer", "Ihre E-Mail-Adresse" (not "Ihrer E-Mail vom ..."). */
+    private const string PERSONAL = '/\\bIhre[mnrs]?\\s+(?:(?:Telefon|Handy|Mobil|Ruf|Rückruf|Mobilfunk)\\w*|(?:E-Mail|Mail)-?Adresse\\w*|Kontaktdaten)\\b/u';
+    /**
+     * Mobile numbers. AT: the common mobile blocks only (0662, 065xx, 07xxx are landlines). DE and CH only with
+     * the country code: national "015x" or "07xx" are Austrian landlines too. Numbers not listed fall back to
+     * the authority-context rule, as before.
+     */
+    private const string MOBILE = '/^(?:(?:\\+|00)43|0)(?:650|660|664|676|677|678|680|681|688|699)|^(?:\\+|00)49(?:15|16|17)|^(?:\\+|00)41(?:7[5-9])/';
     /** Names of authorities: a letterhead needs one ("uns" or "wir" are not enough there). */
     private const string AUTHORITY_NAMES = '/\b(?:Bezirkshauptmannschaft|Finanzamt|Magistrat|Magistratsabteilung|Behörde|Gericht|Bezirksgericht|Landesgericht|Amtsgericht|Amt|Gemeindeamt|Gemeinde|Stadtgemeinde|Marktgemeinde|Landesregierung|Ministerium|Polizei|Polizeiinspektion|Landespolizeidirektion|Stadtverwaltung)\b/iu';
     /** Short forms authorities put before their name in a domain ("bh-musterstadt.gv.at"). */
+    private const array SECOND_LEVEL_DOMAINS = ['gv', 'co', 'or', 'ac', 'gov'];
     private const array DOMAIN_PREFIXES = ['bh', 'fa', 'ma', 'mag', 'gem', 'stadt', 'markt', 'land', 'lpd', 'bg', 'lg'];
     /** The authority's name must be on one of the first lines of the letterhead. */
     private const int AUTHORITY_NAME_LINES = 2;
     private const int LETTERHEAD_LINES = 6;
     private const int LETTERHEAD_BYTES = 2_000;
+    private const int SENTENCE_WINDOW = 400;
     /** Abbreviations whose dot does not end a sentence ("Abt. Verkehr, Tel. 05572 ..."). */
     private const array ABBREVIATIONS = ['Abs', 'Abt', 'Art', 'bzw', 'ca', 'Dr', 'DI', 'Fa', 'Fr', 'gem', 'GZ', 'Hr', 'inkl', 'Ing', 'lit', 'lt', 'Mag', 'Nr', 'Prof', 'Str', 'Tel', 'usw', 'vgl', 'z.B', 'Zl'];
 
@@ -63,21 +70,43 @@ final class AuthorityContext
     /**
      * The sentence around a byte offset, within its line. A sentence ends at ".", "!" or "?" followed by
      * whitespace and an upper-case letter, unless the dot ends a known abbreviation or an initial.
+     *
+     * Only SENTENCE_WINDOW bytes on each side are looked at: OCR text can be one long line with many
+     * contacts, and scanning the whole line per contact would be quadratic.
      */
     private static function sentenceAround(string $text, int $byteOffset): string
     {
-        $line = RegexMatcher::lineAround($text, $byteOffset);
-        $offset = $byteOffset - RegexMatcher::lineStart($text, $byteOffset);
+        $length = \strlen($text);
+        $from = max(0, $byteOffset - self::SENTENCE_WINDOW);
+        $to = min($length, $byteOffset + self::SENTENCE_WINDOW);
+        while ($from > 0 && 0x80 === (\ord($text[$from]) & 0xC0)) { // start and end on whole UTF-8 characters
+            --$from;
+        }
+        while ($to < $length && 0x80 === (\ord($text[$to]) & 0xC0)) {
+            ++$to;
+        }
+        $window = substr($text, $from, $to - $from);
+        $offset = $byteOffset - $from;
+
+        $lineStart = strrpos(substr($window, 0, $offset), "\n");
+        if (false !== $lineStart) {
+            $window = substr($window, $lineStart + 1);
+            $offset -= $lineStart + 1;
+        }
+        $lineEnd = strpos($window, "\n", $offset);
+        if (false !== $lineEnd) {
+            $window = substr($window, 0, $lineEnd);
+        }
+
         $abbreviations = implode('|', array_map(static fn (string $a): string => '\\b'.preg_quote($a, '/'), self::ABBREVIATIONS));
-        $pattern = '/(?<!'.$abbreviations.'|\\b\\p{Lu})[.!?]\\s+(?=\\p{Lu})/u';
-        $sentences = preg_split($pattern, $line, flags: \PREG_SPLIT_OFFSET_CAPTURE);
+        $sentences = preg_split('/(?<!'.$abbreviations.'|\\b\\p{Lu})[.!?]\\s+(?=\\p{Lu})/u', $window, flags: \PREG_SPLIT_OFFSET_CAPTURE);
         foreach (array_reverse(false === $sentences ? [] : $sentences) as [$sentence, $start]) {
             if ($start <= $offset) {
                 return $sentence;
             }
         }
 
-        return $line;
+        return $window;
     }
 
     /**
@@ -109,7 +138,12 @@ final class AuthorityContext
         }
         $words = preg_split('/[^\p{L}]+/u', mb_strtolower($authority), flags: \PREG_SPLIT_NO_EMPTY);
         $words = array_filter(false === $words ? [] : $words, static fn (string $w): bool => mb_strlen($w) >= 5);
-        $parts = explode('-', $labels[\count($labels) - 2]);
+        // "bh-musterstadt.gv.at": the name is the label before a second-level domain like "gv" or "co"
+        $nameIndex = \count($labels) - 2;
+        if ($nameIndex > 0 && \in_array($labels[$nameIndex], self::SECOND_LEVEL_DOMAINS, true)) {
+            --$nameIndex;
+        }
+        $parts = explode('-', $labels[$nameIndex]);
         $name = array_pop($parts);
 
         return \in_array($name, $words, true) && [] === array_diff($parts, self::DOMAIN_PREFIXES);

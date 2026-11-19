@@ -226,6 +226,17 @@ final class PiiShieldTest extends TestCase
         self::assertTrue($restored->isClean());
     }
 
+    public function testRestoreFailsLoudlyInsteadOfReturningAnEmptyText(): void
+    {
+        $shield = PiiShield::withDefaultDetectors();
+        $redaction = $shield->redact('SVNR 4568 150392');
+
+        // An unclosed "[[" followed by thousands of tokens exhausts the regex engine.
+        $this->expectException(\RuntimeException::class);
+
+        $shield->restore('Text davor. [[A'.str_repeat(' 1', 5_000), $redaction);
+    }
+
     public function testRestoreReportsUnknownAndUnusedPlaceholders(): void
     {
         $shield = PiiShield::withDefaultDetectors();

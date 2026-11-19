@@ -28,6 +28,7 @@ final class PerformanceTest extends TestCase
      */
     public static function crafted(): iterable
     {
+        yield 'contacts on one line' => [static fn (int $n): string => implode(' ', array_map(static fn (int $i): string => "Kontakt bei uns: person{$i}@example.org, Tel. 05572 ".(100_000 + $i).'.', range(1, $n)))];
         yield 'same name repeated' => [static fn (int $n): string => str_repeat('Herr Aaaa ', $n)];
         yield 'different names' => [static fn (int $n): string => implode(' ', array_map(static fn (int $i): string => 'Herr Name'.self::letters($i).' Zeuge', range(1, $n)))];
         yield 'full names in address blocks' => [static fn (int $n): string => implode("\n\n", array_map(static fn (int $i): string => "Frau\nMaria Name".self::letters($i)."\nLindenweg ".($i % 999 + 1)."\n6900 Bregenz", range(1, $n)))];
