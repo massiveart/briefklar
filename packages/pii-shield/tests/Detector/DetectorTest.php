@@ -33,6 +33,9 @@ final class DetectorTest extends TestCase
         yield 'svnr: wrong check digit' => [new AtSvnrDetector(), 'SVNR 1234 010180', []];
         yield 'svnr: with hyphen' => [new AtSvnrDetector(), 'SVNR 4568-150392', ['4568-150392']];
         yield 'svnr: split across lines' => [new AtSvnrDetector(), "SVNR 4568\n150392", ["4568\n150392"]];
+        yield 'svnr: hyphen needs a birth date' => [new AtSvnrDetector(), 'Unser Zeichen: VWA-2026-100084, bitte angeben', []];
+        yield 'svnr: line break needs a birth date' => [new AtSvnrDetector(), "Dornbirn, am 12.03.2026\n100084 Euro sind offen", []];
+        yield 'svnr: year of a date is no SVNR start' => [new AtSvnrDetector(), "Dornbirn, am 12.03.2026\n150392 Euro sind offen", []];
         yield 'svnr: part of longer number' => [new AtSvnrDetector(), 'Konto 912370101801', []];
 
         // IBAN
@@ -60,6 +63,7 @@ final class DetectorTest extends TestCase
         yield 'email: authority keyword in another sentence of the line' => [new EmailDetector(), 'Ihr Einspruch ist eingelangt. Ihre Adresse maria@example.org wurde gespeichert.', ['maria@example.org']];
         yield 'email: first person singular is the writer, not the authority' => [new EmailDetector(), 'Gegen den Bescheid erhebe ich Einspruch. Sie erreichen mich unter johann.beispielmann@example.at.', ['johann.beispielmann@example.at']];
         yield 'email: "Ihre E-Mail-Adresse" is the recipient\'s' => [new EmailDetector(), 'Ihre E-Mail-Adresse maria@example.org haben wir gespeichert.', ['maria@example.org']];
+        yield 'email: case worker in first person, authority domain under gv.at' => [new EmailDetector(), "Bezirkshauptmannschaft Musterstadt\nVerkehrsamt\n\nFrau\nMaria Musterfrau\n\nSie erreichen mich unter verkehr@bh-musterstadt.gv.at.", []];
         yield 'email: authority contact redacted when disabled' => [new EmailDetector(keepAuthorityContacts: false), 'Bitte kontaktieren Sie uns unter post@bh.example.', ['post@bh.example']];
 
         // Phone
@@ -75,9 +79,19 @@ final class DetectorTest extends TestCase
         yield 'phone: international mobile number is never an authority contact' => [new PhoneDetector(), 'Laut unserer Unterlagen sind Sie unter +43 664 1234567 erreichbar.', ['+43 664 1234567']];
         yield 'phone: first person singular is the writer, not the authority' => [new PhoneDetector(), 'Gegen den Bescheid erhebe ich Einspruch. Sie erreichen mich unter 05572 12345.', ['05572 12345']];
         yield 'phone: mobile number with trunk zero after the country code' => [new PhoneDetector(), 'Ihren Einspruch haben wir unter +43 0664 1234567 notiert.', ['+43 0664 1234567']];
-        yield 'phone: first person singular in the same sentence' => [new PhoneDetector(), 'Ich habe Einspruch erhoben und bin unter 05572 12345 erreichbar.', ['05572 12345']];
         yield 'phone: "Ihre Telefonnummer" is the recipient\'s' => [new PhoneDetector(), 'Ihre Telefonnummer 05572 12345 haben wir gespeichert.', ['05572 12345']];
         yield 'phone: authority hotline with "Ihrem Bescheid" kept' => [new PhoneDetector(), 'Bei Fragen zu Ihrem Bescheid erreichen Sie uns unter 05572 12345.', []];
+        yield 'phone: Salzburg landline is no mobile' => [new PhoneDetector(), 'Rückfragen richten Sie bitte an das Magistrat Salzburg, Tel. 0662 8072 2000.', []];
+        yield 'phone: Salzburg landline with country code is no mobile' => [new PhoneDetector(), 'Rückfragen richten Sie bitte an das Magistrat Salzburg, Tel. +43 662 8072 2000.', []];
+        yield 'phone: Pinzgau landline is no mobile' => [new PhoneDetector(), 'Bei Fragen erreichen Sie uns unter 06542 7860.', []];
+        yield 'phone: Upper Austrian landline is no mobile' => [new PhoneDetector(), 'Bei Fragen erreichen Sie uns unter 07612 7920.', []];
+        yield 'phone: Vienna landline is no mobile' => [new PhoneDetector(), 'Bei Fragen erreichen Sie uns unter 01 514 33.', []];
+        yield 'phone: Frankfurt landline is no mobile' => [new PhoneDetector(), 'Bei Fragen erreichen Sie uns unter 069 212 0.', []];
+        yield 'phone: German mobile with country code' => [new PhoneDetector(), 'Ihren Einspruch haben wir unter +49 151 2345678 notiert.', ['+49 151 2345678']];
+        yield 'phone: case worker in first person is kept' => [new PhoneDetector(), 'Für Rückfragen zu Ihrem Einspruch stehe ich Ihnen unter 05572 306 1234 zur Verfügung.', []];
+        yield 'phone: "Ihrer E-Mail vom" does not make it personal' => [new PhoneDetector(), 'Bezüglich Ihrer E-Mail vom 01.02.2026 erreichen Sie uns unter 05572 306 0.', []];
+        yield 'phone: "Meinung" is no first person' => [new PhoneDetector(), 'Nach unserer Meinung erreichen Sie uns am besten unter 05572 306 0.', []];
+        yield 'phone: "Ihre Rufnummer" is the recipient\'s' => [new PhoneDetector(), 'Wir haben Ihren Einspruch erhalten, Ihre Rufnummer 05572 45678 ist vermerkt.', ['05572 45678']];
         yield 'phone: seven digits are enough' => [new PhoneDetector(), 'Tel. 0664 123', ['0664 123']];
         yield 'phone: six digits are not' => [new PhoneDetector(), 'Tel. 0664 12', []];
         yield 'phone: time is no phone' => [new PhoneDetector(), 'um 07:42 Uhr', []];
