@@ -14,11 +14,18 @@ namespace Clarifile\PiiShield\Detector;
  * OCR and copied text put whole paragraphs on one line, and "Sie haben Einspruch erhoben.
  * Ihre Nummer ist ..." must not keep the recipient's number.
  *
+ * Never authority context: a sentence in first person singular (the writer is a person, "ich erhebe
+ * Einspruch, erreichbar unter ..."), a sentence about the recipient's contact ("Ihre Telefonnummer"),
+ * and mobile numbers (authorities publish landlines; see isMobileNumber()).
+ *
  * @internal
  */
 final class AuthorityContext
 {
     private const string KEYWORDS = '/\b(?:uns|wir|unser\w*|einzubringen|Einspruch|Beschwerde|Bezirkshauptmannschaft|Finanzamt\w*|Magistrat\w*|Behörde\w*|Gericht\w*|Amt)\b/iu';
+    private const string PERSONAL = '/\\b(?i:ich|mich|mir|mein\\w*)\\b|\\bIhre[mnrs]?\\s+(?:Telefon\\w*|Handy\\w*|Mobil\\w*|E-Mail\\w*|Mail\\w*|Kontakt\\w*)/u';
+    /** Mobile prefixes: AT 0650-0699, DE 015x-017x, CH 075x-079x (after the country code: 6.., 1[5-7].., 7[5-9]..). */
+    private const string MOBILE = '/^(?:(?:\\+|00)43|0)6[5-9]|^(?:(?:\\+|00)49|0)1[5-7]|^(?:(?:\\+|00)41|0)7[5-9]/';
     /** Names of authorities: a letterhead needs one ("uns" or "wir" are not enough there). */
     private const string AUTHORITY_NAMES = '/\b(?:Bezirkshauptmannschaft|Finanzamt|Magistrat|Magistratsabteilung|Behörde|Gericht|Bezirksgericht|Landesgericht|Amtsgericht|Amt|Gemeindeamt|Gemeinde|Stadtgemeinde|Marktgemeinde|Landesregierung|Ministerium|Polizei|Polizeiinspektion|Landespolizeidirektion|Stadtverwaltung)\b/iu';
     /** Short forms authorities put before their name in a domain ("bh-musterstadt.gv.at"). */
@@ -35,7 +42,18 @@ final class AuthorityContext
      */
     public static function isAuthorityContact(string $text, int $byteOffset): bool
     {
-        return 1 === preg_match(self::KEYWORDS, self::sentenceAround($text, $byteOffset));
+        $sentence = self::sentenceAround($text, $byteOffset);
+
+        return 1 === preg_match(self::KEYWORDS, $sentence) && 1 !== preg_match(self::PERSONAL, $sentence);
+    }
+
+    /**
+     * Whether a phone number is a mobile number (AT, DE, CH). Mobile numbers are treated as personal even
+     * next to authority keywords: "Ihren Einspruch haben wir unter 0664 ... notiert".
+     */
+    public static function isMobileNumber(string $phone): bool
+    {
+        return 1 === preg_match(self::MOBILE, (string) preg_replace('/[^\d+]/', '', $phone));
     }
 
     /**

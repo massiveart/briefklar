@@ -198,6 +198,7 @@ final class ModelDetector implements DetectorInterface
             // file numbers only after a keyword, like the pattern detector ("Zahl:", "Aktenzeichen", ...)
             EntityType::FileNumber === $type => 1 !== preg_match('/\b'.FileNumberDetector::KEYWORDS.'[ \t]*:?[ \t]*$/u', $before),
             !$this->keepAuthorityContacts => false,
+            EntityType::Phone === $type && AuthorityContext::isMobileNumber($value) => false,
             \in_array($type, [EntityType::Email, EntityType::Phone], true) && AuthorityContext::isAuthorityContact($text, $byteOffset) => true,
             EntityType::Email === $type && AuthorityContext::isAuthorityEmail($text, $value) => true,
             \in_array($type, [EntityType::Address, EntityType::Email, EntityType::Phone], true) => AuthorityContext::isInLetterhead($text, $byteOffset),
