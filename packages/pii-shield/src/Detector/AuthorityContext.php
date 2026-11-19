@@ -53,7 +53,11 @@ final class AuthorityContext
      */
     public static function isMobileNumber(string $phone): bool
     {
-        return 1 === preg_match(self::MOBILE, (string) preg_replace('/[^\d+]/', '', $phone));
+        $digits = (string) preg_replace('/[^\d+]/', '', $phone);
+        // "+43 0664 ..." / "+43 (0)664 ...": the trunk zero after the country code is not part of the number
+        $digits = (string) preg_replace('/^((?:\+|00)\d{2})0/', '$1', $digits);
+
+        return 1 === preg_match(self::MOBILE, $digits);
     }
 
     /**
