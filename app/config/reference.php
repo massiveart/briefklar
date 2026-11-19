@@ -1920,6 +1920,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         path?: scalar|Param|null, // Default: "%kernel.project_dir%/var/pii_shield/learned_types.json"
  *         cache_pool?: scalar|Param|null, // Store in this PSR-6 pool instead of the JSON file. // Default: null
  *         store?: scalar|Param|null, // Service id of your own CustomEntityStoreInterface instead of the JSON file. // Default: null
+ *         lock?: scalar|Param|null, // Service id of a Symfony\Component\Lock\LockFactory (symfony/lock) to lock writes, for several processes learning at once. Its store must be shared by all of them. // Default: null
  *     },
  *     agent_processor?: bool|array{ // Redact input and restore output of Symfony AI agents.
  *         enabled?: bool|Param, // Default: true
