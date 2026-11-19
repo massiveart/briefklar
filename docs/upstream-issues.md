@@ -49,3 +49,20 @@ Bugs and rough edges found in Symfony AI and `mcp/sdk` during the hackathon. Eac
 - Actual: `The service "ai.security.is_granted_attribute_listener" has a dependency on a non-existent service "security.authorization_checker".` `AiBundle::loadExtension()` keeps the listener as soon as `AuthorizationCheckerInterface` (security-core) is installed, but the service comes from SecurityBundle.
 - Workaround: `App\Kernel::process()` removes the listener when SecurityBundle is not installed.
 - Filed: not yet.
+
+## Stress test of 1.0.0-BETA1 and mcp/sdk (19.11.2026)
+Targeted run against `symfony/ai` 1.0.0-BETA1 / `main` ef3728f and `mcp/sdk` 0.9.0 / v0.10.0 / `main` 3d2e831. Every finding was reproduced on `main` with its own minimal repro and checked against all existing issues and PRs before filing. None of them affects Clarifile directly.
+
+| Finding | Package | Filed |
+|---|---|---|
+| `Toolbox` accepts duplicate tool names and calls the wrong tool | `symfony/ai-agent` | https://github.com/symfony/ai/issues/3003 |
+| Typed `options` of an agent model lose their string type (`'007'` → `7`) | `symfony/ai-bundle` | https://github.com/symfony/ai/issues/3004 |
+| `#[Schema(enum: [...])]` cannot narrow a backed-enum parameter | `symfony/ai-platform` | https://github.com/symfony/ai/issues/3005 |
+| Explicit `null` for string options becomes `""`; reference config fails to compile | `symfony/mcp-bundle` | https://github.com/symfony/ai/issues/3006 |
+| Self-referencing classes exhaust memory in schema generation; `mixed`/`iterable` schemas | `symfony/ai-platform` | comment on https://github.com/symfony/ai/pull/2915 (fixes them as a side effect) |
+| `#[Schema(exclusiveMinimum: true)]` is invalid under JSON Schema 2020-12 | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/754 |
+| Error response to a repeated `initialize` has no `id` | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/755 |
+| A `float $x = INF` default makes `tools/list` fail for all tools | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/756 |
+| Class-typed params and enum arrays still fail at call time with the new schema generator | `mcp/sdk` | comment on https://github.com/modelcontextprotocol/php-sdk/pull/740 |
+
+Fixed on `main` after BETA1, relevant while we stay on it: a tool returning `void`/`null` crashes the agent run (`Message::ofToolCall()` TypeError, symfony/ai #2896). Tools must return a string.
