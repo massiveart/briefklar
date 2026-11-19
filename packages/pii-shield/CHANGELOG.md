@@ -15,6 +15,7 @@ All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https:
 - IBAN and SVNR split by a line break are detected; SVNR with a hyphen (`4568-150392`) too.
 - Authority contacts are judged per sentence instead of per line: in a one-line paragraph, "Sie haben Einspruch erhoben. Ihre Telefonnummer ..." kept the recipient's number. Abbreviations (`Abt.`, `Tel.`, ...) and initials don't end a sentence.
 - Mobile numbers (AT, DE, CH), sentences in first person singular and "Ihre Telefonnummer/E-Mail-Adresse" are never kept as authority contacts, also for model findings: "Ihren Einspruch haben wir unter 0664 ... notiert" kept the number.
+- Error messages no longer carry personal data: `ModelDetector` names the provider's exception class instead of its message (providers may echo the request; the message stays in `getPrevious()` for server logs), and learning errors name the position of an example (`example 2`, `counter-example 1`) instead of its value. Both reach HTTP and MCP clients.
 - Birth dates after "geb. am"; names and streets with capitals beyond `A-ZÄÖÜ` (`Čermáková`, `Željko Šarić`).
 - Learned types with digits in their name (`VN2_NUMBER`) are restored; the placeholder parser accepted letters only.
 - Docs: `restore_text` returns original values to the MCP client (docs said never); the demo's MCP instructions say so. New note on the Symfony profiler, which records the unredacted agent input.
