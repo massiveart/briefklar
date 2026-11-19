@@ -23,6 +23,7 @@ use Clarifile\PiiShield\Learning\CustomEntityStoreInterface;
 use Clarifile\PiiShield\Learning\EntityLearner;
 use Clarifile\PiiShield\Learning\JsonFileCustomEntityStore;
 use Clarifile\PiiShield\Learning\LearnedTypesDetector;
+use Clarifile\PiiShield\Learning\LockingCustomEntityStore;
 use Clarifile\PiiShield\Masking\TypeLabelMask;
 use Clarifile\PiiShield\PiiMasker;
 use Clarifile\PiiShield\PiiMaskerInterface;
@@ -38,6 +39,7 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use Symfony\Component\Lock\LockFactory;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
@@ -141,6 +143,11 @@ final class PiiShieldBundle extends AbstractBundle
                         ->scalarNode('path')->defaultValue('%kernel.project_dir%/var/pii_shield/learned_types.json')->end()
                         ->scalarNode('cache_pool')->info('Store in this PSR-6 pool instead of the JSON file.')->defaultNull()->end()
                         ->scalarNode('store')->info('Service id of your own CustomEntityStoreInterface instead of the JSON file.')->defaultNull()->end()
+                        ->scalarNode('lock')->info('Service id of a Symfony\\Component\\Lock\\LockFactory (symfony/lock) to lock writes, for several processes learning at once. Its store must be shared by all of them.')->defaultNull()->end()
+                    ->end()
+                    ->validate()
+                        ->ifTrue(static fn (array $l): bool => null !== $l['lock'] && !class_exists(LockFactory::class))
+                        ->thenInvalid('"lock" needs symfony/lock: composer require symfony/lock')
                     ->end()
                     ->validate()
                         ->ifTrue(static fn (array $l): bool => null !== $l['store'] && null !== $l['cache_pool'])
@@ -162,7 +169,7 @@ final class PiiShieldBundle extends AbstractBundle
      */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{types: list<string>, keep_authority_contacts: bool, allowlist: list<string>, model: array{enabled: bool, platform?: string, model?: string, location?: string, acknowledge_external_transfer?: bool, options?: array<string, mixed>, chunk_size?: int}, vault: array{enabled: bool, key?: string, cache_pool?: string|null, storage?: string|null, ttl?: int}, learning: array{enabled: bool, path: string, cache_pool: string|null, store?: string|null}, agent_processor: array{enabled: bool, agents: list<string>}} $config */
+        /** @var array{types: list<string>, keep_authority_contacts: bool, allowlist: list<string>, model: array{enabled: bool, platform?: string, model?: string, location?: string, acknowledge_external_transfer?: bool, options?: array<string, mixed>, chunk_size?: int}, vault: array{enabled: bool, key?: string, cache_pool?: string|null, storage?: string|null, ttl?: int}, learning: array{enabled: bool, path: string, cache_pool: string|null, store?: string|null, lock?: string|null}, agent_processor: array{enabled: bool, agents: list<string>}} $config */
         $services = $container->services();
 
         foreach ($config['types'] as $type) {
@@ -179,11 +186,16 @@ final class PiiShieldBundle extends AbstractBundle
         $learnedStore = null;
         if ($config['learning']['enabled']) {
             $learnedStore = service('pii_shield.learned_types');
+            $lock = $config['learning']['lock'] ?? null;
+            $storeId = null === $lock ? 'pii_shield.learned_types' : 'pii_shield.learned_types.unlocked';
             match (true) {
-                null !== ($config['learning']['store'] ?? null) => $services->alias('pii_shield.learned_types', $config['learning']['store']),
-                null !== $config['learning']['cache_pool'] => $services->set('pii_shield.learned_types', CacheCustomEntityStore::class)->args([service($config['learning']['cache_pool'])]),
-                default => $services->set('pii_shield.learned_types', JsonFileCustomEntityStore::class)->args([$config['learning']['path']]),
+                null !== ($config['learning']['store'] ?? null) => $services->alias($storeId, $config['learning']['store']),
+                null !== $config['learning']['cache_pool'] => $services->set($storeId, CacheCustomEntityStore::class)->args([service($config['learning']['cache_pool'])]),
+                default => $services->set($storeId, JsonFileCustomEntityStore::class)->args([$config['learning']['path']]),
             };
+            if (null !== $lock) {
+                $services->set('pii_shield.learned_types', LockingCustomEntityStore::class)->args([service($storeId), service($lock)]);
+            }
             $services->alias(CustomEntityStoreInterface::class, 'pii_shield.learned_types');
             $services->set('pii_shield.learner', EntityLearner::class)->args([$learnedStore]);
             $services->alias(EntityLearner::class, 'pii_shield.learner')->public();
