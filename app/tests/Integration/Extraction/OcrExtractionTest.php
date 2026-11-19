@@ -77,6 +77,37 @@ final class OcrExtractionTest extends TestCase
         self::assertSame([], glob($this->tempDir.'/*'));
     }
 
+    public function testHugePageIsRenderedAtAReadableSizeOnly(): void
+    {
+        // Issue #84: a PDF of a few hundred bytes with a 2.54 m page took 27 s and 1.6 GB at 300 dpi.
+        $pdf = PdfFixtureFactory::toTempFile(PdfFixtureFactory::hugePage(7200), '.pdf');
+        self::assertLessThan(1000, (int) filesize($pdf));
+
+        $started = microtime(true);
+        self::assertNull($this->scannedPdfExtractor()->extract($pdf));
+
+        self::assertLessThan(8.0, microtime(true) - $started);
+        self::assertSame([], glob($this->tempDir.'/*'));
+    }
+
+    public function testRemovesWorkDirectoriesThatAnEarlierRunLeftBehind(): void
+    {
+        // Issue #84: a fatal error (time limit) skips the finally block, so page images can stay behind.
+        $stale = $this->tempDir.'/clarifile_ocr_stale';
+        mkdir($stale);
+        file_put_contents($stale.'/page-1.png', 'page image');
+        touch($stale.'/page-1.png', time() - 7200);
+        touch($stale, time() - 7200);
+        $running = $this->tempDir.'/clarifile_ocr_running';
+        mkdir($running);
+
+        $this->scannedPdfExtractor()->extract(PdfFixtureFactory::toTempFile('%PDF-1.4 this is not a pdf', '.pdf'));
+
+        self::assertDirectoryDoesNotExist($stale);
+        self::assertDirectoryExists($running, 'A directory of a request that may still run is kept.');
+        rmdir($running);
+    }
+
     /**
      * @return iterable<string, array{string, bool, bool}>
      */

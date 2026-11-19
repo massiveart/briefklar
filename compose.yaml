@@ -25,7 +25,9 @@ services:
     image: ollama/ollama
     profiles: ["local"]
     ports:
-      - "11434:11434"
+      # Localhost only: the Ollama API has no authentication (anyone on the network could run,
+      # pull or delete models). The app reaches it over the compose network either way.
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama:/root/.ollama
 

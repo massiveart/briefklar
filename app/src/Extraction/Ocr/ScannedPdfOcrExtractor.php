@@ -18,11 +18,22 @@ use Symfony\Component\Process\Process;
 #[AsTaggedItem(priority: 20)]
 final readonly class ScannedPdfOcrExtractor implements TextExtractorInterface
 {
+    /**
+     * Longest side of a rendered page in pixels: A4 at 300 dpi. pdftoppm scales every page to it, so a
+     * tiny PDF with a page of metres (issue #84) costs no more than a letter; smaller pages get enlarged.
+     */
+    private const int MAX_PAGE_PIXELS = 3508;
+
+    /**
+     * Work directories older than this are left over from a run that ended with a fatal error (time limit),
+     * which skips the finally block; their page images contain personal data and are removed.
+     */
+    private const int STALE_AFTER_SECONDS = 3600;
+
     public function __construct(
         private TesseractOcr $ocr,
         private OcrTextCorrector $corrector,
         private string $pdftoppmBinary = 'pdftoppm',
-        private int $dpi = 300,
         private int $maxPages = 10,
         private ?string $tempDir = null,
     ) {
@@ -35,14 +46,18 @@ final readonly class ScannedPdfOcrExtractor implements TextExtractorInterface
 
     public function extract(string $path): ?ExtractedText
     {
-        $workDir = ($this->tempDir ?? sys_get_temp_dir()).'/clarifile_ocr_'.bin2hex(random_bytes(8));
+        $tempDir = $this->tempDir ?? sys_get_temp_dir();
+        self::removeStaleWorkDirs($tempDir);
+
+        $workDir = $tempDir.'/clarifile_ocr_'.bin2hex(random_bytes(8));
         if (!mkdir($workDir, 0700) && !is_dir($workDir)) {
             throw new \RuntimeException('Could not create OCR work directory.');
         }
 
         try {
             $render = new Process([
-                $this->pdftoppmBinary, '-r', (string) $this->dpi, '-gray', '-png', '-l', (string) $this->maxPages, $path, $workDir.'/page',
+                $this->pdftoppmBinary, '-scale-to', (string) self::MAX_PAGE_PIXELS,
+                '-gray', '-png', '-l', (string) $this->maxPages, $path, $workDir.'/page',
             ], timeout: 120);
 
             try {
@@ -60,6 +75,18 @@ final readonly class ScannedPdfOcrExtractor implements TextExtractorInterface
         } finally {
             array_map(unlink(...), self::files($workDir.'/*'));
             rmdir($workDir);
+        }
+    }
+
+    private static function removeStaleWorkDirs(string $tempDir): void
+    {
+        foreach (self::files($tempDir.'/clarifile_ocr_*') as $dir) {
+            $modified = @filemtime($dir);
+            if (!is_dir($dir) || false === $modified || $modified > time() - self::STALE_AFTER_SECONDS) {
+                continue;
+            }
+            array_map(static fn (string $file): bool => @unlink($file), self::files($dir.'/*'));
+            @rmdir($dir);
         }
     }
 

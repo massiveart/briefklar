@@ -20,7 +20,8 @@ Needs Docker and a [Hugging Face access token](https://huggingface.co/settings/t
 
 ```bash
 git clone https://github.com/massiveart/clarifile.git && cd clarifile
-echo "HUGGINGFACE_API_KEY=hf_your_token" >> app/.env.local   # git-ignored, never committed
+printf 'Hugging Face token: ' && read -rs TOKEN && echo     # typed without echo, so it stays out of the shell history
+printf 'HUGGINGFACE_API_KEY=%s\n' "$TOKEN" >> app/.env.local && unset TOKEN   # git-ignored, never committed
 docker compose up -d                                        # first start installs dependencies (about a minute)
 open http://localhost:8080
 ```

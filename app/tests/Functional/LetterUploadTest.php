@@ -420,6 +420,44 @@ final class LetterUploadTest extends WebTestCase
         self::assertSelectorTextContains('form', 'keinen Text erkennen');
     }
 
+    public function testUploadFormCarriesACsrfToken(): void
+    {
+        self::createClient()->request('GET', '/de');
+
+        self::assertSelectorExists('form[name=letter_upload] input[type=hidden][name="letter_upload[_token]"]');
+    }
+
+    public function testCrossSitePostIsRefused(): void
+    {
+        $client = self::createClient();
+        $crawler = $client->request('GET', '/de');
+        $form = $crawler->selectButton('Brief erklären')->form();
+        self::attach($form, PdfFixtureFactory::toTempFile(PdfFixtureFactory::textPdf(PdfFixtureFactory::letter('01-strafverfuegung')), '.pdf'));
+
+        // Issue #84: another website auto-submitting the form. The browser sends that site as Origin and Referer.
+        $client->setServerParameter('HTTP_ORIGIN', 'https://attacker.example');
+        $client->setServerParameter('HTTP_REFERER', 'https://attacker.example/');
+        $client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('form', 'CSRF');
+        self::assertSame([], self::getContainer()->get(ScriptedPlatform::class)->requests());
+    }
+
+    public function testDecompressionBombEndsInAFriendlyMessage(): void
+    {
+        $client = self::createClient();
+        $crawler = $client->request('GET', '/de');
+
+        // Issue #84: 300 MB of page content in a file of a few hundred kilobytes.
+        $form = $crawler->selectButton('Brief erklären')->form();
+        self::attach($form, PdfFixtureFactory::toTempFile(PdfFixtureFactory::decompressionBomb(300), '.pdf'));
+        $client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('form', 'keinen Text erkennen');
+    }
+
     private function uploadText(KernelBrowser $client, string $text): void
     {
         $crawler = $client->request('GET', '/de');

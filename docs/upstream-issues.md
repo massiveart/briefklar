@@ -41,3 +41,11 @@ Bugs and rough edges found in Symfony AI and `mcp/sdk` during the hackathon. Eac
 - Actual: `Http\Discovery\Exception\NotFoundException: No PSR-17 server request factory found` from `McpController` via `PsrHttpFactory::createRequest()`. The Flex recipe of `php-http/discovery` adds `config/packages/http_discovery.yaml` pointing to `Http\Discovery\Psr17Factory`, and the bundle requires `php-http/discovery`, but nothing installs an implementation. STDIO works, so the problem shows up only on the first HTTP request.
 - Workaround: `composer require nyholm/psr7`.
 - Filed: no, fixed upstream in symfony/ai 80854de613 ("[MCP Bundle] Let php-http/discovery install a PSR-17 implementation", 27.10.2026) after 1.0.0-BETA1. Drop `nyholm/psr7` when we upgrade past BETA1.
+
+## `#[IsGrantedTool]` listener breaks the container without SecurityBundle
+- Package / version: `symfony/ai-bundle` 1.0.0-BETA1 (same on `main` at ef3728f289, 19.11.2026)
+- Reproduction: a Symfony 8.1 app with `symfony/ai-bundle` and `symfony/form`, no SecurityBundle. `composer require symfony/security-csrf` (for form CSRF protection; it requires `symfony/security-core`).
+- Expected: the container compiles; the listener for `#[IsGrantedTool]` is only kept when `security.authorization_checker` exists.
+- Actual: `The service "ai.security.is_granted_attribute_listener" has a dependency on a non-existent service "security.authorization_checker".` `AiBundle::loadExtension()` keeps the listener as soon as `AuthorizationCheckerInterface` (security-core) is installed, but the service comes from SecurityBundle.
+- Workaround: `App\Kernel::process()` removes the listener when SecurityBundle is not installed.
+- Filed: not yet.

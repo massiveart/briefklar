@@ -40,6 +40,32 @@ final class PdfTextLayerExtractorTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{int, int}>
+     */
+    public static function decompressionBombs(): iterable
+    {
+        yield 'one stream inflating to 300 MB' => [300, 1];
+        yield '150 streams of 2 MB each' => [2, 150];
+    }
+
+    /**
+     * Issue #84: a small PDF that inflates beyond the memory limit must not end the process
+     * (a fatal error cannot be caught); it is treated as a PDF without usable text layer.
+     */
+    #[DataProvider('decompressionBombs')]
+    public function testDecompressionBombDoesNotExhaustMemory(int $inflatedMegabytes, int $streams): void
+    {
+        $pdf = PdfFixtureFactory::toTempFile(PdfFixtureFactory::decompressionBomb($inflatedMegabytes, $streams), '.pdf');
+        self::assertLessThan(2_000_000, (int) filesize($pdf));
+        $before = memory_get_usage();
+        memory_reset_peak_usage();
+
+        (new PdfTextLayerExtractor())->extract($pdf);
+
+        self::assertLessThan(48 * 1024 * 1024, memory_get_peak_usage() - $before);
+    }
+
+    /**
      * @return iterable<string, array{string, bool}>
      */
     public static function mimeTypes(): iterable

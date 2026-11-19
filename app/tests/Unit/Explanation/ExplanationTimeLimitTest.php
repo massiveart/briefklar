@@ -30,4 +30,27 @@ final class ExplanationTimeLimitTest extends TestCase
     {
         self::assertSame($expected, (new ExplanationTimeLimit(120, $modelDetection))->seconds($redactionPasses));
     }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function sapis(): iterable
+    {
+        yield 'web (FrankenPHP)' => ['frankenphp', '180'];
+        yield 'web (FPM)' => ['fpm-fcgi', '180'];
+        // Issue #84: the STDIO MCP server runs for hours; a limit armed by one tool call would end it.
+        yield 'command line' => ['cli', '0'];
+    }
+
+    #[DataProvider('sapis')]
+    public function testRaisesTheLimitForWebRequestsOnly(string $sapi, string $expected): void
+    {
+        set_time_limit(0);
+        try {
+            (new ExplanationTimeLimit(120, false, $sapi))->apply();
+            self::assertSame($expected, \ini_get('max_execution_time'));
+        } finally {
+            set_time_limit(0);
+        }
+    }
 }

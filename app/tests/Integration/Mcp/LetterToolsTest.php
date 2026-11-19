@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Mcp;
 
-use App\Explanation\ExplanationTimeLimit;
 use App\Mcp\LetterTools;
 use App\Tests\Support\FailingDetector;
 use App\Tests\Support\PdfFixtureFactory;
@@ -84,17 +83,14 @@ final class LetterToolsTest extends KernelTestCase
         }
     }
 
-    public function testRaisesPhpsTimeLimitLikeTheWebUpload(): void
+    public function testLeavesTheTimeLimitOfTheStdioServerAlone(): void
     {
-        // Over HTTP, PHP's 30 s default cut off a local model (seen with Claude Code against /mcp).
-        try {
-            $this->tools()->explainLetter(PdfFixtureFactory::letter('01-strafverfuegung'));
-            $expected = self::getContainer()->get(ExplanationTimeLimit::class)->seconds();
-            self::assertSame((string) $expected, \ini_get('max_execution_time'));
-            self::assertGreaterThan(30, $expected);
-        } finally {
-            set_time_limit(0); // the CLI default, for the following tests
-        }
+        // Over HTTP the limit is raised like for the web upload (ExplanationTimeLimitTest); the STDIO server
+        // is a long-running command line process, and a limit armed by one call would end it (issue #84).
+        set_time_limit(0);
+        $this->tools()->explainLetter(PdfFixtureFactory::letter('01-strafverfuegung'));
+
+        self::assertSame('0', \ini_get('max_execution_time'));
     }
 
     public function testReportsProgressBetweenTheSteps(): void
@@ -147,6 +143,22 @@ final class LetterToolsTest extends KernelTestCase
             self::fail('Expected a ToolCallException.');
         } catch (ToolCallException $e) {
             self::assertStringNotContainsString($this->folder, $e->getMessage());
+        }
+        self::assertSame([], self::getContainer()->get(ScriptedPlatform::class)->requests());
+    }
+
+    public function testDecompressionBombComesBackAsToolError(): void
+    {
+        // Issue #84: over STDIO a fatal "memory exhausted" would end the whole server.
+        file_put_contents($this->folder.'/bombe.pdf', PdfFixtureFactory::decompressionBomb(300));
+
+        try {
+            $this->tools()->explainLetterFile('bombe.pdf');
+            self::fail('Expected a ToolCallException.');
+        } catch (ToolCallException $e) {
+            self::assertStringNotContainsString($this->folder, $e->getMessage());
+        } finally {
+            set_time_limit(0);
         }
         self::assertSame([], self::getContainer()->get(ScriptedPlatform::class)->requests());
     }
