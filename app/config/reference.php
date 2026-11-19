@@ -1903,7 +1903,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         enabled?: bool|Param, // Default: false
  *         platform?: scalar|Param|null, // Service id of a Symfony AI platform, e.g. "ai.platform.ollama". Required when enabled. // Default: null
  *         model?: scalar|Param|null, // Model name, e.g. "qwen3:8b". Required when enabled. // Default: null
- *         location?: "local"|"on_premise"|"external"|Param, // Default: "local"
+ *         location?: "local"|"on_premise"|"external"|Param, // Where the model runs: "local", "on_premise" or "external". Required when enabled, no default: detection sends unredacted text to this model. // Default: null
  *         acknowledge_external_transfer?: bool|Param, // Detection sends unredacted text to the model. Required for "external". // Default: false
  *         options?: list<mixed>,
  *         chunk_size?: int|Param, // Characters per model call; longer texts are split along paragraphs and sent concurrently. // Default: 4000
@@ -1920,6 +1920,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         path?: scalar|Param|null, // Default: "%kernel.project_dir%/var/pii_shield/learned_types.json"
  *         cache_pool?: scalar|Param|null, // Store in this PSR-6 pool instead of the JSON file. // Default: null
  *         store?: scalar|Param|null, // Service id of your own CustomEntityStoreInterface instead of the JSON file. // Default: null
+ *         lock?: scalar|Param|null, // Service id of a Symfony\Component\Lock\LockFactory (symfony/lock) to lock writes, for several processes learning at once. Its store must be shared by all of them. // Default: null
  *     },
  *     agent_processor?: bool|array{ // Redact input and restore output of Symfony AI agents.
  *         enabled?: bool|Param, // Default: true

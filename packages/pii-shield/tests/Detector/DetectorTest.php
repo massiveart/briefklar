@@ -58,6 +58,8 @@ final class DetectorTest extends TestCase
         yield 'email: private after an authority contact' => [new EmailDetector(), "Einspruch an post@bh.example einzubringen.\nPrivat: maria@example.org", ['maria@example.org']];
         yield 'email: authority keyword on another line' => [new EmailDetector(), "Finanzamt Linz\nKontakt: maria@example.org\nBescheid vom Finanzamt", ['maria@example.org']];
         yield 'email: authority keyword in another sentence of the line' => [new EmailDetector(), 'Ihr Einspruch ist eingelangt. Ihre Adresse maria@example.org wurde gespeichert.', ['maria@example.org']];
+        yield 'email: first person singular is the writer, not the authority' => [new EmailDetector(), 'Gegen den Bescheid erhebe ich Einspruch. Sie erreichen mich unter johann.beispielmann@example.at.', ['johann.beispielmann@example.at']];
+        yield 'email: "Ihre E-Mail-Adresse" is the recipient\'s' => [new EmailDetector(), 'Ihre E-Mail-Adresse maria@example.org haben wir gespeichert.', ['maria@example.org']];
         yield 'email: authority contact redacted when disabled' => [new EmailDetector(keepAuthorityContacts: false), 'Bitte kontaktieren Sie uns unter post@bh.example.', ['post@bh.example']];
 
         // Phone
@@ -69,6 +71,12 @@ final class DetectorTest extends TestCase
         yield 'phone: authority keyword in another sentence of the line' => [new PhoneDetector(), 'Gegen den Bescheid haben Sie Einspruch erhoben. Ihre Telefonnummer lautet 0664/1234567.', ['0664/1234567']];
         yield 'phone: abbreviations do not end the sentence' => [new PhoneDetector(), 'Bezirkshauptmannschaft Musterstadt, Abt. Verkehr, Tel. 05572 12345', []];
         yield 'phone: authority hotline after an earlier sentence' => [new PhoneDetector(), 'Bitte beachten Sie die Frist. Bei Fragen erreichen Sie uns unter Tel. 05572 12345.', []];
+        yield 'phone: mobile number is never an authority contact' => [new PhoneDetector(), 'Ihren Einspruch haben wir unter 0664 1234567 notiert.', ['0664 1234567']];
+        yield 'phone: international mobile number is never an authority contact' => [new PhoneDetector(), 'Laut unserer Unterlagen sind Sie unter +43 664 1234567 erreichbar.', ['+43 664 1234567']];
+        yield 'phone: first person singular is the writer, not the authority' => [new PhoneDetector(), 'Gegen den Bescheid erhebe ich Einspruch. Sie erreichen mich unter 05572 12345.', ['05572 12345']];
+        yield 'phone: first person singular in the same sentence' => [new PhoneDetector(), 'Ich habe Einspruch erhoben und bin unter 05572 12345 erreichbar.', ['05572 12345']];
+        yield 'phone: "Ihre Telefonnummer" is the recipient\'s' => [new PhoneDetector(), 'Ihre Telefonnummer 05572 12345 haben wir gespeichert.', ['05572 12345']];
+        yield 'phone: authority hotline with "Ihrem Bescheid" kept' => [new PhoneDetector(), 'Bei Fragen zu Ihrem Bescheid erreichen Sie uns unter 05572 12345.', []];
         yield 'phone: seven digits are enough' => [new PhoneDetector(), 'Tel. 0664 123', ['0664 123']];
         yield 'phone: six digits are not' => [new PhoneDetector(), 'Tel. 0664 12', []];
         yield 'phone: time is no phone' => [new PhoneDetector(), 'um 07:42 Uhr', []];

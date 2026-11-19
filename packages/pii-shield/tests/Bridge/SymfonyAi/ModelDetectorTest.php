@@ -204,6 +204,7 @@ final class ModelDetectorTest extends TestCase
         yield 'law after a citation with lit. dropped' => ['{"type":"OTHER","value":"StVO"}', 'gemäß § 99 Abs. 3 lit. a StVO eine', []];
         yield 'same word outside a citation kept' => ['{"type":"PERSON","value":"Muster"}', 'gemäß § 3 StVO. Herr Muster zahlt', ['Muster']];
         yield 'without a letterhead "wenden Sie sich an" alone is not enough' => ['{"type":"EMAIL","value":"parken@musterhausen.example"}', 'Bei Fragen wenden Sie sich an parken@musterhausen.example.', ['parken@musterhausen.example']];
+        yield 'mobile number next to an authority keyword redacted' => ['{"type":"PHONE","value":"0664 1234567"}', 'Ihren Einspruch haben wir unter 0664 1234567 notiert.', ['0664 1234567']];
         yield 'private e-mail redacted' => ['{"type":"EMAIL","value":"lukas@example.org"}', 'Ihre Adresse lukas@example.org ist hinterlegt.', ['lukas@example.org']];
         yield 'authority phone kept' => ['{"type":"PHONE","value":"+43 50 233 233"}', 'Bei Fragen erreichen Sie uns unter +43 50 233 233.', []];
         yield 'letterhead address kept' => ['{"type":"ADDRESS","value":"Rathausplatz 2, 8999 Musterhausen"}', "Magistrat der Stadt Musterhausen\nRathausplatz 2, 8999 Musterhausen\n\nFrau\nMaria Musterfrau", []];
