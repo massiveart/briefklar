@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Clarifile\PiiShield\Tests\Demo;
 
 use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelLocation;
 use Clarifile\PiiShield\Demo\DemoApi;
 use Clarifile\PiiShield\Learning\CacheCustomEntityStore;
 use Clarifile\PiiShield\Learning\EntityLearner;
@@ -46,7 +47,7 @@ final class DemoApiTest extends TestCase
 
                 return [$vault, $storage];
             },
-            static fn (array $model): ModelDetector => new ModelDetector($platform, \is_string($model['model'] ?? null) ? $model['model'] : ''),
+            static fn (array $model): ModelDetector => new ModelDetector($platform, \is_string($model['model'] ?? null) ? $model['model'] : '', ModelLocation::Local),
             $this->learner,
         );
     }

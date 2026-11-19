@@ -8,9 +8,11 @@ namespace Clarifile\PiiShield\Detector;
  * Heuristic: is a contact detail (e-mail, phone) the sender authority's own contact?
  *
  * Authority contact data is needed for the action steps ("where do I send my objection?")
- * and is not the recipient's personal data, so it is kept by default. A line counts as
+ * and is not the recipient's personal data, so it is kept by default. A sentence counts as
  * authority context if it speaks in first person plural ("erreichen Sie uns") or refers
- * to an authority or to filing something ("einzubringen").
+ * to an authority or to filing something ("einzubringen"). The sentence, not the whole line:
+ * OCR and copied text put whole paragraphs on one line, and "Sie haben Einspruch erhoben.
+ * Ihre Nummer ist ..." must not keep the recipient's number.
  *
  * @internal
  */
@@ -25,13 +27,35 @@ final class AuthorityContext
     private const int AUTHORITY_NAME_LINES = 2;
     private const int LETTERHEAD_LINES = 6;
     private const int LETTERHEAD_BYTES = 2_000;
+    /** Abbreviations whose dot does not end a sentence ("Abt. Verkehr, Tel. 05572 ..."). */
+    private const array ABBREVIATIONS = ['Abs', 'Abt', 'Art', 'bzw', 'ca', 'Dr', 'DI', 'Fa', 'Fr', 'gem', 'GZ', 'Hr', 'inkl', 'Ing', 'lit', 'lt', 'Mag', 'Nr', 'Prof', 'Str', 'Tel', 'usw', 'vgl', 'z.B', 'Zl'];
 
     /**
      * @param int $byteOffset byte offset of the value (RegexMatcher::matchAll() 'byteOffset')
      */
     public static function isAuthorityContact(string $text, int $byteOffset): bool
     {
-        return 1 === preg_match(self::KEYWORDS, RegexMatcher::lineAround($text, $byteOffset));
+        return 1 === preg_match(self::KEYWORDS, self::sentenceAround($text, $byteOffset));
+    }
+
+    /**
+     * The sentence around a byte offset, within its line. A sentence ends at ".", "!" or "?" followed by
+     * whitespace and an upper-case letter, unless the dot ends a known abbreviation or an initial.
+     */
+    private static function sentenceAround(string $text, int $byteOffset): string
+    {
+        $line = RegexMatcher::lineAround($text, $byteOffset);
+        $offset = $byteOffset - RegexMatcher::lineStart($text, $byteOffset);
+        $abbreviations = implode('|', array_map(static fn (string $a): string => '\\b'.preg_quote($a, '/'), self::ABBREVIATIONS));
+        $pattern = '/(?<!'.$abbreviations.'|\\b\\p{Lu})[.!?]\\s+(?=\\p{Lu})/u';
+        $sentences = preg_split($pattern, $line, flags: \PREG_SPLIT_OFFSET_CAPTURE);
+        foreach (array_reverse(false === $sentences ? [] : $sentences) as [$sentence, $start]) {
+            if ($start <= $offset) {
+                return $sentence;
+            }
+        }
+
+        return $line;
     }
 
     /**

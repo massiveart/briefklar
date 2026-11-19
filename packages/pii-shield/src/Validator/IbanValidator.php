@@ -11,7 +11,7 @@ final class IbanValidator implements ValidatorInterface
 {
     public function isValid(string $candidate): bool
     {
-        $iban = strtoupper(str_replace(' ', '', $candidate));
+        $iban = strtoupper((string) preg_replace('/\s/', '', $candidate));
 
         if (1 !== preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/', $iban)) {
             return false;

@@ -22,9 +22,9 @@ use Clarifile\PiiShield\EntityType;
 final class SalutationPersonDetector implements DetectorInterface
 {
     private const string TITLES = '(?:(?:Dr|Mag|DI|Dipl\.-Ing|Ing|Prof|MMag|Mag\.\(FH\))\.?[ \t]+)*';
-    private const string WORD = "[A-ZÄÖÜ][\\p{L}'-]+";
+    private const string WORD = "\\p{Lu}[\\p{L}'-]+";
     /** Like WORD, but also an initial split off by OCR: "J ohann". */
-    private const string OCR_WORD = "[A-ZÄÖÜ](?:[ \\t](?=\\p{Ll}))?[\\p{L}'-]+";
+    private const string OCR_WORD = "\\p{Lu}(?:[ \\t](?=\\p{Ll}))?[\\p{L}'-]+";
 
     public function detect(string $text): array
     {

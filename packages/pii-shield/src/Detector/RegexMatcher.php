@@ -48,11 +48,20 @@ final class RegexMatcher
      */
     public static function lineAround(string $text, int $byteOffset): string
     {
-        $start = 0 === $byteOffset ? false : strrpos($text, "\n", $byteOffset - \strlen($text) - 1);
-        $start = false === $start ? 0 : $start + 1;
+        $start = self::lineStart($text, $byteOffset);
         $end = strpos($text, "\n", $byteOffset);
         $end = false === $end ? \strlen($text) : $end;
 
         return substr($text, $start, $end - $start);
+    }
+
+    /**
+     * Byte offset where the line around a byte offset starts.
+     */
+    public static function lineStart(string $text, int $byteOffset): int
+    {
+        $start = 0 === $byteOffset ? false : strrpos($text, "\n", $byteOffset - \strlen($text) - 1);
+
+        return false === $start ? 0 : $start + 1;
     }
 }

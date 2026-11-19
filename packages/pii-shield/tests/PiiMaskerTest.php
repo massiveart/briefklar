@@ -34,6 +34,14 @@ final class PiiMaskerTest extends TestCase
         self::assertSame($expected, PiiMasker::withDefaultDetectors()->mask($text));
     }
 
+    public function testNoBreakSpacesDoNotHideValues(): void
+    {
+        $masked = PiiMasker::withDefaultDetectors()->mask("SVNR 4568\u{00A0}150392, Tel.\u{00A0}0664\u{00A0}1234567");
+
+        self::assertStringNotContainsString('150392', $masked);
+        self::assertStringNotContainsString('12345', $masked);
+    }
+
     public function testAllowlistedValuesAreNotMasked(): void
     {
         $masker = new PiiMasker(EntityExtractor::defaultDetectors(), allowlist: ['4568 150392']);

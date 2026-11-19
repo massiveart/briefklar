@@ -17,7 +17,7 @@ use Clarifile\PiiShield\EntityType;
  */
 final class PostalAddressDetector implements DetectorInterface
 {
-    private const string PATTERN = "/^(?<address>[A-ZÄÖÜ][\\p{L}.' -]*?[ \\t]\\d{1,4}[a-zA-Z]?(?:\\/\\d{1,4}[a-zA-Z]?)*[ \\t]*\\n(?:[ \\t]*\\n){0,2}(?:(?:A|D|CH)-)?(?:[1-9]\\d{3}|\\d{5})[ \\t]+[A-ZÄÖÜ][\\p{L}.' -]*\\p{L})[ \\t]*$/mu";
+    private const string PATTERN = "/^(?<address>\\p{Lu}[\\p{L}.' -]*?[ \\t]\\d{1,4}[a-zA-Z]?(?:\\/\\d{1,4}[a-zA-Z]?)*[ \\t]*\\n(?:[ \\t]*\\n){0,2}(?:(?:A|D|CH)-)?(?:[1-9]\\d{3}|\\d{5})[ \\t]+\\p{Lu}[\\p{L}.' -]*\\p{L})[ \\t]*$/mu";
 
     public function detect(string $text): array
     {

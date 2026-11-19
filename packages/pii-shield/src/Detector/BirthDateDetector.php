@@ -13,7 +13,7 @@ use Clarifile\PiiShield\EntityType;
  */
 final class BirthDateDetector implements DetectorInterface
 {
-    private const string PATTERN = '/(?:\bgeb\.|\bgeboren(?:\s+am)?|\bGeburtsdatum:?)\s*(?<date>\d{1,2}\.\s?\d{1,2}\.\s?\d{4})(?!\d)/iu';
+    private const string PATTERN = '/(?:\bgeb\.(?:\s*am)?|\bgeboren(?:\s+am)?|\bGeburtsdatum:?)\s*(?<date>\d{1,2}\.\s?\d{1,2}\.\s?\d{4})(?!\d)/iu';
 
     public function detect(string $text): array
     {

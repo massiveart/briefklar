@@ -49,6 +49,18 @@ final class CustomEntityTest extends TestCase
         self::assertTrue($shield->restore('Nummer ⟦insurance number 2⟧', $redaction)->isClean());
     }
 
+    public function testTypeNamesWithDigitsAreRestored(): void
+    {
+        $type = new CustomEntityType('VN2_NUMBER_3', 'Versichertennummer einer Versicherung', ['VN-2026-000417'], [], 'VN-\d{4}-\d{6}');
+        $shield = new PiiShield([new CustomEntityDetector($type)]);
+
+        $redaction = $shield->redact('Nummer VN-2026-000417.');
+
+        self::assertSame('Nummer ⟦VN2_NUMBER_3_1⟧.', $redaction->redactedText);
+        self::assertSame('Nummer VN-2026-000417.', $shield->restore($redaction->redactedText, $redaction)->text);
+        self::assertSame('Nummer VN-2026-000417.', $shield->restore('Nummer ⟦vn2 number 3 1⟧.', $redaction)->text);
+    }
+
     public function testMaskingUsesTheCustomName(): void
     {
         $masker = new PiiMasker([new CustomEntityDetector(self::insuranceNumber())]);

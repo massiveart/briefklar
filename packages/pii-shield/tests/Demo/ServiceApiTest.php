@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Clarifile\PiiShield\Tests\Demo;
 
 use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
+use Clarifile\PiiShield\Bridge\SymfonyAi\ModelLocation;
 use Clarifile\PiiShield\Demo\ServiceApi;
 use Clarifile\PiiShield\Learning\CacheCustomEntityStore;
 use Clarifile\PiiShield\Learning\EntityLearner;
@@ -37,7 +38,7 @@ final class ServiceApiTest extends TestCase
         $this->api = new ServiceApi(
             new EncryptedVault($storage, EncryptedVault::generateKey()),
             $learner,
-            static fn (): ModelDetector => new ModelDetector($platform, 'test-model', learnedTypes: null),
+            static fn (): ModelDetector => new ModelDetector($platform, 'test-model', ModelLocation::Local, learnedTypes: null),
             self::TOKEN,
         );
     }
@@ -125,7 +126,7 @@ final class ServiceApiTest extends TestCase
     {
         $client = new MockModelClient(static fn (): string => 'not json, internal detail: http://10.0.0.7:11434');
         $platform = new Platform([new Provider('mock', [$client], [new MockResultConverter()], new FallbackModelCatalog())], new CatalogBasedModelRouter());
-        $api = new ServiceApi(new EncryptedVault(new Psr6CacheStorage(new ArrayAdapter()), EncryptedVault::generateKey()), new EntityLearner(new CacheCustomEntityStore(new ArrayAdapter())), static fn (): ModelDetector => new ModelDetector($platform, 'secret-model-name'), self::TOKEN);
+        $api = new ServiceApi(new EncryptedVault(new Psr6CacheStorage(new ArrayAdapter()), EncryptedVault::generateKey()), new EntityLearner(new CacheCustomEntityStore(new ArrayAdapter())), static fn (): ModelDetector => new ModelDetector($platform, 'secret-model-name', ModelLocation::Local), self::TOKEN);
 
         $response = $api->handle('POST', '/v1/redact', ['text' => 'x', 'detection' => 'model'], 'Bearer '.self::TOKEN, '10.0.0.5');
 

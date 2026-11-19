@@ -17,7 +17,7 @@ final class AtSvnrValidator implements ValidatorInterface
 
     public function isValid(string $candidate): bool
     {
-        $digits = str_replace(' ', '', $candidate);
+        $digits = (string) preg_replace('/[\s-]/', '', $candidate);
 
         if (1 !== preg_match('/^[1-9]\d{9}$/', $digits)) {
             return false;

@@ -31,12 +31,16 @@ final class DetectorTest extends TestCase
         yield 'svnr: valid with space' => [new AtSvnrDetector(), 'SVNR: 4568 150392.', ['4568 150392']];
         yield 'svnr: valid compact' => [new AtSvnrDetector(), 'Nr. 1237010180', ['1237010180']];
         yield 'svnr: wrong check digit' => [new AtSvnrDetector(), 'SVNR 1234 010180', []];
+        yield 'svnr: with hyphen' => [new AtSvnrDetector(), 'SVNR 4568-150392', ['4568-150392']];
+        yield 'svnr: split across lines' => [new AtSvnrDetector(), "SVNR 4568\n150392", ["4568\n150392"]];
         yield 'svnr: part of longer number' => [new AtSvnrDetector(), 'Konto 912370101801', []];
 
         // IBAN
         yield 'iban: grouped' => [new IbanDetector(), 'IBAN AT61 1904 3002 3457 3201, danke', ['AT61 1904 3002 3457 3201']];
         yield 'iban: compact DE' => [new IbanDetector(), 'auf DE89370400440532013000 überweisen', ['DE89370400440532013000']];
         yield 'iban: followed by uppercase word' => [new IbanDetector(), 'AT61 1904 3002 3457 3201 BIC', ['AT61 1904 3002 3457 3201']];
+        yield 'iban: split across lines' => [new IbanDetector(), "IBAN AT61 1904 3002\n3457 3201, danke", ["AT61 1904 3002\n3457 3201"]];
+        yield 'iban: BIC on the next line' => [new IbanDetector(), "AT61 1904 3002 3457 3201\nBKAUATWW", ['AT61 1904 3002 3457 3201']];
         yield 'iban: invalid checksum' => [new IbanDetector(), 'AT62 1904 3002 3457 3201', []];
 
         // Tax numbers
@@ -53,6 +57,7 @@ final class DetectorTest extends TestCase
         yield 'email: several private' => [new EmailDetector(), 'maria@example.org und johann@example.org', ['maria@example.org', 'johann@example.org']];
         yield 'email: private after an authority contact' => [new EmailDetector(), "Einspruch an post@bh.example einzubringen.\nPrivat: maria@example.org", ['maria@example.org']];
         yield 'email: authority keyword on another line' => [new EmailDetector(), "Finanzamt Linz\nKontakt: maria@example.org\nBescheid vom Finanzamt", ['maria@example.org']];
+        yield 'email: authority keyword in another sentence of the line' => [new EmailDetector(), 'Ihr Einspruch ist eingelangt. Ihre Adresse maria@example.org wurde gespeichert.', ['maria@example.org']];
         yield 'email: authority contact redacted when disabled' => [new EmailDetector(keepAuthorityContacts: false), 'Bitte kontaktieren Sie uns unter post@bh.example.', ['post@bh.example']];
 
         // Phone
@@ -61,6 +66,9 @@ final class DetectorTest extends TestCase
         yield 'phone: authority hotline kept' => [new PhoneDetector(), 'Bei Fragen erreichen Sie uns unter +43 50 233 233.', []];
         yield 'phone: several private' => [new PhoneDetector(), 'Mobil +43 664 1234567, Festnetz 05572 123456', ['+43 664 1234567', '05572 123456']];
         yield 'phone: private after an authority hotline' => [new PhoneDetector(), "Erreichen Sie uns unter +43 50 233 233.\nPrivat: 0664/1234567", ['0664/1234567']];
+        yield 'phone: authority keyword in another sentence of the line' => [new PhoneDetector(), 'Gegen den Bescheid haben Sie Einspruch erhoben. Ihre Telefonnummer lautet 0664/1234567.', ['0664/1234567']];
+        yield 'phone: abbreviations do not end the sentence' => [new PhoneDetector(), 'Bezirkshauptmannschaft Musterstadt, Abt. Verkehr, Tel. 05572 12345', []];
+        yield 'phone: authority hotline after an earlier sentence' => [new PhoneDetector(), 'Bitte beachten Sie die Frist. Bei Fragen erreichen Sie uns unter Tel. 05572 12345.', []];
         yield 'phone: seven digits are enough' => [new PhoneDetector(), 'Tel. 0664 123', ['0664 123']];
         yield 'phone: six digits are not' => [new PhoneDetector(), 'Tel. 0664 12', []];
         yield 'phone: time is no phone' => [new PhoneDetector(), 'um 07:42 Uhr', []];
@@ -70,6 +78,8 @@ final class DetectorTest extends TestCase
         yield 'birth date: geb.' => [new BirthDateDetector(), 'geb. 15.03.1992', ['15.03.1992']];
         yield 'birth date: geboren am' => [new BirthDateDetector(), 'geboren am 1.3.1980 in Linz', ['1.3.1980']];
         yield 'birth date: Geburtsdatum' => [new BirthDateDetector(), 'Geburtsdatum: 01.01.1970', ['01.01.1970']];
+        yield 'birth date: geb. am' => [new BirthDateDetector(), 'geb. am 15.03.1992', ['15.03.1992']];
+        yield 'birth date: Geburtsdatum without colon' => [new BirthDateDetector(), 'Geburtsdatum 01.01.1970', ['01.01.1970']];
         yield 'birth date: deadline is kept' => [new BirthDateDetector(), 'fällig am 15.11.2026', []];
         yield 'birth date: impossible date' => [new BirthDateDetector(), 'geb. 31.02.1992', []];
 
@@ -94,6 +104,8 @@ final class DetectorTest extends TestCase
         // Over-redaction is preferred to leaking half a name.
         yield 'person: inline over-redacts following noun' => [new SalutationPersonDetector(), 'Herr Beispielmann Bescheid gegeben', ['Beispielmann Bescheid']];
         yield 'person: inline takes at most two words' => [new SalutationPersonDetector(), 'Frau Maria Anna Musterfrau', ['Maria Anna']];
+        yield 'person: inline name with non-German capital' => [new SalutationPersonDetector(), 'Sehr geehrte Frau Čermáková,', ['Čermáková']];
+        yield 'person: address block with non-German capitals' => [new SalutationPersonDetector(), "Herrn\nŽeljko Šarić\nLindenweg 12", ['Željko Šarić']];
         yield 'person: no salutation' => [new SalutationPersonDetector(), 'Mag. Thomas Beispiel', []];
         // OCR output (Tesseract): blank lines in the address block, split words
         yield 'person: OCR blank line after salutation' => [new SalutationPersonDetector(), "Frau\n\nMaria Musterfrau\nLindenweg 12", ['Maria Musterfrau']];
@@ -106,6 +118,7 @@ final class DetectorTest extends TestCase
         yield 'address: street and city' => [new PostalAddressDetector(), "Lindenweg 12\n6900 Bregenz\n", ["Lindenweg 12\n6900 Bregenz"]];
         yield 'address: door number' => [new PostalAddressDetector(), "Bahnhofstraße 7/3\n4020 Linz", ["Bahnhofstraße 7/3\n4020 Linz"]];
         yield 'address: DE postcode' => [new PostalAddressDetector(), "Musterallee 5a\n10115 Berlin", ["Musterallee 5a\n10115 Berlin"]];
+        yield 'address: street with non-German capital' => [new PostalAddressDetector(), "Šumavská 12\n6900 Bregenz", ["Šumavská 12\n6900 Bregenz"]];
         yield 'address: single line letterhead kept' => [new PostalAddressDetector(), 'Hauptplatz 1, 6999 Musterstadt', []];
         yield 'address: OCR blank line before city' => [new PostalAddressDetector(), "Bahnhofstraße 7/3\n\n4020 Linz\n", ["Bahnhofstraße 7/3\n\n4020 Linz"]];
         yield 'address: OCR two blank lines before city' => [new PostalAddressDetector(), "Lindenweg 12\n\n\n6900 Bregenz", ["Lindenweg 12\n\n\n6900 Bregenz"]];

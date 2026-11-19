@@ -11,7 +11,7 @@ use Clarifile\PiiShield\Validator\ValidatorInterface;
 
 final class IbanDetector implements DetectorInterface
 {
-    private const string PATTERN = '/\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?\b/u';
+    private const string PATTERN = '/\b[A-Z]{2}\d{2}(?:(?: |[ \t]*\n[ \t]*)?[A-Z0-9]{4}){2,7}(?:(?: |[ \t]*\n[ \t]*)?[A-Z0-9]{1,3})?\b/u';
 
     public function __construct(
         private readonly ValidatorInterface $validator = new IbanValidator(),
@@ -32,8 +32,8 @@ final class IbanDetector implements DetectorInterface
     }
 
     /**
-     * The greedy pattern may swallow a following uppercase token ("... 3201 BIC").
-     * Drop trailing space-separated groups until the checksum matches.
+     * The greedy pattern may swallow a following uppercase token ("... 3201 BIC"), also from the next line.
+     * Drop trailing whitespace-separated groups until the checksum matches.
      */
     private function longestValidPrefix(string $candidate): ?string
     {
@@ -41,11 +41,10 @@ final class IbanDetector implements DetectorInterface
             if ($this->validator->isValid($candidate)) {
                 return $candidate;
             }
-            $lastSpace = strrpos($candidate, ' ');
-            if (false === $lastSpace) {
+            if (1 !== preg_match('/^(.*\S)\s+\S+$/s', $candidate, $shorter)) {
                 return null;
             }
-            $candidate = substr($candidate, 0, $lastSpace);
+            $candidate = $shorter[1];
         }
     }
 }

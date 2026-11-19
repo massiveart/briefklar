@@ -175,6 +175,18 @@ final class PiiShieldTest extends TestCase
         );
     }
 
+    public function testWindowsLineEndingsAndNoBreakSpacesAreHandled(): void
+    {
+        $text = "Frau\r\nMaria Musterfrau\r\nLindenweg 12\r\n6900 Bregenz\r\n\r\nIBAN AT61\u{00A0}1904\u{00A0}3002\u{00A0}3457\u{00A0}3201\rSVNR 4568\u{202F}150392";
+        $shield = PiiShield::withDefaultDetectors();
+
+        $result = $shield->redact($text);
+
+        self::assertSame("Frau\r\n⟦PERSON_1⟧\r\n⟦ADDRESS_1⟧\r\n\r\nIBAN ⟦IBAN_1⟧\rSVNR ⟦SVNR_1⟧", $result->redactedText);
+        self::assertSame("Lindenweg 12\r\n6900 Bregenz", $result->vault['⟦ADDRESS_1⟧'], 'vault keeps the original characters');
+        self::assertSame($text, $shield->restore($result->redactedText, $result)->text);
+    }
+
     public function testRestoreReplacesPlaceholdersWithOriginals(): void
     {
         $shield = PiiShield::withDefaultDetectors();
