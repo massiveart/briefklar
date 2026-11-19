@@ -74,6 +74,7 @@ final class DetectorTest extends TestCase
         yield 'phone: mobile number is never an authority contact' => [new PhoneDetector(), 'Ihren Einspruch haben wir unter 0664 1234567 notiert.', ['0664 1234567']];
         yield 'phone: international mobile number is never an authority contact' => [new PhoneDetector(), 'Laut unserer Unterlagen sind Sie unter +43 664 1234567 erreichbar.', ['+43 664 1234567']];
         yield 'phone: first person singular is the writer, not the authority' => [new PhoneDetector(), 'Gegen den Bescheid erhebe ich Einspruch. Sie erreichen mich unter 05572 12345.', ['05572 12345']];
+        yield 'phone: mobile number with trunk zero after the country code' => [new PhoneDetector(), 'Ihren Einspruch haben wir unter +43 0664 1234567 notiert.', ['+43 0664 1234567']];
         yield 'phone: first person singular in the same sentence' => [new PhoneDetector(), 'Ich habe Einspruch erhoben und bin unter 05572 12345 erreichbar.', ['05572 12345']];
         yield 'phone: "Ihre Telefonnummer" is the recipient\'s' => [new PhoneDetector(), 'Ihre Telefonnummer 05572 12345 haben wir gespeichert.', ['05572 12345']];
         yield 'phone: authority hotline with "Ihrem Bescheid" kept' => [new PhoneDetector(), 'Bei Fragen zu Ihrem Bescheid erreichen Sie uns unter 05572 12345.', []];
