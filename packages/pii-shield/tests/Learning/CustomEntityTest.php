@@ -85,6 +85,7 @@ final class CustomEntityTest extends TestCase
     public function testPatternMustMatchAllExamples(): void
     {
         $this->expectException(LearningFailedException::class);
+        $this->expectExceptionMessageMatches('/^(?!.*AB-1).*example 2\b/');
 
         new CustomEntityType('INSURANCE_NUMBER', 'x', ['VN-2026-000417', 'AB-1'], [], 'VN-\d{4}-\d{6}');
     }
@@ -92,6 +93,7 @@ final class CustomEntityTest extends TestCase
     public function testPatternMustNotMatchCounterExamples(): void
     {
         $this->expectException(LearningFailedException::class);
+        $this->expectExceptionMessageMatches('/^(?!.*999999).*counter-example 1\b/');
 
         new CustomEntityType('INSURANCE_NUMBER', 'x', ['VN-2026-000417'], ['VN-2026-999999'], 'VN-\d{4}-\d{6}');
     }

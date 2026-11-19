@@ -120,6 +120,23 @@ final class ModelDetectorTest extends TestCase
         $detector->detect(self::TEXT);
     }
 
+    public function testProviderErrorsDoNotReachTheMessage(): void
+    {
+        // Providers may echo the request (here: the unredacted letter) in their error text.
+        $detector = $this->chunkingDetector(static function (): string {
+            throw new \RuntimeException('400 Bad Request: input "Johann Beispielmann, SVNR 4568 150392" is invalid');
+        }, ModelDetector::DEFAULT_CHUNK_SIZE);
+
+        try {
+            $detector->detect(self::TEXT);
+            self::fail('Expected DetectionFailedException');
+        } catch (DetectionFailedException $e) {
+            self::assertStringNotContainsString('Beispielmann', $e->getMessage());
+            self::assertStringContainsString('RuntimeException', $e->getMessage());
+            self::assertStringContainsString('Beispielmann', (string) $e->getPrevious()?->getMessage(), 'details stay in the previous exception for server logs');
+        }
+    }
+
     public function testSendsTheTextToTheConfiguredModelWithInstructions(): void
     {
         $this->detector('{"entities":[]}', model: 'llama3.1:8b')->detect(self::TEXT);

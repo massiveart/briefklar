@@ -60,14 +60,15 @@ final readonly class CustomEntityType
             throw new LearningFailedException(\sprintf('The pattern %s is not a valid regular expression.', $pattern));
         }
         self::assertSafePattern($pattern, $examples);
-        foreach ($examples as $example) {
+        // Examples are personal data: messages name their position, never the value (they reach HTTP and MCP clients).
+        foreach (array_values($examples) as $i => $example) {
             if (1 !== preg_match('~^(?:'.$pattern.')$~u', $example)) {
-                throw new LearningFailedException(\sprintf('The pattern %s does not match the example "%s".', $pattern, $example));
+                throw new LearningFailedException(\sprintf('The pattern %s does not match example %d.', $pattern, $i + 1));
             }
         }
-        foreach ($counterExamples as $counter) {
+        foreach (array_values($counterExamples) as $i => $counter) {
             if (1 === preg_match('~^(?:'.$pattern.')$~u', $counter)) {
-                throw new LearningFailedException(\sprintf('The pattern %s also matches the counter-example "%s".', $pattern, $counter));
+                throw new LearningFailedException(\sprintf('The pattern %s also matches counter-example %d.', $pattern, $i + 1));
             }
         }
     }

@@ -179,7 +179,8 @@ final class ModelDetector implements DetectorInterface
 
             return array_map(static fn ($result): string => $result->asText(), $pending);
         } catch (\Throwable $e) {
-            throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached: %s', $this->model, $e->getMessage()), previous: $e);
+            // Not the provider's message: it may echo the unredacted request. Details stay in $previous for server logs.
+            throw new DetectionFailedException(\sprintf('The detection model "%s" could not be reached (%s).', $this->model, $e::class), previous: $e);
         }
     }
 
