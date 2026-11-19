@@ -43,6 +43,7 @@
     "symfony/css-selector": "^8.1",
     "symfony/dotenv": "^8.1",
     "symfony/framework-bundle": "^8.1",
+    "symfony/lock": "^8.1",
     "symfony/mcp-bundle": "1.0.0-BETA1",
     "symfony/yaml": "^8.1"
   },
@@ -53,7 +54,8 @@
     "symfony/ai-ollama-platform": "Model-based detection with a local or on-premise Ollama",
     "symfony/ai-generic-platform": "Model-based detection with any OpenAI-compatible server (vLLM, ...)",
     "symfony/ai-mistral-platform": "Model-based detection with Mistral (external, needs acknowledgement)",
-    "psr/cache-implementation": "To persist encrypted vaults (e.g. symfony/cache with Redis, filesystem or PDO)"
+    "psr/cache-implementation": "To persist encrypted vaults (e.g. symfony/cache with Redis, filesystem or PDO)",
+    "symfony/lock": "To lock writes of learned entity types when several processes learn at once (LockingCustomEntityStore)"
   },
   "autoload": {
     "psr-4": {

@@ -52,6 +52,7 @@ pii_shield:
         path: '%kernel.project_dir%/var/pii_shield/learned_types.json'
         cache_pool: null        # use a PSR-6 pool instead of the file
         store: null             # or the service id of your own CustomEntityStoreInterface (not together with cache_pool)
+        lock: null              # service id of a LockFactory (symfony/lock): lock writes when several processes learn
     agent_processor:            # redact input / restore output of Symfony AI agents
         enabled: true
         agents: []              # agent names; empty = all agents
@@ -113,7 +114,7 @@ $shield->forget($vaultId); // delete immediately when done
 
 `fetch` of a tampered entry, an entry encrypted with another key or an entry copied to another id throws `VaultException`.
 
-**Your own backend in the bundle:** implement `VaultStorageInterface` (`put`, `get`, `remove`; payloads arrive encrypted) and set `vault.storage` to its service id. The same works for learned entity types: implement `CustomEntityStoreInterface` and set `learning.store`. Without these options the bundle uses a PSR-6 pool (vault) or the JSON file (learning). Neither built-in learning store locks: two `learn()` calls at the same moment can overwrite each other, so learn from one process at a time, or lock in your own store.
+**Your own backend in the bundle:** implement `VaultStorageInterface` (`put`, `get`, `remove`; payloads arrive encrypted) and set `vault.storage` to its service id. The same works for learned entity types: implement `CustomEntityStoreInterface` and set `learning.store`. Without these options the bundle uses a PSR-6 pool (vault) or the JSON file (learning). The learning stores read the whole list, change it and write it back, so two processes learning at the same moment can overwrite each other. Set `learning.lock` to a `LockFactory` service (`composer require symfony/lock`) and the bundle wraps the store in `Learning\LockingCustomEntityStore`, which holds one lock around every write; reads do not lock. The lock store must be shared by all writing processes: `FlockStore` on one host, Redis or a database across hosts. Without the bundle: `new LockingCustomEntityStore($store, new LockFactory(new FlockStore()))`.
 
 ### Irreversible masking (logs, previews)
 

@@ -7,7 +7,10 @@ namespace Clarifile\PiiShield\Tests\Bridge\Symfony;
 use Clarifile\PiiShield\Bridge\Symfony\PiiShieldBundle;
 use Clarifile\PiiShield\Bridge\SymfonyAi\ModelDetector;
 use Clarifile\PiiShield\Bridge\SymfonyAi\PiiShieldProcessor;
+use Clarifile\PiiShield\Learning\CustomEntityStoreInterface;
 use Clarifile\PiiShield\Learning\EntityLearner;
+use Clarifile\PiiShield\Learning\JsonFileCustomEntityStore;
+use Clarifile\PiiShield\Learning\LockingCustomEntityStore;
 use Clarifile\PiiShield\PiiMaskerInterface;
 use Clarifile\PiiShield\PiiShieldInterface;
 use Clarifile\PiiShield\Tests\Bridge\Symfony\Fixtures\InMemoryCustomEntityStore;
@@ -134,6 +137,25 @@ final class PiiShieldBundleTest extends TestCase
         self::assertNotNull($store->get('INSURANCE_NUMBER'));
         self::assertSame('Polizze ⟦INSURANCE_NUMBER_1⟧', self::service($container, PiiShieldInterface::class)->redact('Polizze VN-2024-123456')->redactedText);
         self::assertFileDoesNotExist($this->kernel?->getProjectDir().'/var/pii_shield/learned_types.json');
+    }
+
+    public function testLearningWritesCanBeLocked(): void
+    {
+        $container = $this->container(['learning' => ['store' => 'app.entity_store', 'lock' => 'app.lock_factory']]);
+
+        self::assertInstanceOf(LockingCustomEntityStore::class, $container->get(CustomEntityStoreInterface::class));
+        self::service($container, EntityLearner::class)->learn('INSURANCE_NUMBER', 'Polizzennummer', ['VN-2026-000417', 'VN-2025-998812']);
+
+        $store = $container->get('app.entity_store');
+        self::assertInstanceOf(InMemoryCustomEntityStore::class, $store);
+        self::assertNotNull($store->get('INSURANCE_NUMBER'));
+    }
+
+    public function testLearningWritesAreNotLockedByDefault(): void
+    {
+        $builder = $this->load([]);
+
+        self::assertSame(JsonFileCustomEntityStore::class, $builder->getDefinition('pii_shield.learned_types')->getClass());
     }
 
     public function testLearningCanBeDisabled(): void

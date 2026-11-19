@@ -10,6 +10,8 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
 /**
  * Minimal application with FrameworkBundle and PiiShieldBundle, configured per test.
  */
@@ -51,5 +53,7 @@ final class TestKernel extends Kernel
         $services = $container->services();
         $services->set('app.vault_storage', InMemoryVaultStorage::class)->public();
         $services->set('app.entity_store', InMemoryCustomEntityStore::class)->public();
+        $services->set('app.lock_store', \Symfony\Component\Lock\Store\InMemoryStore::class);
+        $services->set('app.lock_factory', \Symfony\Component\Lock\LockFactory::class)->args([service('app.lock_store')]);
     }
 }

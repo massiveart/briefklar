@@ -7,6 +7,7 @@ All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https:
 ### Added
 
 - Bundle: `vault.storage` and `learning.store` take the service id of your own `VaultStorageInterface` / `CustomEntityStoreInterface` (database, S3, ...). `VaultStorageInterface` is aliased to the configured storage. Setting one of them together with `cache_pool` is rejected.
+- `Learning\LockingCustomEntityStore`: wraps any learned-type store and locks writes with `symfony/lock` (optional dependency), so concurrent `learn()` calls no longer overwrite each other. Bundle: `learning.lock` takes the `LockFactory` service id.
 
 ### Fixed
 
