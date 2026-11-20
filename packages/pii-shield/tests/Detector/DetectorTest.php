@@ -96,6 +96,8 @@ final class DetectorTest extends TestCase
         yield 'phone: six digits are not' => [new PhoneDetector(), 'Tel. 0664 12', []];
         yield 'phone: time is no phone' => [new PhoneDetector(), 'um 07:42 Uhr', []];
         yield 'phone: date is no phone' => [new PhoneDetector(), 'am 02.11.2026', []];
+        yield 'phone: a long digit run before a letter does not exhaust the regex' => [new PhoneDetector(), 'Ref. 0'.str_repeat('1', 160).'a', []];
+        yield 'phone: compact number before a letter' => [new PhoneDetector(), 'Tel. 06641234567x', []];
 
         // Birth date
         yield 'birth date: geb.' => [new BirthDateDetector(), 'geb. 15.03.1992', ['15.03.1992']];

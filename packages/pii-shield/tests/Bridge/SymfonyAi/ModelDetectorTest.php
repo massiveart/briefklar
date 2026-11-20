@@ -62,6 +62,16 @@ final class ModelDetectorTest extends TestCase
         self::assertSame(['Jan Novák', "Lindenweg 12\n6900 Bregenz", 'Jan Novák'], $values);
     }
 
+    public function testValuesEndingOrStartingInMultibyteCharactersAreKept(): void
+    {
+        $text = 'Sehr geehrter Herr Jan Kovář, Ihr Kollege Александр zahlt €12.';
+        $detector = $this->detector('{"entities":[{"type":"PERSON","value":"„Jan Kovář“"},{"type":"PERSON","value":"Александр"},{"type":"OTHER","value":"€12"}]}');
+
+        $values = array_map(static fn (Entity $e): string => $e->value, $detector->detect($text));
+
+        self::assertSame(['Jan Kovář', 'Александр', '€12'], $values);
+    }
+
     public function testDatesAreBirthDatesOnlyWithABirthKeyword(): void
     {
         $text = 'Login am 03.11.2026. Geboren am 02.05.1981, narozen 7. 3. 1990.';

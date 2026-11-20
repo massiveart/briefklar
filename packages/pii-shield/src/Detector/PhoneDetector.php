@@ -13,7 +13,7 @@ use Clarifile\PiiShield\EntityType;
  */
 final class PhoneDetector implements DetectorInterface
 {
-    private const string PATTERN = '/(?<![\w+\/])(?:(?:\+|00)\d{1,3}|0\d{1,4})(?:[ \/-]?\d{2,}){1,5}(?![\w\/])/u';
+    private const string PATTERN = '/(?<![\w+\/])(?:(?:\+|00)\d{1,3}|0\d{1,4})(?:[ \/-]?\d{2,}(?!\d)){1,5}(?![\w\/])/u';
     private const int MIN_DIGITS = 7;
 
     public function __construct(

@@ -382,7 +382,8 @@ final class ModelDetector implements DetectorInterface
      */
     private static function clean(string $value): string
     {
-        $value = trim($value, " \t\n\r\0\x0B\"'„“”‚‘’«»");
+        // Not trim(): it strips bytes, so a value ending in "ř" or "р" would lose half a character and be dropped.
+        $value = (string) preg_replace('/^[\s\0"\'„“”‚‘’«»]+|[\s\0"\'„“”‚‘’«»]+$/u', '', $value);
         $value = (string) preg_replace('/^(?:(?:Herrn?|Frau|Mr|Mrs|Ms|Miss|Monsieur|Madame|Signora?|Señora?|pan|paní|pani)\.?\s+)+/iu', '', $value);
 
         return rtrim($value, " \t\n\r.,;:!?");
