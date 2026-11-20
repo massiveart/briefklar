@@ -11,6 +11,8 @@ All notable changes to `clarifile/pii-shield`. Format: [Keep a Changelog](https:
 
 ### Fixed
 
+- Model detection no longer drops values that end or start in a multibyte character ("Jan Kovář", "Александр", "€12"): quotes and whitespace were trimmed byte-wise, the value became invalid UTF-8 and was silently discarded, so it reached the provider unredacted.
+- Phone detection no longer throws "Backtrack limit exhausted" on 50 or more digits followed by a letter (e.g. an OCR artifact), which made the whole `redact()` fail.
 - Line endings and spaces no longer hide values: `\r\n`, a lone `\r`, no-break, figure, thin and narrow no-break spaces are normalized for detection (one code point for one, so offsets, vault values and restore keep the original characters). CRLF address blocks and `AT61\u{00A0}1904 ...` were missed before.
 - IBAN and SVNR split by a line break are detected; SVNR with a hyphen (`4568-150392`) too.
 - Authority contacts are judged per sentence instead of per line: in a one-line paragraph, "Sie haben Einspruch erhoben. Ihre Telefonnummer ..." kept the recipient's number. Abbreviations (`Abt.`, `Tel.`, ...) and initials don't end a sentence.
