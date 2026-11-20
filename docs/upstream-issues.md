@@ -61,7 +61,7 @@ Targeted run against `symfony/ai` 1.0.0-BETA1 / `main` ef3728f and `mcp/sdk` 0.9
 | Explicit `null` for string options becomes `""`; reference config fails to compile | `symfony/mcp-bundle` | https://github.com/symfony/ai/issues/3006 |
 | Self-referencing classes exhaust memory in schema generation; `mixed`/`iterable` schemas | `symfony/ai-platform` | comment on https://github.com/symfony/ai/pull/2915 (fixes them as a side effect) |
 | `#[Schema(exclusiveMinimum: true)]` is invalid under JSON Schema 2020-12 | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/754 |
-| Error response to a repeated `initialize` has no `id` | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/755 |
+| Error response to a repeated `initialize` has no `id` | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/755, fix PR https://github.com/modelcontextprotocol/php-sdk/pull/758 |
 | A `float $x = INF` default makes `tools/list` fail for all tools | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/756 |
 | Class-typed params and enum arrays still fail at call time with the new schema generator | `mcp/sdk` | comment on https://github.com/modelcontextprotocol/php-sdk/pull/740 |
 
