@@ -55,14 +55,28 @@ Targeted run against `symfony/ai` 1.0.0-BETA1 / `main` ef3728f and `mcp/sdk` 0.9
 
 | Finding | Package | Filed |
 |---|---|---|
-| `Toolbox` accepts duplicate tool names and calls the wrong tool | `symfony/ai-agent` | https://github.com/symfony/ai/issues/3003 |
+| `Toolbox` accepts duplicate tool names and calls the wrong tool | `symfony/ai-agent` | https://github.com/symfony/ai/issues/3003, fix PR https://github.com/symfony/ai/pull/3017 |
 | Typed `options` of an agent model lose their string type (`'007'` → `7`) | `symfony/ai-bundle` | https://github.com/symfony/ai/issues/3004 |
-| `#[Schema(enum: [...])]` cannot narrow a backed-enum parameter | `symfony/ai-platform` | https://github.com/symfony/ai/issues/3005 |
+| `#[Schema(enum: [...])]` cannot narrow a backed-enum parameter | `symfony/ai-platform` | https://github.com/symfony/ai/issues/3005, fix PR https://github.com/symfony/ai/pull/3015 |
 | Explicit `null` for string options becomes `""`; reference config fails to compile | `symfony/mcp-bundle` | https://github.com/symfony/ai/issues/3006 |
 | Self-referencing classes exhaust memory in schema generation; `mixed`/`iterable` schemas | `symfony/ai-platform` | comment on https://github.com/symfony/ai/pull/2915 (fixes them as a side effect) |
 | `#[Schema(exclusiveMinimum: true)]` is invalid under JSON Schema 2020-12 | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/754 |
 | Error response to a repeated `initialize` has no `id` | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/755, fix PR https://github.com/modelcontextprotocol/php-sdk/pull/758 |
-| A `float $x = INF` default makes `tools/list` fail for all tools | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/756 |
+| A `float $x = INF` default makes `tools/list` fail for all tools | `mcp/sdk` | https://github.com/modelcontextprotocol/php-sdk/issues/756, fix PR https://github.com/modelcontextprotocol/php-sdk/pull/759 |
 | Class-typed params and enum arrays still fail at call time with the new schema generator | `mcp/sdk` | comment on https://github.com/modelcontextprotocol/php-sdk/pull/740 |
 
 Fixed on `main` after BETA1, relevant while we stay on it: a tool returning `void`/`null` crashes the agent run (`Message::ofToolCall()` TypeError, symfony/ai #2896). Tools must return a string.
+
+Second round (20.11.2026), focused on what Clarifile uses: the Ollama, Hugging Face and Generic bridges and the MCP client. Same verification as above.
+
+| Finding | Package | Filed |
+|---|---|---|
+| `StringTemplateRenderer` expands placeholders inside substituted values | `symfony/ai-platform` | fix PR https://github.com/symfony/ai/pull/3016 |
+| Backed enums in tool results are serialized as `{"name","value"}` | `symfony/ai-agent` | fix PR https://github.com/symfony/ai/pull/3018 |
+| Explicit nested Ollama `options` are sent twice | `symfony/ai-ollama-platform` | fix PR https://github.com/symfony/ai/pull/3019 |
+| Generic/Hugging Face errors with a string `error` or a 402/403/404/422 status lose their message | `symfony/ai-generic-platform` | https://github.com/symfony/ai/issues/3020 |
+| Ollama `image` capability breaks `ModelCatalog::getModels()` | `symfony/ai-ollama-platform` | https://github.com/symfony/ai/issues/3021 |
+| Doubled quotes in the mcp-bundle registry pattern error | `symfony/mcp-bundle` | comment on https://github.com/symfony/ai/issues/3002 |
+| Client answers a server `ping` with -32601 | `mcp/sdk` | fix PR https://github.com/modelcontextprotocol/php-sdk/pull/761 |
+| Client drops server requests with an unknown method or invalid params | `mcp/sdk` | fix PR https://github.com/modelcontextprotocol/php-sdk/pull/762 |
+| Listening-stream client tests hang on macOS (8 KB socket buffer) | `mcp/sdk` | fix PR https://github.com/modelcontextprotocol/php-sdk/pull/760 |
